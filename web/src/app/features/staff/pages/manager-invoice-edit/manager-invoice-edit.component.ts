@@ -11,6 +11,14 @@ import {
   heroPaperAirplane,
   heroExclamationTriangle,
   heroChevronRight,
+  heroLightBulb,
+  heroUser,
+  heroArrowTopRightOnSquare,
+  heroPlusCircle,
+  heroAcademicCap,
+  heroClock,
+  heroPencilSquare,
+  heroInformationCircle,
 } from '@ng-icons/heroicons/outline';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
@@ -20,7 +28,6 @@ import { ManagerInvoiceCreateApiService } from '../../data/manager-invoice-creat
 import { ToastService } from '../../../../shared/services/toast.service';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
-import { PageHeaderComponent } from '../../../../shared/components/common/page-header/page-header.component';
 import { formatGbp, formatMinutes, formatBillingMonthLabel } from '../../utils/invoice-run-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
 import {
@@ -62,7 +69,6 @@ function mapApiLineToForm(line: ManagerInvoiceLine): FormInvoiceLine {
     NgIcon,
     AlertComponent,
     LoadingStateComponent,
-    PageHeaderComponent,
   ],
   templateUrl: './manager-invoice-edit.component.html',
   providers: [
@@ -74,6 +80,14 @@ function mapApiLineToForm(line: ManagerInvoiceLine): FormInvoiceLine {
       heroPaperAirplane,
       heroExclamationTriangle,
       heroChevronRight,
+      heroLightBulb,
+      heroUser,
+      heroArrowTopRightOnSquare,
+      heroPlusCircle,
+      heroAcademicCap,
+      heroClock,
+      heroPencilSquare,
+      heroInformationCircle,
     }),
   ],
 })
@@ -97,6 +111,12 @@ export class ManagerInvoiceEditComponent implements OnInit {
 
   lines = signal<FormInvoiceLine[]>([]);
   originalLines = signal<FormInvoiceLine[]>([]);
+
+  issueDate = '2026-08-01';
+  dueDate = '2026-08-14';
+  reference = '';
+  internalNote = '';
+  parentNote = '';
 
   isSaving = false;
   isIssuing = false;
@@ -135,6 +155,22 @@ export class ManagerInvoiceEditComponent implements OnInit {
     return this.invoice?.parentContact?.fullName ?? '';
   }
 
+  get invoiceNumberDisplay(): string {
+    return this.invoice?.invoiceNumberDisplay || this.invoice?.invoiceNumber || 'INV-DRAFT';
+  }
+
+  get roomName(): string {
+    return this.invoice?.roomName || 'Main Room';
+  }
+
+  get childId(): string {
+    return this.invoice?.childId || '';
+  }
+
+  get photoUrl(): string | null {
+    return this.invoice?.photoUrl || null;
+  }
+
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
     if (!invoiceId) {
@@ -157,6 +193,9 @@ export class ManagerInvoiceEditComponent implements OnInit {
         }
 
         this.invoice = detail;
+        this.issueDate = detail.issuedAt ? detail.issuedAt.slice(0, 10) : (detail.period?.startDate || '2026-08-01');
+        this.dueDate = detail.dueAt ? detail.dueAt.slice(0, 10) : (detail.period?.endDate || '2026-08-14');
+        this.parentNote = detail.parentNote || '';
         const formLines = detail.lines.map(mapApiLineToForm);
         this.lines.set(formLines);
         this.originalLines.set(formLines.map((l) => ({ ...l })));

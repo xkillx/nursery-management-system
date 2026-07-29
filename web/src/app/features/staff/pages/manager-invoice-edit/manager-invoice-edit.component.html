@@ -1,6 +1,6 @@
 <div class="space-y-6">
   @if (isLoading) {
-    <app-loading-state label="Loading invoice..." />
+    <app-loading-state label="Loading invoice details..." />
   }
 
   @if (errorMessage) {
@@ -8,155 +8,228 @@
   }
 
   @if (invoice && !isLoading) {
-    <!-- Breadcrumb -->
-    <nav class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-      <a routerLink="/manager/invoices" class="hover:text-brand-500 transition-colors">Invoices</a>
-      <ng-icon name="heroChevronRight" size="12" class="text-gray-400" aria-hidden="true" />
-      <a [routerLink]="['/manager/invoices', invoice.invoiceId]" class="hover:text-brand-500 transition-colors">{{ childName }}</a>
-      <ng-icon name="heroChevronRight" size="12" class="text-gray-400" aria-hidden="true" />
-      <span class="text-gray-700 dark:text-gray-200">Edit</span>
-    </nav>
-
-    <!-- Page Header -->
-    <app-page-header
-      title="Edit Draft Invoice"
-      [description]="childName + (parentContactName ? ' · ' + parentContactName : '') + ' · ' + formatBillingMonthLabel(billingMonth)"
-      [hasActions]="true"
-    >
-      <div actions class="flex items-center gap-3">
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05] disabled:opacity-50"
-          (click)="regenerate()"
-          [disabled]="isRegenerating || isSaving || isIssuing"
-        >
-          <ng-icon name="heroArrowPath" size="16" aria-hidden="true" />
-          {{ isRegenerating ? 'Regenerating...' : 'Regenerate' }}
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:opacity-50"
-          (click)="saveChanges()"
-          [disabled]="isSaving || isIssuing || isRegenerating"
-        >
-          <ng-icon name="heroCheck" size="16" aria-hidden="true" />
-          {{ isSaving ? 'Saving...' : 'Save Changes' }}
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 rounded-xl bg-success-500 px-4 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-success-600 focus:outline-hidden focus:ring-3 focus:ring-success-500/10 disabled:opacity-50"
-          (click)="issueInvoice()"
-          [disabled]="isSaving || isIssuing || isRegenerating"
-        >
-          <ng-icon name="heroPaperAirplane" size="16" aria-hidden="true" />
-          {{ isIssuing ? 'Issuing...' : 'Issue Invoice' }}
-        </button>
-      </div>
-    </app-page-header>
-
-    @if (submitError) {
-      <app-alert variant="error" title="Error" [message]="submitError" />
-    }
-
-    <!-- Main content grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Line items table -->
-      <div class="lg:col-span-8">
-        <section class="rounded-2xl border border-gray-200 bg-white shadow-theme-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Line items">
-          <div class="border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02] flex items-center justify-between">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Line Items</h2>
-            <span class="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
-              {{ lines().length }} Items
-            </span>
+    <div class="space-y-6">
+      <!-- Header Section -->
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white/90">Edit Draft Invoice</h1>
+            <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 uppercase tracking-wider">Draft</span>
           </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {{ childName }} · {{ formatBillingMonthLabel(billingMonth) }} Billing Period
+          </p>
+        </div>
 
-          @if (lines().length > 0) {
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05] disabled:opacity-50"
+            (click)="regenerate()"
+            [disabled]="isRegenerating || isSaving || isIssuing"
+          >
+            <ng-icon name="heroArrowPath" size="16" aria-hidden="true" [class.animate-spin]="isRegenerating" />
+            {{ isRegenerating ? 'Regenerating...' : 'Regenerate' }}
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05] disabled:opacity-50"
+            (click)="saveChanges()"
+            [disabled]="isSaving || isIssuing || isRegenerating"
+          >
+            <ng-icon name="heroCheck" size="16" aria-hidden="true" />
+            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden disabled:opacity-50"
+            (click)="issueInvoice()"
+            [disabled]="isSaving || isIssuing || isRegenerating"
+          >
+            <ng-icon name="heroPaperAirplane" size="16" aria-hidden="true" />
+            {{ isIssuing ? 'Issuing...' : 'Issue Invoice' }}
+          </button>
+        </div>
+      </div>
+
+      @if (submitError) {
+        <app-alert variant="error" title="Error" [message]="submitError" />
+      }
+
+      <!-- Draft callout -->
+      <div class="flex items-start gap-3.5 rounded-2xl border border-warning-200 bg-warning-50/70 p-4.5 dark:border-warning-500/20 dark:bg-warning-500/10 text-warning-900 dark:text-warning-200 shadow-theme-xs">
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300">
+          <ng-icon name="heroInformationCircle" size="20" aria-hidden="true" />
+        </div>
+        <div class="space-y-0.5">
+          <p class="text-sm font-semibold text-warning-900 dark:text-warning-200">Draft invoice — editable</p>
+          <p class="text-xs text-warning-800 dark:text-warning-300/80">Review line items below. Once finalized, issue the invoice to make it visible to parents and enable online payments.</p>
+        </div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Left Column: Details & Items -->
+        <div class="lg:col-span-8 space-y-6">
+          <!-- Metadata Card -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-labelledby="invoice-metadata">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+              <div>
+                <label for="inv-number-input" class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1 block">Invoice Number</label>
+                <input
+                  id="inv-number-input"
+                  class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 dark:border-gray-800 dark:bg-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="text"
+                  [value]="invoiceNumberDisplay"
+                  readonly
+                  disabled
+                />
+              </div>
+              <div>
+                <label for="issue-date-input" class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1 block">Issue Date</label>
+                <input
+                  id="issue-date-input"
+                  class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
+                  type="date"
+                  [(ngModel)]="issueDate"
+                />
+              </div>
+              <div>
+                <label for="due-date-input" class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1 block">Due Date</label>
+                <input
+                  id="due-date-input"
+                  class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
+                  type="date"
+                  [(ngModel)]="dueDate"
+                />
+              </div>
+              <div>
+                <label for="reference-input" class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1 block">Reference</label>
+                <input
+                  id="reference-input"
+                  class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
+                  placeholder="e.g. PO-123"
+                  type="text"
+                  [(ngModel)]="reference"
+                />
+              </div>
+            </div>
+          </section>
+
+          <!-- Line Items Table -->
+          <section class="rounded-2xl border border-gray-200 bg-white shadow-theme-xs overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Line items">
+            <div class="border-b border-gray-200/70 bg-gray-50/40 p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.02] flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white">Line Items</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Core childcare, extras, and government funding deductions</p>
+              </div>
+              <span class="rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/10 dark:border-brand-500/20 dark:text-brand-300">
+                Currency: GBP (£)
+              </span>
+            </div>
             <div class="overflow-x-auto">
               <table class="w-full min-w-[600px] border-collapse text-left text-sm">
                 <thead>
-                  <tr class="border-b border-gray-150 bg-gray-50/50 text-xs font-bold uppercase tracking-wider text-gray-400 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-500">
-                    <th class="px-6 py-3.5">Description</th>
-                    <th class="px-6 py-3.5 text-center w-28">Qty</th>
-                    <th class="px-6 py-3.5 text-right w-36">Unit Price</th>
-                    <th class="px-6 py-3.5 text-right w-36">Gross</th>
-                    <th class="px-6 py-3.5 text-right w-24">Actions</th>
+                  <tr class="border-b border-gray-200/70 bg-gray-50/70 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                    <th class="px-6 py-4">Description</th>
+                    <th class="px-4 py-4 text-right w-28">Qty/Hrs</th>
+                    <th class="px-4 py-4 text-right w-36">Unit Price</th>
+                    <th class="px-4 py-4 text-right w-36">Gross</th>
+                    <th class="px-4 py-4 text-center w-16"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                   @for (line of lines(); track line.id) {
-                    <tr
-                      class="transition hover:bg-gray-50/50 dark:hover:bg-white/[0.01]"
-                      [class.bg-warning-50/20]="line.lineKind === 'funded_deduction'"
-                      [class.dark:bg-warning-500/5]="line.lineKind === 'funded_deduction'"
-                    >
-                      <td class="px-6 py-3">
+                    <tr class="group transition-colors hover:bg-gray-50/60 dark:hover:bg-white/[0.01]">
+                      <td class="px-6 py-4">
                         @if (isEditableLine(line)) {
                           <input
                             type="text"
                             [ngModel]="line.description"
                             (ngModelChange)="updateLine(line.id, 'description', $event)"
-                            class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-sm dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
+                            class="w-full bg-transparent border-none text-sm text-gray-900 dark:text-white focus:ring-0 outline-none"
                             placeholder="Description"
+                            [aria-label]="'Description for ' + (line.description || 'line item')"
                           />
                         } @else {
-                          <p class="font-semibold text-gray-900 dark:text-white/90">{{ line.description }}</p>
+                          <p
+                            class="text-sm font-bold"
+                            [class.text-orange-900]="line.lineKind === 'funded_deduction'"
+                            [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'"
+                            [class.text-gray-900]="line.lineKind !== 'funded_deduction'"
+                            [class.dark:text-white]="line.lineKind !== 'funded_deduction'"
+                          >
+                            {{ line.description }}
+                          </p>
+                          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            @if (line.lineKind === 'core_childcare') {
+                              Standard full-day rate
+                            } @else if (line.lineKind === 'funded_deduction') {
+                              <span class="inline-flex items-center gap-1.5 text-orange-700 dark:text-orange-400 font-medium">
+                                <span class="inline-block size-1.5 rounded-full bg-orange-500"></span>
+                                Government funding offset
+                              </span>
+                            } @else {
+                              System calculated
+                            }
+                          </p>
                         }
                       </td>
-                      <td class="px-6 py-3 text-center">
+                      <td class="px-4 py-4 text-right">
                         @if (isEditableLine(line)) {
                           <input
                             type="number"
                             [ngModel]="line.quantityHours"
                             (ngModelChange)="updateLine(line.id, 'quantityHours', $event)"
-                            class="w-20 rounded border border-gray-200 bg-white px-2 py-1 text-sm text-center dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
+                            class="w-full bg-transparent border-none text-right text-sm text-gray-700 dark:text-gray-300 focus:ring-0 outline-none"
                             min="0"
                             step="1"
+                            [aria-label]="'Quantity for ' + (line.description || 'line item')"
                           />
                         } @else {
-                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            @if (line.quantityHours) {
-                              {{ line.quantityHours }} hrs
-                            } @else {
-                              —
-                            }
-                          </span>
+                          <p class="text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {{ line.quantityHours ? line.quantityHours : '—' }}
+                          </p>
                         }
                       </td>
-                      <td class="px-6 py-3 text-right">
+                      <td class="px-4 py-4 text-right">
                         @if (isEditableLine(line)) {
                           <input
                             type="number"
                             [ngModel]="line.unitAmountMinor"
                             (ngModelChange)="updateLine(line.id, 'unitAmountMinor', $event)"
-                            class="w-24 rounded border border-gray-200 bg-white px-2 py-1 text-sm text-right dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
+                            class="w-full bg-transparent border-none text-right text-sm text-gray-600 dark:text-gray-400 focus:ring-0 outline-none"
                             min="0"
+                            [aria-label]="'Unit price for ' + (line.description || 'line item')"
                           />
                         } @else {
-                          <span class="text-sm text-gray-600 dark:text-gray-350">
-                            @if (line.unitAmountMinor) {
-                              {{ formatGbp(line.unitAmountMinor) }}
-                            } @else {
-                              —
-                            }
-                          </span>
+                          <p class="text-right text-sm text-gray-600 dark:text-gray-400">
+                            {{ line.unitAmountMinor ? formatGbp(line.unitAmountMinor) : '—' }}
+                          </p>
                         }
                       </td>
-                      <td class="px-6 py-3 text-right text-sm font-semibold" [class.text-warning-700]="line.lineKind === 'funded_deduction'" [class.dark:text-warning-400]="line.lineKind === 'funded_deduction'" [class.text-gray-900]="line.lineKind !== 'funded_deduction'" [class.dark:text-white/90]="line.lineKind !== 'funded_deduction'">
-                        @if (line.lineKind === 'funded_deduction' && line.lineAmountMinor > 0) {
-                          &minus;{{ formatGbp(line.lineAmountMinor) }}
+                      <td
+                        class="px-4 py-4 text-right text-sm font-bold"
+                        [class.text-orange-900]="line.lineKind === 'funded_deduction'"
+                        [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'"
+                        [class.text-gray-900]="line.lineKind !== 'funded_deduction'"
+                        [class.dark:text-white]="line.lineKind !== 'funded_deduction'"
+                      >
+                        @if (line.lineKind === 'funded_deduction') {
+                          &minus;{{ formatGbp(Math.abs(line.lineAmountMinor)) }}
                         } @else {
                           {{ formatGbp(line.lineAmountMinor) }}
                         }
                       </td>
-                      <td class="px-6 py-3 text-right">
+                      <td class="px-4 py-4 text-center">
                         @if (isEditableLine(line)) {
                           <button
                             type="button"
-                            class="rounded p-1.5 text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition"
-                            title="Remove line"
+                            class="p-1.5 rounded-lg text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors opacity-0 group-hover:opacity-100"
                             (click)="removeLine(line.id)"
+                            title="Delete Line Item"
                           >
-                            <ng-icon name="heroTrash" size="14" aria-hidden="true" />
+                            <ng-icon name="heroTrash" size="16" aria-hidden="true" />
                           </button>
                         }
                       </td>
@@ -165,108 +238,150 @@
                 </tbody>
               </table>
             </div>
+            <div class="p-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                class="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 font-semibold text-sm hover:bg-gray-50 hover:border-brand-300 hover:text-brand-600 dark:border-gray-700 dark:hover:border-brand-500/30 dark:hover:text-brand-400 transition-all flex items-center justify-center gap-2"
+                (click)="addBlankLine()"
+              >
+                <ng-icon name="heroPlusCircle" size="20" aria-hidden="true" />
+                Add Line Item
+              </button>
+            </div>
 
-            <!-- Totals footer -->
-            <div class="flex justify-end border-t border-gray-150 bg-gray-50/20 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
-              <dl class="w-full max-w-xs space-y-3 text-sm">
+            <!-- Summary Totals -->
+            <div class="flex justify-end border-t border-gray-100 bg-gray-50/30 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
+              <dl class="w-full max-w-sm space-y-3 text-sm">
                 <div class="flex justify-between text-gray-500 dark:text-gray-400">
-                  <dt>Subtotal</dt>
-                  <dd class="font-medium text-gray-900 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
+                  <dt class="font-medium">Subtotal</dt>
+                  <dd class="font-bold text-gray-900 dark:text-white">{{ formatGbp(subtotalMinor()) }}</dd>
                 </div>
-                <div class="flex justify-between text-gray-500 dark:text-gray-400">
-                  <dt class="flex items-center gap-1.5 text-warning-700 dark:text-warning-400">
-                    <span class="inline-block size-1.5 rounded-full bg-warning-500"></span>
-                    Funded Deduction
-                  </dt>
-                  <dd class="font-medium text-warning-700 dark:text-warning-400">
-                    @if (fundedDeductionMinor() > 0) {
-                      &minus;{{ formatGbp(fundedDeductionMinor()) }}
-                    } @else {
-                      {{ formatGbp(0) }}
-                    }
-                  </dd>
-                </div>
-                <div class="flex justify-between items-center border-t border-gray-200 pt-4 mt-2 dark:border-gray-700 bg-brand-50/50 -mx-4 px-4 py-3.5 rounded-2xl border border-brand-100/30 dark:bg-brand-500/5 dark:border-brand-500/10">
-                  <dt class="text-xs font-bold text-brand-800 dark:text-brand-300 uppercase tracking-wider">Total Due</dt>
-                  <dd class="text-xl font-extrabold text-brand-600 dark:text-brand-400">
+                @if (fundedDeductionMinor() > 0) {
+                  <div class="flex justify-between text-orange-700 dark:text-orange-400">
+                    <dt class="flex items-center gap-1.5 font-medium">
+                      <span class="inline-block size-1.5 rounded-full bg-orange-500"></span>
+                      Funded Deduction
+                    </dt>
+                    <dd class="font-bold">&minus;{{ formatGbp(fundedDeductionMinor()) }}</dd>
+                  </div>
+                }
+                <div class="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-4 mt-3">
+                  <dt class="text-lg font-bold text-gray-900 dark:text-white">Total Due</dt>
+                  <dd class="text-3xl font-extrabold text-brand-500 dark:text-brand-400 tracking-tight font-outfit">
                     {{ formatGbp(totalDueMinor()) }}
                   </dd>
                 </div>
               </dl>
             </div>
-          } @else {
-            <p class="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No line items have been generated yet.</p>
-          }
+          </section>
 
-          <!-- Add line button -->
-          <div class="border-t border-gray-150 bg-gray-50/30 p-4 dark:border-gray-800 dark:bg-white/[0.01]">
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
-              (click)="addBlankLine()"
-            >
-              <ng-icon name="heroPlus" size="14" aria-hidden="true" />
-              Add Line
-            </button>
-          </div>
-        </section>
-      </div>
-
-      <!-- Summary sidebar -->
-      <div class="lg:col-span-4 space-y-6">
-        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Invoice summary">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Invoice Summary</h2>
-          <dl class="space-y-3 text-sm">
-            <div class="flex justify-between text-gray-500 dark:text-gray-400">
-              <dt>Subtotal</dt>
-              <dd class="font-medium text-gray-900 dark:text-white/90">{{ formatGbp(subtotalMinor()) }}</dd>
+          <!-- Audit Trail Card -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-labelledby="audit-heading">
+            <div class="flex items-center gap-2 text-brand-500 dark:text-brand-400 pb-3 border-b border-gray-100 dark:border-gray-800 mb-4">
+              <div class="flex size-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+                <ng-icon name="heroClock" size="16" aria-hidden="true" />
+              </div>
+              <h2 id="audit-heading" class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Audit Trail</h2>
             </div>
-            <div class="flex justify-between text-gray-500 dark:text-gray-400">
-              <dt class="flex items-center gap-1.5 text-warning-700 dark:text-warning-400">
-                <span class="inline-block size-1.5 rounded-full bg-warning-500"></span>
-                Funded Deduction
-              </dt>
-              <dd class="font-medium text-warning-700 dark:text-warning-400">
-                @if (fundedDeductionMinor() > 0) {
-                  &minus;{{ formatGbp(fundedDeductionMinor()) }}
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Draft updated {{ invoice.updatedAt ? (invoice.updatedAt | date:'short') : 'recently' }}. Standard calculation model applied for {{ formatBillingMonthLabel(billingMonth) }}.
+            </p>
+          </section>
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <div class="lg:col-span-4 space-y-6">
+          <!-- Child Details Card -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-labelledby="child-heading">
+            <div class="flex items-center gap-2 text-brand-500 dark:text-brand-400 pb-3 border-b border-gray-100 dark:border-gray-800 mb-4">
+              <div class="flex size-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+                <ng-icon name="heroUser" size="16" aria-hidden="true" />
+              </div>
+              <h2 id="child-heading" class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Child Details</h2>
+            </div>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="size-14 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center text-gray-400 dark:text-gray-500 shrink-0">
+                @if (photoUrl) {
+                  <img [src]="photoUrl" [alt]="childName" class="size-full object-cover" />
                 } @else {
-                  {{ formatGbp(0) }}
+                  <ng-icon name="heroUser" size="28" aria-hidden="true" />
                 }
-              </dd>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-gray-900 dark:text-white leading-snug">{{ childName }}</p>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <ng-icon name="heroAcademicCap" size="16" class="text-brand-500 dark:text-brand-400" aria-hidden="true" />
+                  <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">{{ roomName }}</span>
+                </div>
+              </div>
             </div>
-            <div class="flex justify-between items-center border-t border-gray-200 pt-4 mt-2 dark:border-gray-700 bg-brand-50/50 -mx-2 px-3 py-3 rounded-2xl">
-              <dt class="text-xs font-bold text-brand-800 dark:text-brand-300 uppercase tracking-wider">Total Due</dt>
-              <dd class="text-xl font-extrabold text-brand-600 dark:text-brand-400">
-                {{ formatGbp(totalDueMinor()) }}
-              </dd>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.01]">
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mb-0.5">Parent</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ parentContactName || 'N/A' }}</p>
+              </div>
+              <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.01]">
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mb-0.5">Account</p>
+                <p class="text-sm font-mono font-medium text-gray-700 dark:text-gray-300">#{{ childId ? childId.slice(0, 8) : 'N/A' }}</p>
+              </div>
             </div>
-          </dl>
-        </section>
-
-        <!-- Invoice details -->
-        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Invoice details">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Details</h2>
-          <dl class="space-y-2.5 text-sm">
-            <div class="flex justify-between">
-              <dt class="text-gray-500 dark:text-gray-400">Status</dt>
-              <dd class="font-medium text-gray-900 dark:text-white/90">Draft</dd>
-            </div>
-            <div class="flex justify-between">
-              <dt class="text-gray-500 dark:text-gray-400">Child</dt>
-              <dd class="font-medium text-gray-900 dark:text-white/90">{{ childName }}</dd>
-            </div>
-            <div class="flex justify-between">
-              <dt class="text-gray-500 dark:text-gray-400">Month</dt>
-              <dd class="font-medium text-gray-900 dark:text-white/90">{{ formatBillingMonthLabel(billingMonth) }}</dd>
-            </div>
-            @if (parentContactName) {
-              <div class="flex justify-between">
-                <dt class="text-gray-500 dark:text-gray-400">Parent</dt>
-                <dd class="font-medium text-gray-900 dark:text-white/90">{{ parentContactName }}</dd>
+            @if (childId) {
+              <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <a
+                  [routerLink]="['/manager/children', childId]"
+                  class="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline w-full"
+                >
+                  View Child Profile
+                  <ng-icon name="heroArrowTopRightOnSquare" size="14" aria-hidden="true" />
+                </a>
               </div>
             }
-          </dl>
-        </section>
+          </section>
+
+          <!-- Notes Section Card -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] space-y-5" aria-labelledby="notes-heading">
+            <div class="flex items-center gap-2 text-brand-500 dark:text-brand-400 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div class="flex size-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+                <ng-icon name="heroPencilSquare" size="16" aria-hidden="true" />
+              </div>
+              <h2 id="notes-heading" class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Notes</h2>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label for="internal-note-input" class="text-xs font-medium text-gray-700 dark:text-gray-300">Internal Note</label>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-error-600 bg-error-50 dark:bg-error-500/10 px-2 py-0.5 rounded-full border border-error-200 dark:border-error-500/20">Private</span>
+              </div>
+              <textarea
+                id="internal-note-input"
+                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 resize-none dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
+                placeholder="Add a note for the management team..."
+                rows="3"
+                [(ngModel)]="internalNote"
+              ></textarea>
+            </div>
+            <div>
+              <label for="invoice-memo-input" class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 block">Invoice Memo</label>
+              <textarea
+                id="invoice-memo-input"
+                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 resize-none dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
+                placeholder="Visible to the parent on the invoice PDF..."
+                rows="3"
+                [(ngModel)]="parentNote"
+              ></textarea>
+            </div>
+          </section>
+
+          <!-- Helpful Tips -->
+          <div class="flex items-start gap-3.5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4.5 dark:border-blue-500/20 dark:bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-theme-xs">
+            <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">
+              <ng-icon name="heroLightBulb" size="20" aria-hidden="true" />
+            </div>
+            <div class="space-y-0.5">
+              <p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Pro Tip</p>
+              <p class="text-xs text-blue-700 dark:text-blue-300/80 leading-relaxed">You can regenerate system lines at any time to recalculate standard childcare and funding allowances based on attendance logs.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   }
