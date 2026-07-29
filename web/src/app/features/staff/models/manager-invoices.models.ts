@@ -71,7 +71,7 @@ export interface ManagerInvoiceLine {
   lineKind: string;
   description: string;
   sortOrder: number;
-  quantityMinutes: number | null;
+  quantityHours: number | null;
   unitAmountMinor: number | null;
   lineAmountMinor: number;
   rawAttendedMinutes: number | null;
@@ -207,14 +207,14 @@ export interface PaginatedPaymentEvents {
 export interface AddInvoiceLineInput {
   lineKind: string;
   description: string;
-  quantityMinutes: number;
+  quantityHours: number;
   unitAmountMinor: number;
   lineAmountMinor: number;
 }
 
 export interface UpdateInvoiceLineInput {
   description: string;
-  quantityMinutes: number;
+  quantityHours: number;
   unitAmountMinor: number;
   lineAmountMinor: number;
 }

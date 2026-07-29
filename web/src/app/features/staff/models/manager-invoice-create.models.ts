@@ -2,7 +2,7 @@ export interface ManagerInvoicePrefillLine {
   lineKind: string;
   description: string;
   sortOrder: number;
-  quantityMinutes: number;
+  quantityHours: number;
   unitAmountMinor: number;
   lineAmountMinor: number;
   fundedAllowanceMinutes: number;
@@ -39,7 +39,7 @@ export interface FormInvoiceLine {
   lineKind: string;
   description: string;
   sortOrder: number;
-  quantityMinutes: number;
+  quantityHours: number;
   unitAmountMinor: number;
   lineAmountMinor: number;
   fundedAllowanceMinutes: number;
@@ -69,7 +69,7 @@ export interface DraftLineResult {
   lineKind: string;
   description: string;
   sortOrder: number;
-  quantityMinutes: number;
+  quantityHours: number;
   unitAmountMinor: number;
   lineAmountMinor: number;
 }

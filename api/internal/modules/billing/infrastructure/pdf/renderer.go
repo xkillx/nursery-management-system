@@ -212,14 +212,15 @@ func (r *Renderer) drawLineItemsTable(pdf *gopdf.GoPdf, input InvoicePDFInput, s
 	for _, line := range input.Lines {
 		qty := ""
 		if line.QuantityMinutes != nil {
-			qty = fmt.Sprintf("%d min", *line.QuantityMinutes)
+			hours := *line.QuantityMinutes / 60
+			qty = fmt.Sprintf("%d hrs", hours)
 		} else if line.SessionCount != nil {
 			qty = fmt.Sprintf("%d", *line.SessionCount)
 		}
 
 		unitStr := "\u2014"
 		if line.UnitAmountMinor != nil {
-			unitStr = formatMoney(*line.UnitAmountMinor)
+			unitStr = formatMoney(*line.UnitAmountMinor * 60)
 		}
 
 		totalStr := formatMoney(line.LineAmountMinor)

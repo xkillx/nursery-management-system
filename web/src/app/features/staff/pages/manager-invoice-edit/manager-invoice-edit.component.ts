@@ -42,7 +42,7 @@ function mapApiLineToForm(line: ManagerInvoiceLine): FormInvoiceLine {
     lineKind: line.lineKind,
     description: line.description,
     sortOrder: line.sortOrder,
-    quantityMinutes: line.quantityMinutes ?? 0,
+    quantityHours: line.quantityHours ?? 0,
     unitAmountMinor: line.unitAmountMinor ?? 0,
     lineAmountMinor: line.lineAmountMinor,
     fundedAllowanceMinutes: line.fundedAllowanceMinutes ?? 0,
@@ -173,8 +173,8 @@ export class ManagerInvoiceEditComponent implements OnInit {
       prev.map((l) => {
         if (l.id !== lineId) return l;
         const updated = { ...l, [field]: value };
-        if (field === 'quantityMinutes' || field === 'unitAmountMinor') {
-          const q = typeof updated.quantityMinutes === 'number' ? updated.quantityMinutes : 0;
+        if (field === 'quantityHours' || field === 'unitAmountMinor') {
+          const q = typeof updated.quantityHours === 'number' ? updated.quantityHours : 0;
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
           updated.lineAmountMinor = q * u;
         }
@@ -191,7 +191,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
         lineKind: 'extra',
         description: '',
         sortOrder: prev.length + 1,
-        quantityMinutes: 0,
+        quantityHours: 0,
         unitAmountMinor: 0,
         lineAmountMinor: 0,
         fundedAllowanceMinutes: 0,
@@ -224,7 +224,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
               lineKind: l.lineKind,
               description: l.description,
               sortOrder: l.sortOrder,
-              quantityMinutes: l.quantityMinutes,
+              quantityHours: l.quantityHours,
               unitAmountMinor: l.unitAmountMinor,
               lineAmountMinor: l.lineAmountMinor,
               fundedAllowanceMinutes: l.fundedAllowanceMinutes,
@@ -265,7 +265,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
         orig &&
         !l.id.startsWith('line-') &&
         (orig.description !== l.description ||
-          orig.quantityMinutes !== l.quantityMinutes ||
+          orig.quantityHours !== l.quantityHours ||
           orig.unitAmountMinor !== l.unitAmountMinor ||
           orig.lineAmountMinor !== l.lineAmountMinor)
       );
@@ -281,7 +281,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
     for (const line of toUpdate) {
       const input: UpdateInvoiceLineInput = {
         description: line.description,
-        quantityMinutes: line.quantityMinutes,
+        quantityHours: line.quantityHours,
         unitAmountMinor: line.unitAmountMinor,
         lineAmountMinor: line.lineAmountMinor,
       };
@@ -292,7 +292,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
       const input: AddInvoiceLineInput = {
         lineKind: line.lineKind,
         description: line.description,
-        quantityMinutes: line.quantityMinutes,
+        quantityHours: line.quantityHours,
         unitAmountMinor: line.unitAmountMinor,
         lineAmountMinor: line.lineAmountMinor,
       };
@@ -342,7 +342,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
         orig &&
         !l.id.startsWith('line-') &&
         (orig.description !== l.description ||
-          orig.quantityMinutes !== l.quantityMinutes ||
+          orig.quantityHours !== l.quantityHours ||
           orig.unitAmountMinor !== l.unitAmountMinor ||
           orig.lineAmountMinor !== l.lineAmountMinor)
       );
@@ -356,7 +356,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
     for (const line of toUpdate) {
       const input: UpdateInvoiceLineInput = {
         description: line.description,
-        quantityMinutes: line.quantityMinutes,
+        quantityHours: line.quantityHours,
         unitAmountMinor: line.unitAmountMinor,
         lineAmountMinor: line.lineAmountMinor,
       };
@@ -366,7 +366,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
       const input: AddInvoiceLineInput = {
         lineKind: line.lineKind,
         description: line.description,
-        quantityMinutes: line.quantityMinutes,
+        quantityHours: line.quantityHours,
         unitAmountMinor: line.unitAmountMinor,
         lineAmountMinor: line.lineAmountMinor,
       };

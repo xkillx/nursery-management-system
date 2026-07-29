@@ -62,7 +62,7 @@ const draftDetail: ManagerInvoiceDetail = {
       lineKind: 'core_childcare',
       description: 'Core childcare',
       sortOrder: 1,
-      quantityMinutes: 1320,
+      quantityHours: 1320,
       unitAmountMinor: 25,
       lineAmountMinor: 33000,
       rawAttendedMinutes: null,
@@ -78,7 +78,7 @@ const draftDetail: ManagerInvoiceDetail = {
       lineKind: 'funded_deduction',
       description: 'Funded deduction',
       sortOrder: 2,
-      quantityMinutes: 360,
+      quantityHours: 360,
       unitAmountMinor: 25,
       lineAmountMinor: -9000,
       rawAttendedMinutes: null,
@@ -94,7 +94,7 @@ const draftDetail: ManagerInvoiceDetail = {
       lineKind: 'extra',
       description: 'Late pick-up',
       sortOrder: 3,
-      quantityMinutes: 30,
+      quantityHours: 30,
       unitAmountMinor: 500,
       lineAmountMinor: 1500,
       rawAttendedMinutes: null,
@@ -142,8 +142,8 @@ describe('ManagerInvoiceEditComponent', () => {
   function createFixture(detail: ManagerInvoiceDetail = draftDetail) {
     const apiSpy = createApiSpy();
     apiSpy.getInvoice.and.returnValue(of(detail));
-    apiSpy.addLine.and.returnValue(of({ lineId: 'new-1', lineKind: 'extra', description: '', sortOrder: 4, quantityMinutes: 0, unitAmountMinor: 0, lineAmountMinor: 0, subtotalMinor: 33000, totalDueMinor: 24000 }));
-    apiSpy.updateLine.and.returnValue(of({ lineId: 'l3', lineKind: 'extra', description: 'Updated', sortOrder: 3, quantityMinutes: 30, unitAmountMinor: 500, lineAmountMinor: 1500, subtotalMinor: 33000, totalDueMinor: 24000 }));
+    apiSpy.addLine.and.returnValue(of({ lineId: 'new-1', lineKind: 'extra', description: '', sortOrder: 4, quantityHours: 0, unitAmountMinor: 0, lineAmountMinor: 0, subtotalMinor: 33000, totalDueMinor: 24000 }));
+    apiSpy.updateLine.and.returnValue(of({ lineId: 'l3', lineKind: 'extra', description: 'Updated', sortOrder: 3, quantityHours: 30, unitAmountMinor: 500, lineAmountMinor: 1500, subtotalMinor: 33000, totalDueMinor: 24000 }));
     apiSpy.deleteLine.and.returnValue(of({ lineId: 'l3', subtotalMinor: 31500, totalDueMinor: 22500 }));
     apiSpy.issueInvoice.and.returnValue(of({ invoiceId: 'inv-1', status: 'issued' }));
 
@@ -156,8 +156,8 @@ describe('ManagerInvoiceEditComponent', () => {
       billingMonth: '2026-05',
       entitlementStatus: { fundingProfileId: 'fp1', fundedAllowanceMinutes: 360, statusLabel: 'Standard' },
       lines: [
-        { lineKind: 'core_childcare', description: 'Core childcare', sortOrder: 1, quantityMinutes: 1320, unitAmountMinor: 25, lineAmountMinor: 33000, fundedAllowanceMinutes: 0, fundedDeductionMinutes: 0, coreBillableMinutes: 960, sessionCount: 4 },
-        { lineKind: 'funded_deduction', description: 'Funded deduction', sortOrder: 2, quantityMinutes: 360, unitAmountMinor: 25, lineAmountMinor: -9000, fundedAllowanceMinutes: 360, fundedDeductionMinutes: 360, coreBillableMinutes: 0, sessionCount: 0 },
+        { lineKind: 'core_childcare', description: 'Core childcare', sortOrder: 1, quantityHours: 1320, unitAmountMinor: 25, lineAmountMinor: 33000, fundedAllowanceMinutes: 0, fundedDeductionMinutes: 0, coreBillableMinutes: 960, sessionCount: 4 },
+        { lineKind: 'funded_deduction', description: 'Funded deduction', sortOrder: 2, quantityHours: 360, unitAmountMinor: 25, lineAmountMinor: -9000, fundedAllowanceMinutes: 360, fundedDeductionMinutes: 360, coreBillableMinutes: 0, sessionCount: 0 },
       ],
       subtotalMinor: 33000,
       fundedDeductionMinor: 9000,
@@ -266,7 +266,7 @@ describe('ManagerInvoiceEditComponent', () => {
     it('recalculates lineAmountMinor when changing quantity', () => {
       createFixture();
       const comp = fixture.componentInstance;
-      comp.updateLine('l3', 'quantityMinutes', 60);
+      comp.updateLine('l3', 'quantityHours', 60);
       const line = comp.lines().find((l) => l.id === 'l3');
       expect(line?.lineAmountMinor).toBe(60 * 500);
     });

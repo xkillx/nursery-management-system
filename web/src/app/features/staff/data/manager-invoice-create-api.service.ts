@@ -115,7 +115,7 @@ export class ManagerInvoiceCreateApiService {
   createDraft(input: {
     childId: string;
     billingMonth: string;
-    lines: { lineKind: string; description: string; sortOrder: number; quantityMinutes: number; unitAmountMinor: number; lineAmountMinor: number }[];
+    lines: { lineKind: string; description: string; sortOrder: number; quantityHours: number; unitAmountMinor: number; lineAmountMinor: number }[];
     paymentTerms: string;
     internalNotes: string;
     parentNote: string;
@@ -127,8 +127,8 @@ export class ManagerInvoiceCreateApiService {
         line_kind: l.lineKind,
         description: l.description,
         sort_order: l.sortOrder,
-        quantity_minutes: l.quantityMinutes,
-        unit_amount_minor: l.unitAmountMinor,
+        quantity_minutes: l.quantityHours * 60,
+        unit_amount_minor: Math.round(l.unitAmountMinor / 60),
         line_amount_minor: l.lineAmountMinor,
       })),
       payment_terms: input.paymentTerms,
@@ -143,7 +143,7 @@ export class ManagerInvoiceCreateApiService {
   createAndIssue(input: {
     childId: string;
     billingMonth: string;
-    lines: { lineKind: string; description: string; sortOrder: number; quantityMinutes: number; unitAmountMinor: number; lineAmountMinor: number }[];
+    lines: { lineKind: string; description: string; sortOrder: number; quantityHours: number; unitAmountMinor: number; lineAmountMinor: number }[];
     paymentTerms: string;
     internalNotes: string;
     parentNote: string;
@@ -155,8 +155,8 @@ export class ManagerInvoiceCreateApiService {
         line_kind: l.lineKind,
         description: l.description,
         sort_order: l.sortOrder,
-        quantity_minutes: l.quantityMinutes,
-        unit_amount_minor: l.unitAmountMinor,
+        quantity_minutes: l.quantityHours * 60,
+        unit_amount_minor: Math.round(l.unitAmountMinor / 60),
         line_amount_minor: l.lineAmountMinor,
       })),
       payment_terms: input.paymentTerms,
@@ -201,8 +201,8 @@ export class ManagerInvoiceCreateApiService {
       lineKind: l.line_kind,
       description: l.description,
       sortOrder: l.sort_order,
-      quantityMinutes: l.quantity_minutes,
-      unitAmountMinor: l.unit_amount_minor,
+      quantityHours: l.quantity_minutes / 60,
+      unitAmountMinor: l.unit_amount_minor * 60,
       lineAmountMinor: l.line_amount_minor,
       fundedAllowanceMinutes: l.funded_allowance_minutes,
       fundedDeductionMinutes: l.funded_deduction_minutes,
@@ -234,8 +234,8 @@ export class ManagerInvoiceCreateApiService {
       lineKind: l.line_kind,
       description: l.description,
       sortOrder: l.sort_order,
-      quantityMinutes: l.quantity_minutes,
-      unitAmountMinor: l.unit_amount_minor,
+      quantityHours: l.quantity_minutes / 60,
+      unitAmountMinor: l.unit_amount_minor * 60,
       lineAmountMinor: l.line_amount_minor,
     };
   }

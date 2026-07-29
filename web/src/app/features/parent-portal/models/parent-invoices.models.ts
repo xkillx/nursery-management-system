@@ -53,7 +53,7 @@ export interface ParentInvoiceLine {
   lineKind: string;
   description: string;
   sortOrder: number;
-  quantityMinutes: number | null;
+  quantityHours: number | null;
   unitAmountMinor: number | null;
   lineAmountMinor: number;
   fundingModel: string | null;

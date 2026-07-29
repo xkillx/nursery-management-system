@@ -97,16 +97,16 @@ function lineQuantityLabel(line: ManagerInvoiceLine): string {
     if (line.fundedAllowanceMinutes !== null) {
       return `${formatMinutes(line.fundedAllowanceMinutes)} allowance`;
     }
-    if (line.quantityMinutes !== null) {
-      return formatMinutes(line.quantityMinutes);
+    if (line.quantityHours !== null) {
+      return `${line.quantityHours} hr${line.quantityHours === 1 ? '' : 's'}`;
     }
     return '—';
   }
   if (line.sessionCount !== null && line.sessionCount > 0) {
     return `${line.sessionCount} session${line.sessionCount === 1 ? '' : 's'}`;
   }
-  if (line.quantityMinutes !== null) {
-    return formatMinutes(line.quantityMinutes);
+  if (line.quantityHours !== null) {
+    return `${line.quantityHours} hr${line.quantityHours === 1 ? '' : 's'}`;
   }
   return '—';
 }

@@ -106,15 +106,16 @@
                         @if (isEditableLine(line)) {
                           <input
                             type="number"
-                            [ngModel]="line.quantityMinutes"
-                            (ngModelChange)="updateLine(line.id, 'quantityMinutes', $event)"
+                            [ngModel]="line.quantityHours"
+                            (ngModelChange)="updateLine(line.id, 'quantityHours', $event)"
                             class="w-20 rounded border border-gray-200 bg-white px-2 py-1 text-sm text-center dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200"
                             min="0"
+                            step="1"
                           />
                         } @else {
                           <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            @if (line.quantityMinutes) {
-                              {{ formatMinutes(line.quantityMinutes) }}
+                            @if (line.quantityHours) {
+                              {{ line.quantityHours }} hrs
                             } @else {
                               —
                             }

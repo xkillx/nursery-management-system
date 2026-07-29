@@ -354,8 +354,8 @@ export class ManagerInvoicesApiService {
     return this.http.post<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines`), {
       line_kind: input.lineKind,
       description: input.description,
-      quantity_minutes: input.quantityMinutes,
-      unit_amount_minor: input.unitAmountMinor,
+      quantity_minutes: input.quantityHours * 60,
+      unit_amount_minor: Math.round(input.unitAmountMinor / 60),
       line_amount_minor: input.lineAmountMinor,
     });
   }
@@ -363,8 +363,8 @@ export class ManagerInvoicesApiService {
   updateLine(invoiceId: string, lineId: string, input: UpdateInvoiceLineInput): Observable<InvoiceLineResult> {
     return this.http.put<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`), {
       description: input.description,
-      quantity_minutes: input.quantityMinutes,
-      unit_amount_minor: input.unitAmountMinor,
+      quantity_minutes: input.quantityHours * 60,
+      unit_amount_minor: Math.round(input.unitAmountMinor / 60),
       line_amount_minor: input.lineAmountMinor,
     });
   }
@@ -633,8 +633,8 @@ export class ManagerInvoicesApiService {
       lineKind: l.line_kind,
       description: l.description,
       sortOrder: l.sort_order,
-      quantityMinutes: l.quantity_minutes,
-      unitAmountMinor: l.unit_amount_minor,
+      quantityHours: l.quantity_minutes != null ? l.quantity_minutes / 60 : null,
+      unitAmountMinor: l.unit_amount_minor != null ? l.unit_amount_minor * 60 : null,
       lineAmountMinor: l.line_amount_minor,
       rawAttendedMinutes: l.raw_attended_minutes ?? null,
       roundedAttendedMinutes: l.rounded_attended_minutes ?? null,

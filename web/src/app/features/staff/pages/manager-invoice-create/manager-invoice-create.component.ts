@@ -333,7 +333,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
             lineKind: l.lineKind,
             description: l.description,
             sortOrder: l.sortOrder,
-            quantityMinutes: l.quantityMinutes,
+            quantityHours: l.quantityHours,
             unitAmountMinor: l.unitAmountMinor,
             lineAmountMinor: l.lineAmountMinor,
             fundedAllowanceMinutes: l.fundedAllowanceMinutes,
@@ -363,7 +363,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         lineKind: 'extra',
         description: '',
         sortOrder: prev.length + 1,
-        quantityMinutes: 0,
+        quantityHours: 0,
         unitAmountMinor: 0,
         lineAmountMinor: 0,
         fundedAllowanceMinutes: 0,
@@ -383,7 +383,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
         lineKind: 'extra',
         description,
         sortOrder: prev.length + 1,
-        quantityMinutes: quantity,
+        quantityHours: quantity,
         unitAmountMinor: unitPriceMinor,
         lineAmountMinor: quantity * unitPriceMinor,
         fundedAllowanceMinutes: 0,
@@ -405,14 +405,10 @@ export class ManagerInvoiceCreateComponent implements OnInit {
       prev.map((l) => {
         if (l.id !== lineId) return l;
         const updated = { ...l, [field]: value };
-        if (field === 'quantityMinutes' || field === 'unitAmountMinor') {
-          const q = typeof updated.quantityMinutes === 'number' ? updated.quantityMinutes : 0;
+        if (field === 'quantityHours' || field === 'unitAmountMinor') {
+          const q = typeof updated.quantityHours === 'number' ? updated.quantityHours : 0;
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
-          if (updated.lineKind === 'core_childcare') {
-            updated.lineAmountMinor = Math.round((q / 60) * u);
-          } else {
-            updated.lineAmountMinor = q * u;
-          }
+          updated.lineAmountMinor = q * u;
         }
         return updated;
       }),
@@ -432,7 +428,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
           lineKind: l.lineKind,
           description: l.description,
           sortOrder: l.sortOrder,
-          quantityMinutes: l.quantityMinutes,
+          quantityHours: l.quantityHours,
           unitAmountMinor: l.unitAmountMinor,
           lineAmountMinor: l.lineAmountMinor,
         })),
@@ -467,7 +463,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
           lineKind: l.lineKind,
           description: l.description,
           sortOrder: l.sortOrder,
-          quantityMinutes: l.quantityMinutes,
+          quantityHours: l.quantityHours,
           unitAmountMinor: l.unitAmountMinor,
           lineAmountMinor: l.lineAmountMinor,
         })),

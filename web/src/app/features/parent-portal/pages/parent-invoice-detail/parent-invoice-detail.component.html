@@ -243,8 +243,8 @@
                   </td>
                   <td class="py-3 pr-4 text-gray-500 dark:text-gray-400">{{ lineKindLabel(line.lineKind) }}</td>
                   <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
-                    @if (line.quantityMinutes !== null) {
-                      {{ formatMinutes(line.quantityMinutes) }}
+                    @if (line.quantityHours !== null) {
+                      {{ line.quantityHours }} hr{{ line.quantityHours === 1 ? '' : 's' }}
                     }
                   </td>
                   <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
