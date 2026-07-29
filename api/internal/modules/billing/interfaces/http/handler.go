@@ -268,12 +268,16 @@ func (h *Handler) createDraftHandler(c *gin.Context) {
 	lines := make([]application.DraftInvoiceLineInput, 0, len(req.Lines))
 	for _, l := range req.Lines {
 		lines = append(lines, application.DraftInvoiceLineInput{
-			LineKind:        l.LineKind,
-			Description:     l.Description,
-			SortOrder:       l.SortOrder,
-			QuantityMinutes: l.QuantityMinutes,
-			UnitAmountMinor: l.UnitAmountMinor,
-			LineAmountMinor: l.LineAmountMinor,
+			LineKind:               l.LineKind,
+			Description:            l.Description,
+			SortOrder:              l.SortOrder,
+			QuantityMinutes:        l.QuantityMinutes,
+			UnitAmountMinor:        l.UnitAmountMinor,
+			LineAmountMinor:        l.LineAmountMinor,
+			FundedAllowanceMinutes: l.FundedAllowanceMinutes,
+			FundedDeductionMinutes: l.FundedDeductionMinutes,
+			CoreBillableMinutes:    l.CoreBillableMinutes,
+			SessionCount:           l.SessionCount,
 		})
 	}
 
@@ -331,12 +335,16 @@ func (h *Handler) createAndIssueInvoiceHandler(c *gin.Context) {
 	lines := make([]application.DraftInvoiceLineInput, 0, len(req.Lines))
 	for _, l := range req.Lines {
 		lines = append(lines, application.DraftInvoiceLineInput{
-			LineKind:        l.LineKind,
-			Description:     l.Description,
-			SortOrder:       l.SortOrder,
-			QuantityMinutes: l.QuantityMinutes,
-			UnitAmountMinor: l.UnitAmountMinor,
-			LineAmountMinor: l.LineAmountMinor,
+			LineKind:               l.LineKind,
+			Description:            l.Description,
+			SortOrder:              l.SortOrder,
+			QuantityMinutes:        l.QuantityMinutes,
+			UnitAmountMinor:        l.UnitAmountMinor,
+			LineAmountMinor:        l.LineAmountMinor,
+			FundedAllowanceMinutes: l.FundedAllowanceMinutes,
+			FundedDeductionMinutes: l.FundedDeductionMinutes,
+			CoreBillableMinutes:    l.CoreBillableMinutes,
+			SessionCount:           l.SessionCount,
 		})
 	}
 

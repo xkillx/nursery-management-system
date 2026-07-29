@@ -355,7 +355,7 @@ export class ManagerInvoicesApiService {
       line_kind: input.lineKind,
       description: input.description,
       quantity_minutes: input.quantityHours * 60,
-      unit_amount_minor: Math.round(input.unitAmountMinor / 60),
+      unit_amount_minor: input.unitAmountMinor,
       line_amount_minor: input.lineAmountMinor,
     });
   }
@@ -364,7 +364,7 @@ export class ManagerInvoicesApiService {
     return this.http.put<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`), {
       description: input.description,
       quantity_minutes: input.quantityHours * 60,
-      unit_amount_minor: Math.round(input.unitAmountMinor / 60),
+      unit_amount_minor: input.unitAmountMinor,
       line_amount_minor: input.lineAmountMinor,
     });
   }

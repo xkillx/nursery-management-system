@@ -515,12 +515,16 @@ type createDraftInvoiceRequest struct {
 }
 
 type draftInvoiceLineRequest struct {
-	LineKind        string `json:"line_kind"`
-	Description     string `json:"description"`
-	SortOrder       int    `json:"sort_order"`
-	QuantityMinutes int    `json:"quantity_minutes"`
-	UnitAmountMinor int    `json:"unit_amount_minor"`
-	LineAmountMinor int    `json:"line_amount_minor"`
+	LineKind               string `json:"line_kind"`
+	Description            string `json:"description"`
+	SortOrder              int    `json:"sort_order"`
+	QuantityMinutes        int    `json:"quantity_minutes"`
+	UnitAmountMinor        int    `json:"unit_amount_minor"`
+	LineAmountMinor        int    `json:"line_amount_minor"`
+	FundedAllowanceMinutes int    `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int    `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int    `json:"core_billable_minutes"`
+	SessionCount           int    `json:"session_count"`
 }
 
 type createDraftInvoiceResponse struct {
@@ -539,13 +543,17 @@ type createDraftInvoiceResponse struct {
 }
 
 type draftLineResponse struct {
-	LineID          string `json:"line_id"`
-	LineKind        string `json:"line_kind"`
-	Description     string `json:"description"`
-	SortOrder       int    `json:"sort_order"`
-	QuantityMinutes int    `json:"quantity_minutes"`
-	UnitAmountMinor int    `json:"unit_amount_minor"`
-	LineAmountMinor int    `json:"line_amount_minor"`
+	LineID                 string `json:"line_id"`
+	LineKind               string `json:"line_kind"`
+	Description            string `json:"description"`
+	SortOrder              int    `json:"sort_order"`
+	QuantityMinutes        int    `json:"quantity_minutes"`
+	UnitAmountMinor        int    `json:"unit_amount_minor"`
+	LineAmountMinor        int    `json:"line_amount_minor"`
+	FundedAllowanceMinutes int    `json:"funded_allowance_minutes,omitempty"`
+	FundedDeductionMinutes int    `json:"funded_deduction_minutes,omitempty"`
+	CoreBillableMinutes    int    `json:"core_billable_minutes,omitempty"`
+	SessionCount           int    `json:"session_count,omitempty"`
 }
 
 type parentInvoiceCalculationResponse struct {

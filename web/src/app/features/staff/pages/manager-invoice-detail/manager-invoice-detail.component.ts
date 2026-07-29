@@ -94,7 +94,7 @@ function invoiceDisplayTitle(detail: ManagerInvoiceDetail): string {
 
 function lineQuantityLabel(line: ManagerInvoiceLine): string {
   if (line.lineKind === 'funded_deduction') {
-    if (line.fundedAllowanceMinutes !== null) {
+    if (line.fundedAllowanceMinutes !== null && line.fundedAllowanceMinutes > 0) {
       return `${formatMinutes(line.fundedAllowanceMinutes)} allowance`;
     }
     if (line.quantityHours !== null) {

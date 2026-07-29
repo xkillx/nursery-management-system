@@ -125,16 +125,20 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 				}
 			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
-				ID:              uid.NewUUID(),
-				TenantID:        actor.TenantID,
-				BranchID:        actor.BranchID,
-				InvoiceID:       invoiceID,
-				LineKind:        line.LineKind,
-				Description:     line.Description,
-				SortOrder:       line.SortOrder,
-				QuantityMinutes: line.QuantityMinutes,
-				UnitAmount:      unitAmount,
-				LineAmount:      lineAmount,
+				ID:                     uid.NewUUID(),
+				TenantID:               actor.TenantID,
+				BranchID:               actor.BranchID,
+				InvoiceID:              invoiceID,
+				LineKind:               line.LineKind,
+				Description:            line.Description,
+				SortOrder:              line.SortOrder,
+				QuantityMinutes:        line.QuantityMinutes,
+				UnitAmount:             unitAmount,
+				LineAmount:             lineAmount,
+				FundedAllowanceMinutes: line.FundedAllowanceMinutes,
+				FundedDeductionMinutes: line.FundedDeductionMinutes,
+				CoreBillableMinutes:    line.CoreBillableMinutes,
+				SessionCount:           line.SessionCount,
 			}); insErr != nil {
 				return fmt.Errorf("insert invoice line: %w", insErr)
 			}

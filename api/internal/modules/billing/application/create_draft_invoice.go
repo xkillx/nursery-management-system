@@ -40,12 +40,16 @@ type CreateDraftInvoiceInput struct {
 }
 
 type DraftInvoiceLineInput struct {
-	LineKind        string
-	Description     string
-	SortOrder       int
-	QuantityMinutes int
-	UnitAmountMinor int
-	LineAmountMinor int
+	LineKind               string
+	Description            string
+	SortOrder              int
+	QuantityMinutes        int
+	UnitAmountMinor        int
+	LineAmountMinor        int
+	FundedAllowanceMinutes int
+	FundedDeductionMinutes int
+	CoreBillableMinutes    int
+	SessionCount           int
 }
 
 type CreateDraftInvoiceResult struct {
@@ -64,13 +68,17 @@ type CreateDraftInvoiceResult struct {
 }
 
 type DraftLineResult struct {
-	LineID          uuid.UUID
-	LineKind        string
-	Description     string
-	SortOrder       int
-	QuantityMinutes int
-	UnitAmountMinor int
-	LineAmountMinor int
+	LineID                 uuid.UUID
+	LineKind               string
+	Description            string
+	SortOrder              int
+	QuantityMinutes        int
+	UnitAmountMinor        int
+	LineAmountMinor        int
+	FundedAllowanceMinutes int
+	FundedDeductionMinutes int
+	CoreBillableMinutes    int
+	SessionCount           int
 }
 
 func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorContext, input CreateDraftInvoiceInput) (CreateDraftInvoiceResult, error) {
@@ -157,27 +165,35 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 				}
 			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
-				ID:              lineID,
-				TenantID:        actor.TenantID,
-				BranchID:        actor.BranchID,
-				InvoiceID:       invoiceID,
-				LineKind:        line.LineKind,
-				Description:     line.Description,
-				SortOrder:       line.SortOrder,
-				QuantityMinutes: line.QuantityMinutes,
-				UnitAmount:      unitAmount,
-				LineAmount:      lineAmount,
+				ID:                     lineID,
+				TenantID:               actor.TenantID,
+				BranchID:               actor.BranchID,
+				InvoiceID:              invoiceID,
+				LineKind:               line.LineKind,
+				Description:            line.Description,
+				SortOrder:              line.SortOrder,
+				QuantityMinutes:        line.QuantityMinutes,
+				UnitAmount:             unitAmount,
+				LineAmount:             lineAmount,
+				FundedAllowanceMinutes: line.FundedAllowanceMinutes,
+				FundedDeductionMinutes: line.FundedDeductionMinutes,
+				CoreBillableMinutes:    line.CoreBillableMinutes,
+				SessionCount:           line.SessionCount,
 			}); insErr != nil {
 				return fmt.Errorf("insert invoice line: %w", insErr)
 			}
 			lineResults = append(lineResults, DraftLineResult{
-				LineID:          lineID,
-				LineKind:        line.LineKind,
-				Description:     line.Description,
-				SortOrder:       line.SortOrder,
-				QuantityMinutes: line.QuantityMinutes,
-				UnitAmountMinor: line.UnitAmountMinor,
-				LineAmountMinor: line.LineAmountMinor,
+				LineID:                 lineID,
+				LineKind:               line.LineKind,
+				Description:            line.Description,
+				SortOrder:              line.SortOrder,
+				QuantityMinutes:        line.QuantityMinutes,
+				UnitAmountMinor:        line.UnitAmountMinor,
+				LineAmountMinor:        line.LineAmountMinor,
+				FundedAllowanceMinutes: line.FundedAllowanceMinutes,
+				FundedDeductionMinutes: line.FundedDeductionMinutes,
+				CoreBillableMinutes:    line.CoreBillableMinutes,
+				SessionCount:           line.SessionCount,
 			})
 		}
 

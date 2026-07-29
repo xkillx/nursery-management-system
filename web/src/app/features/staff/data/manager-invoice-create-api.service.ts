@@ -53,6 +53,10 @@ interface DraftLineRequestApi {
   quantity_minutes: number;
   unit_amount_minor: number;
   line_amount_minor: number;
+  funded_allowance_minutes?: number;
+  funded_deduction_minutes?: number;
+  core_billable_minutes?: number;
+  session_count?: number;
 }
 
 interface CreateDraftRequestApi {
@@ -115,7 +119,7 @@ export class ManagerInvoiceCreateApiService {
   createDraft(input: {
     childId: string;
     billingMonth: string;
-    lines: { lineKind: string; description: string; sortOrder: number; quantityHours: number; unitAmountMinor: number; lineAmountMinor: number }[];
+    lines: { lineKind: string; description: string; sortOrder: number; quantityHours: number; unitAmountMinor: number; lineAmountMinor: number; fundedAllowanceMinutes?: number; fundedDeductionMinutes?: number; coreBillableMinutes?: number; sessionCount?: number }[];
     paymentTerms: string;
     internalNotes: string;
     parentNote: string;
@@ -128,8 +132,12 @@ export class ManagerInvoiceCreateApiService {
         description: l.description,
         sort_order: l.sortOrder,
         quantity_minutes: l.quantityHours * 60,
-        unit_amount_minor: Math.round(l.unitAmountMinor / 60),
+        unit_amount_minor: l.unitAmountMinor,
         line_amount_minor: l.lineAmountMinor,
+        funded_allowance_minutes: l.fundedAllowanceMinutes,
+        funded_deduction_minutes: l.fundedDeductionMinutes,
+        core_billable_minutes: l.coreBillableMinutes,
+        session_count: l.sessionCount,
       })),
       payment_terms: input.paymentTerms,
       internal_notes: input.internalNotes,
@@ -143,7 +151,7 @@ export class ManagerInvoiceCreateApiService {
   createAndIssue(input: {
     childId: string;
     billingMonth: string;
-    lines: { lineKind: string; description: string; sortOrder: number; quantityHours: number; unitAmountMinor: number; lineAmountMinor: number }[];
+    lines: { lineKind: string; description: string; sortOrder: number; quantityHours: number; unitAmountMinor: number; lineAmountMinor: number; fundedAllowanceMinutes?: number; fundedDeductionMinutes?: number; coreBillableMinutes?: number; sessionCount?: number }[];
     paymentTerms: string;
     internalNotes: string;
     parentNote: string;
@@ -156,8 +164,12 @@ export class ManagerInvoiceCreateApiService {
         description: l.description,
         sort_order: l.sortOrder,
         quantity_minutes: l.quantityHours * 60,
-        unit_amount_minor: Math.round(l.unitAmountMinor / 60),
+        unit_amount_minor: l.unitAmountMinor,
         line_amount_minor: l.lineAmountMinor,
+        funded_allowance_minutes: l.fundedAllowanceMinutes,
+        funded_deduction_minutes: l.fundedDeductionMinutes,
+        core_billable_minutes: l.coreBillableMinutes,
+        session_count: l.sessionCount,
       })),
       payment_terms: input.paymentTerms,
       internal_notes: input.internalNotes,
