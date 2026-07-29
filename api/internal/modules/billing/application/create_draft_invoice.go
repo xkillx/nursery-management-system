@@ -148,8 +148,13 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 			lineID := uid.NewUUID()
 			unitAmount := domain.MustGBP(line.UnitAmountMinor)
 			lineAmount := domain.MustGBP(line.LineAmountMinor)
-			if line.LineKind == domain.LineKindFundedDeduction && lineAmount.Minor() > 0 {
-				lineAmount = domain.MustGBP(-line.LineAmountMinor)
+			if line.LineKind == domain.LineKindFundedDeduction {
+				if unitAmount.Minor() < 0 {
+					unitAmount = domain.MustGBP(-line.UnitAmountMinor)
+				}
+				if lineAmount.Minor() > 0 {
+					lineAmount = domain.MustGBP(-line.LineAmountMinor)
+				}
 			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
 				ID:              lineID,
