@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -72,6 +72,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly elRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly errorMapper = inject(ApiErrorMapper);
   private readonly toast = inject(ToastService);
 
@@ -92,7 +93,20 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   childSearchTerm = '';
   searchResults: ChildRecord[] = [];
   isSearching = false;
+  isDropdownOpen = false;
+  highlightedIndex = -1;
   selectedChild: ChildRecord | null = null;
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isDropdownOpen) return;
+    const target = event.target as Node;
+    if (!target || !document.body.contains(target)) return;
+    const searchContainer = this.elRef.nativeElement.querySelector('.relative');
+    if (searchContainer && !searchContainer.contains(target)) {
+      this.isDropdownOpen = false;
+    }
+  }
 
   parentCarerName = signal<string>('');
   roomName = signal<string>('');
@@ -186,15 +200,18 @@ export class ManagerInvoiceCreateComponent implements OnInit {
 
   onSearchInput(): void {
     const term = this.childSearchTerm.trim();
+    this.highlightedIndex = -1;
     if (term.length < 2) {
       this.searchResults = [];
+      this.isDropdownOpen = false;
       return;
     }
 
     this.isSearching = true;
+    this.isDropdownOpen = true;
 
     this.staffApi
-      .listChildren({ status: 'active', limit: 20, offset: 0 })
+      .listChildren({ status: 'active', limit: 200, offset: 0 })
       .pipe(
         catchError(() => of({ items: [], total: 0 })),
       )
@@ -207,6 +224,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
               return name.includes(q);
             });
           this.isSearching = false;
+          this.isDropdownOpen = true;
         },
         error: () => {
           this.isSearching = false;
@@ -214,10 +232,73 @@ export class ManagerInvoiceCreateComponent implements OnInit {
       });
   }
 
+  onSearchFocus(): void {
+    if (this.childSearchTerm.trim().length >= 2) {
+      this.isDropdownOpen = true;
+    }
+  }
+
+  onSearchKeydown(event: KeyboardEvent): void {
+    if (!this.isDropdownOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      if (this.childSearchTerm.trim().length >= 2) {
+        this.isDropdownOpen = true;
+      }
+    }
+
+    if (event.key === 'ArrowDown') {
+      if (this.searchResults.length > 0) {
+        this.highlightedIndex = (this.highlightedIndex + 1) % this.searchResults.length;
+      }
+      event.preventDefault();
+    } else if (event.key === 'ArrowUp') {
+      if (this.searchResults.length > 0) {
+        this.highlightedIndex =
+          (this.highlightedIndex - 1 + this.searchResults.length) % this.searchResults.length;
+      }
+      event.preventDefault();
+    } else if (event.key === 'Enter') {
+      if (this.isDropdownOpen && this.highlightedIndex >= 0 && this.highlightedIndex < this.searchResults.length) {
+        this.selectChild(this.searchResults[this.highlightedIndex]);
+        event.preventDefault();
+      }
+    } else if (event.key === 'Escape') {
+      this.isDropdownOpen = false;
+      this.highlightedIndex = -1;
+      event.preventDefault();
+    }
+  }
+
+  clearSearch(): void {
+    this.childSearchTerm = '';
+    this.searchResults = [];
+    this.isDropdownOpen = false;
+    this.highlightedIndex = -1;
+    if (this.selectedChild) {
+      this.clearChild();
+    }
+  }
+
+  getHighlightedParts(text: string, query: string): { text: string; match: boolean }[] {
+    if (!query || !text) return [{ text, match: false }];
+    const q = query.trim().toLowerCase();
+    if (!q) return [{ text, match: false }];
+
+    const index = text.toLowerCase().indexOf(q);
+    if (index === -1) return [{ text, match: false }];
+
+    return [
+      { text: text.slice(0, index), match: false },
+      { text: text.slice(index, index + q.length), match: true },
+      { text: text.slice(index + q.length), match: false },
+    ].filter((p) => p.text.length > 0);
+  }
+
   selectChild(child: ChildRecord): void {
     this.selectedChild = child;
     this.childSearchTerm = child.fullName;
     this.searchResults = [];
+    this.isDropdownOpen = false;
+    this.highlightedIndex = -1;
 
     // Load parent/carer contacts
     this.parentCarerName.set('Loading...');
@@ -313,6 +394,9 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   clearChild(): void {
     this.selectedChild = null;
     this.childSearchTerm = '';
+    this.searchResults = [];
+    this.isDropdownOpen = false;
+    this.highlightedIndex = -1;
     this.lines.set([]);
     this.entitlementLabel = '';
     this.hasFundingProfile = false;

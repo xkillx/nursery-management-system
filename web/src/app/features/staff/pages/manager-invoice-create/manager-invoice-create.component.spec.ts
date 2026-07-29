@@ -278,4 +278,105 @@ describe('ManagerInvoiceCreateComponent', () => {
       expect(component.calculateAgeGroup('')).toBe('Unknown');
     });
   });
+
+  describe('search autocomplete', () => {
+    it('onSearchInput opens dropdown and filters children when search term >= 2 chars', () => {
+      staffApiService.listChildren.and.returnValue(of({ items: [mockChild], total: 1 }));
+      component.childSearchTerm = 'Alice';
+      component.onSearchInput();
+
+      expect(component.isSearching).toBeFalse();
+      expect(component.isDropdownOpen).toBeTrue();
+      expect(component.searchResults.length).toBe(1);
+    });
+
+    it('onSearchInput closes dropdown when term < 2 chars', () => {
+      component.childSearchTerm = 'A';
+      component.onSearchInput();
+
+      expect(component.isDropdownOpen).toBeFalse();
+      expect(component.searchResults).toEqual([]);
+    });
+
+    it('onSearchKeydown handles ArrowDown and ArrowUp navigation', () => {
+      component.searchResults = [mockChild, { ...mockChild, id: 'child-2', fullName: 'Bob Builder' }];
+      component.isDropdownOpen = true;
+
+      const downEvent = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+      spyOn(downEvent, 'preventDefault');
+
+      component.onSearchKeydown(downEvent);
+      expect(component.highlightedIndex).toBe(0);
+      expect(downEvent.preventDefault).toHaveBeenCalled();
+
+      component.onSearchKeydown(downEvent);
+      expect(component.highlightedIndex).toBe(1);
+
+      const upEvent = new KeyboardEvent('keydown', { key: 'ArrowUp' });
+      spyOn(upEvent, 'preventDefault');
+      component.onSearchKeydown(upEvent);
+      expect(component.highlightedIndex).toBe(0);
+    });
+
+    it('onSearchKeydown handles Enter to select highlighted child', () => {
+      spyOn(component, 'selectChild');
+      component.searchResults = [mockChild];
+      component.isDropdownOpen = true;
+      component.highlightedIndex = 0;
+
+      const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
+      spyOn(enterEvent, 'preventDefault');
+
+      component.onSearchKeydown(enterEvent);
+      expect(component.selectChild).toHaveBeenCalledWith(mockChild);
+      expect(enterEvent.preventDefault).toHaveBeenCalled();
+    });
+
+    it('onSearchKeydown handles Escape to close dropdown', () => {
+      component.isDropdownOpen = true;
+      component.highlightedIndex = 0;
+
+      const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+      spyOn(escEvent, 'preventDefault');
+
+      component.onSearchKeydown(escEvent);
+      expect(component.isDropdownOpen).toBeFalse();
+      expect(component.highlightedIndex).toBe(-1);
+    });
+
+    it('onDocumentClick closes dropdown when clicking outside element', () => {
+      component.isDropdownOpen = true;
+      const outsideElement = document.createElement('div');
+      document.body.appendChild(outsideElement);
+
+      const clickEvent = new MouseEvent('click', { bubbles: true });
+      Object.defineProperty(clickEvent, 'target', { value: outsideElement });
+
+      component.onDocumentClick(clickEvent);
+      expect(component.isDropdownOpen).toBeFalse();
+
+      document.body.removeChild(outsideElement);
+    });
+
+    it('clearSearch resets search term and search results', () => {
+      component.childSearchTerm = 'Alice';
+      component.searchResults = [mockChild];
+      component.isDropdownOpen = true;
+
+      component.clearSearch();
+
+      expect(component.childSearchTerm).toBe('');
+      expect(component.searchResults).toEqual([]);
+      expect(component.isDropdownOpen).toBeFalse();
+    });
+
+    it('getHighlightedParts highlights query matches correctly', () => {
+      const parts = component.getHighlightedParts('Alice Smith', 'lice');
+      expect(parts).toEqual([
+        { text: 'A', match: false },
+        { text: 'lice', match: true },
+        { text: ' Smith', match: false },
+      ]);
+    });
+  });
 });

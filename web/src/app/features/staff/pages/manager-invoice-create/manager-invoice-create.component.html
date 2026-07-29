@@ -82,7 +82,7 @@
       </section>
 
       <!-- Section 2: Recipient Selection -->
-      <section class="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
+      <section class="relative z-30 bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-theme-sm">
         <div class="flex items-center gap-3 mb-6">
           <div class="flex items-center justify-center size-10 rounded-xl bg-brand-50 dark:bg-brand-950/20">
             <ng-icon name="heroMagnifyingGlass" class="text-brand-600 dark:text-brand-400" size="20" />
@@ -94,6 +94,7 @@
         <div class="space-y-4">
           <div class="space-y-1.5">
             <label for="child-search" class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Search Child / Parent</label>
+            
             <div class="relative">
               <ng-icon
                 name="heroMagnifyingGlass"
@@ -101,45 +102,107 @@
                 class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
                 aria-hidden="true"
               />
+
               <input
                 id="child-search"
-                type="search"
-                class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                type="text"
+                autocomplete="off"
+                class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-800 shadow-theme-xs transition focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                 placeholder="Search by child's first or last name..."
                 [ngModel]="childSearchTerm"
                 (ngModelChange)="childSearchTerm = $event; onSearchInput()"
+                (click)="onSearchFocus()"
+                (focus)="onSearchFocus()"
+                (keydown)="onSearchKeydown($event)"
               />
+
+              <!-- Spinner or Clear (X) icon on right inside input -->
+              @if (isSearching) {
+                <div class="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                  <span class="animate-spin rounded-full h-4 w-4 border-2 border-brand-500 border-t-transparent"></span>
+                </div>
+              } @else if (childSearchTerm) {
+                <button
+                  type="button"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors"
+                  (click)="clearSearch()"
+                  aria-label="Clear search"
+                >
+                  <ng-icon name="heroXMark" size="16" />
+                </button>
+              }
+
+              <!-- Autocomplete Dropdown List -->
+              @if (isDropdownOpen && childSearchTerm.trim().length >= 2) {
+                <div class="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-72 w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white/95 backdrop-blur-md shadow-xl dark:border-gray-800 dark:bg-gray-900/95 divide-y divide-gray-100 dark:divide-gray-800/60">
+                  
+                  @if (isSearching && searchResults.length === 0) {
+                    <div class="px-4 py-4 text-center text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+                      <span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-500 border-t-transparent"></span>
+                      <span>Searching active roster...</span>
+                    </div>
+                  }
+
+                  @if (!isSearching && searchResults.length === 0) {
+                    <div class="px-4 py-6 text-center">
+                      <div class="inline-flex items-center justify-center size-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 mb-2">
+                        <ng-icon name="heroMagnifyingGlass" size="16" />
+                      </div>
+                      <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">No children found matching "{{ childSearchTerm }}"</p>
+                      <p class="text-[11px] text-gray-400 mt-0.5">Try searching by first name or last name.</p>
+                    </div>
+                  }
+
+                  @for (child of searchResults; track child.id; let idx = $index) {
+                    <button
+                      type="button"
+                      class="group w-full px-4 py-3 cursor-pointer flex items-center justify-between transition-colors text-left border-b border-gray-100 dark:border-gray-800/60 last:border-none"
+                      [class.bg-brand-50/80]="idx === highlightedIndex"
+                      [class.dark:bg-brand-950/40]="idx === highlightedIndex"
+                      [class.border-l-4]="idx === highlightedIndex"
+                      [class.border-l-brand-600]="idx === highlightedIndex"
+                      [class.pl-3]="idx === highlightedIndex"
+                      [class.hover:bg-brand-50/60]="idx !== highlightedIndex"
+                      [class.dark:hover:bg-gray-800/60]="idx !== highlightedIndex"
+                      (click)="selectChild(child)"
+                      (mouseenter)="highlightedIndex = idx"
+                    >
+                      <div class="flex items-center gap-3 min-w-0">
+                        <app-child-avatar [photoUrl]="child.photoUrl" [name]="child.fullName" size="md"></app-child-avatar>
+                        <div class="min-w-0">
+                          <div class="font-bold text-sm text-gray-900 dark:text-white/90 truncate flex items-center gap-1.5">
+                            @for (part of getHighlightedParts(child.fullName, childSearchTerm); track $index) {
+                              @if (part.match) {
+                                <mark class="bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-extrabold rounded px-0.5 py-0">{{ part.text }}</mark>
+                              } @else {
+                                <span>{{ part.text }}</span>
+                              }
+                            }
+                          </div>
+                          <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            <span>Age: {{ calculateAgeGroup(child.dateOfBirth) }}</span>
+                            <span>&bull;</span>
+                            <span>DOB: {{ child.dateOfBirth | date:'dd/MM/yyyy' }}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 shrink-0">
+                        <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-md">
+                          Active
+                        </span>
+                        <ng-icon
+                          name="heroChevronRight"
+                          size="14"
+                          class="text-gray-300 dark:text-gray-600 group-hover:text-brand-500 transition-colors"
+                        />
+                      </div>
+                    </button>
+                  }
+                </div>
+              }
             </div>
           </div>
-
-          @if (isSearching) {
-            <div class="flex items-center gap-2 text-xs text-gray-400">
-              <span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-500 border-t-transparent"></span>
-              <span>Searching active roster...</span>
-            </div>
-          }
-
-          @if (searchResults.length > 0) {
-            <ul class="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-              @for (child of searchResults; track child.id) {
-                <li>
-                  <button
-                    type="button"
-                    class="w-full px-4 py-3 text-left text-sm transition hover:bg-brand-50 hover:text-brand-700 focus:outline-hidden dark:hover:bg-white/[0.04] flex flex-col gap-0.5"
-                    (click)="selectChild(child)"
-                  >
-                    <div class="flex items-center gap-2.5">
-                      <app-child-avatar [photoUrl]="child.photoUrl" [name]="child.fullName" size="sm"></app-child-avatar>
-                      <span class="font-bold text-gray-900 dark:text-white/90">{{ child.fullName }}</span>
-                    </div>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">
-                      Age: {{ calculateAgeGroup(child.dateOfBirth) }} &bull; DOB: {{ child.dateOfBirth | date:'dd/MM/yyyy' }}
-                    </span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
 
           <!-- Selected child card (full-width below search) -->
           @if (selectedChild) {
@@ -165,7 +228,7 @@
           }
 
           <!-- Empty state when no child selected -->
-          @if (!selectedChild && !isSearching && searchResults.length === 0) {
+          @if (!selectedChild) {
             <div class="bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-850 p-8 text-center">
               <div class="inline-flex items-center justify-center size-12 rounded-full bg-brand-50 dark:bg-brand-950/20 mb-3">
                 <ng-icon name="heroUser" size="24" class="text-brand-500" />
