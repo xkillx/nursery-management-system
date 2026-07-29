@@ -139,7 +139,9 @@ export class ManagerInvoiceCreateComponent implements OnInit {
   });
 
   readonly subtotalMinor = computed(() =>
-    this.lines().reduce((sum, l) => sum + l.lineAmountMinor, 0)
+    this.lines()
+      .filter((l) => !l.isFundingOffset)
+      .reduce((sum, l) => sum + l.lineAmountMinor, 0)
   );
 
   readonly fundedDeductionMinor = computed(() =>

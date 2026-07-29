@@ -106,6 +106,8 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 			LineKind:               LineKindFundedDeduction,
 			Description:            "Funded hours deduction",
 			SortOrder:              2,
+			QuantityMinutes:        fundedDeductionMinutes,
+			UnitAmountMinor:        -params.SiteHourlyRateMinor,
 			FundedAllowanceMinutes: params.FundedAllowanceMinutes,
 			FundedDeductionMinutes: fundedDeductionMinutes,
 			CoreBillableMinutes:    billableMinutes,
@@ -121,7 +123,7 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 		warnings = append(warnings, "missing_funding_record")
 	}
 	if fundedDeductionMinor > 0 && subtotalMinor > 0 {
-		threshold := subtotalMinor / 4
+		threshold := (subtotalMinor + fundedDeductionMinor) / 4
 		if fundedDeductionMinor > threshold {
 			warnings = append(warnings, "significant_funding_deduction")
 		}

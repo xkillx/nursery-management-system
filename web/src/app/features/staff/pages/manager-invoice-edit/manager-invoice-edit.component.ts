@@ -104,7 +104,9 @@ export class ManagerInvoiceEditComponent implements OnInit {
   submitError: string | null = null;
 
   readonly subtotalMinor = computed(() =>
-    this.lines().reduce((sum, l) => sum + l.lineAmountMinor, 0),
+    this.lines()
+      .filter((l) => l.lineKind !== 'funded_deduction')
+      .reduce((sum, l) => sum + l.lineAmountMinor, 0),
   );
 
   readonly fundedDeductionMinor = computed(() =>

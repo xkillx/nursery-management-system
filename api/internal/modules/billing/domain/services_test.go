@@ -110,6 +110,24 @@ func TestComputeInvoicePrefill(t *testing.T) {
 		if result.Lines[1].LineKind != LineKindFundedDeduction {
 			t.Errorf("second line kind = %q, want %q", result.Lines[1].LineKind, LineKindFundedDeduction)
 		}
+
+		fundedLine := result.Lines[1]
+		if fundedLine.QuantityMinutes != 600 {
+			t.Errorf("funded QuantityMinutes = %d, want 600", fundedLine.QuantityMinutes)
+		}
+		if fundedLine.UnitAmountMinor != -500 {
+			t.Errorf("funded UnitAmountMinor = %d, want -500", fundedLine.UnitAmountMinor)
+		}
+		if fundedLine.LineAmountMinor != result.FundedDeductionMinor {
+			t.Errorf("funded LineAmountMinor = %d, want %d", fundedLine.LineAmountMinor, result.FundedDeductionMinor)
+		}
+
+		if result.SubtotalMinor != result.Lines[0].LineAmountMinor {
+			t.Errorf("SubtotalMinor = %d, want %d (positive lines only)", result.SubtotalMinor, result.Lines[0].LineAmountMinor)
+		}
+		if result.TotalDueMinor != result.SubtotalMinor-result.FundedDeductionMinor {
+			t.Errorf("TotalDueMinor = %d, want %d", result.TotalDueMinor, result.SubtotalMinor-result.FundedDeductionMinor)
+		}
 	})
 
 	t.Run("funded minutes exceed booked minutes", func(t *testing.T) {
@@ -129,6 +147,36 @@ func TestComputeInvoicePrefill(t *testing.T) {
 
 		if result.TotalDueMinor != 0 {
 			t.Errorf("TotalDueMinor = %d, want 0", result.TotalDueMinor)
+		}
+	})
+
+	t.Run("warning threshold uses pre-deduction subtotal", func(t *testing.T) {
+		params := InvoicePrefillParams{
+			Entries:                entries,
+			BillingMonthStart:      july2026,
+			SiteHourlyRateMinor:    500,
+			FundedHourlyRateMinor:  500,
+			FundedAllowanceMinutes: 600, // 10 hours funded
+			HasFunding:             true,
+		}
+
+		result, err := ComputeInvoicePrefill(params)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		preDeductionSubtotal := result.SubtotalMinor + result.FundedDeductionMinor
+		threshold := preDeductionSubtotal / 4
+		if result.FundedDeductionMinor > threshold {
+			hasWarning := false
+			for _, w := range result.Warnings {
+				if w == "significant_funding_deduction" {
+					hasWarning = true
+				}
+			}
+			if !hasWarning {
+				t.Error("expected significant_funding_deduction warning when deduction > 25% of pre-deduction subtotal")
+			}
 		}
 	})
 

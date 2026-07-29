@@ -223,9 +223,9 @@ describe('ManagerInvoiceEditComponent', () => {
     it('shows summary sidebar with correct totals', () => {
       createFixture();
       const text = fixture.nativeElement.textContent;
-      expect(text).toContain('£255.00');
+      expect(text).toContain('£345.00');
       expect(text).toContain('£90.00');
-      expect(text).toContain('£165.00');
+      expect(text).toContain('£255.00');
     });
 
     it('shows loading spinner while API call is in flight', () => {
@@ -319,7 +319,7 @@ describe('ManagerInvoiceEditComponent', () => {
       createFixture();
       const comp = fixture.componentInstance;
       comp.removeLine('l3');
-      expect(comp.subtotalMinor()).toBe(33000 + (-9000));
+      expect(comp.subtotalMinor()).toBe(33000);
     });
   });
 

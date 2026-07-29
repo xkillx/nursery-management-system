@@ -634,7 +634,7 @@ export class ManagerInvoicesApiService {
       description: l.description,
       sortOrder: l.sort_order,
       quantityHours: l.quantity_minutes != null ? l.quantity_minutes / 60 : null,
-      unitAmountMinor: l.unit_amount_minor != null ? l.unit_amount_minor * 60 : null,
+      unitAmountMinor: l.unit_amount_minor ?? null,
       lineAmountMinor: l.line_amount_minor,
       rawAttendedMinutes: l.raw_attended_minutes ?? null,
       roundedAttendedMinutes: l.rounded_attended_minutes ?? null,

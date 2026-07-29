@@ -233,12 +233,12 @@ describe('ManagerInvoiceCreateComponent', () => {
   });
 
   describe('computed totals', () => {
-    it('subtotalMinor sums all line amounts', () => {
+    it('subtotalMinor sums only positive line amounts (excludes funded deduction)', () => {
       component.lines.set([
         toFormLine(mockPrefill.lines[0], 'auto-1'),
         toFormLine(mockPrefill.lines[1], 'auto-2'),
       ]);
-      expect(component.subtotalMinor()).toBe(43000);
+      expect(component.subtotalMinor()).toBe(52000);
     });
 
     it('fundedDeductionMinor sums only funding offset lines', () => {
@@ -254,7 +254,7 @@ describe('ManagerInvoiceCreateComponent', () => {
         toFormLine(mockPrefill.lines[0], 'auto-1'),
         toFormLine(mockPrefill.lines[1], 'auto-2'),
       ]);
-      expect(component.totalDueMinor()).toBe(34000);
+      expect(component.totalDueMinor()).toBe(43000);
     });
   });
 

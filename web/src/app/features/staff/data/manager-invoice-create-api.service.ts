@@ -202,7 +202,7 @@ export class ManagerInvoiceCreateApiService {
       description: l.description,
       sortOrder: l.sort_order,
       quantityHours: l.quantity_minutes / 60,
-      unitAmountMinor: l.unit_amount_minor * 60,
+      unitAmountMinor: l.unit_amount_minor,
       lineAmountMinor: l.line_amount_minor,
       fundedAllowanceMinutes: l.funded_allowance_minutes,
       fundedDeductionMinutes: l.funded_deduction_minutes,
@@ -235,7 +235,7 @@ export class ManagerInvoiceCreateApiService {
       description: l.description,
       sortOrder: l.sort_order,
       quantityHours: l.quantity_minutes / 60,
-      unitAmountMinor: l.unit_amount_minor * 60,
+      unitAmountMinor: l.unit_amount_minor,
       lineAmountMinor: l.line_amount_minor,
     };
   }
