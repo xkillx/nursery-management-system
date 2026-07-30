@@ -15,6 +15,12 @@ type Config struct {
 	APIBasePath string
 	DatabaseURL string
 
+	DBHost     string
+	DBPort     int
+	DBUser     string
+	DBPassword string
+	DBName     string
+
 	JWTAccessSecret         string
 	JWTRefreshSecret        string
 	JWTAccessTTLMin         int
@@ -107,11 +113,21 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	dbPort, err := getEnvInt("DB_PORT", 5432)
+	if err != nil {
+		return Config{}, err
+	}
+
 	cfg := Config{
 		AppEnv:      getEnv("APP_ENV", "local"),
 		APIPort:     getEnv("API_PORT", "8080"),
 		APIBasePath: getEnv("API_BASE_PATH", "/api/v1"),
-		DatabaseURL: strings.TrimSpace(os.Getenv("DATABASE_URL")),
+
+		DBHost:     strings.TrimSpace(os.Getenv("DB_HOST")),
+		DBPort:     dbPort,
+		DBUser:     strings.TrimSpace(os.Getenv("DB_USER")),
+		DBPassword: strings.TrimSpace(os.Getenv("DB_PASSWORD")),
+		DBName:     strings.TrimSpace(os.Getenv("DB_NAME")),
 
 		JWTAccessSecret:         strings.TrimSpace(os.Getenv("JWT_ACCESS_SECRET")),
 		JWTRefreshSecret:        strings.TrimSpace(os.Getenv("JWT_REFRESH_SECRET")),
@@ -164,9 +180,28 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	if cfg.DatabaseURL == "" {
-		return Config{}, errors.New("DATABASE_URL is required")
+	if cfg.DBHost == "" {
+		return Config{}, errors.New("DB_HOST is required")
 	}
+	if cfg.DBUser == "" {
+		return Config{}, errors.New("DB_USER is required")
+	}
+	if cfg.DBName == "" {
+		return Config{}, errors.New("DB_NAME is required")
+	}
+
+	sslmode := "disable"
+	if cfg.AppEnv != "local" {
+		sslmode = "require"
+	}
+	cfg.DatabaseURL = fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		url.QueryEscape(cfg.DBUser),
+		url.QueryEscape(cfg.DBPassword),
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBName,
+		sslmode,
+	)
 
 	if cfg.JWTAccessSecret == "" {
 		return Config{}, errors.New("JWT_ACCESS_SECRET is required")

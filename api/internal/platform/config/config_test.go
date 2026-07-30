@@ -55,7 +55,8 @@ func TestLoadDefaultsNonSecretAPIConfig(t *testing.T) {
 
 func TestLoadFailsFastForMissingCriticalEnvVars(t *testing.T) {
 	for _, key := range []string{
-		"DATABASE_URL", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET",
+		"DB_HOST", "DB_USER", "DB_NAME",
+		"JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET",
 		"WEB_BASE_URL", "PASSWORD_RESET_TOKEN_SECRET", "INVITE_TOKEN_SECRET",
 	} {
 		t.Run(key, func(t *testing.T) {
@@ -145,7 +146,11 @@ func setBaseEnv(t *testing.T) {
 	t.Setenv("APP_ENV", "local")
 	t.Setenv("API_PORT", "8080")
 	t.Setenv("API_BASE_PATH", "/api/v1")
-	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/nursery?sslmode=disable")
+	t.Setenv("DB_HOST", "localhost")
+	t.Setenv("DB_PORT", "5432")
+	t.Setenv("DB_USER", "user")
+	t.Setenv("DB_PASSWORD", "pass")
+	t.Setenv("DB_NAME", "nursery")
 	t.Setenv("JWT_ACCESS_SECRET", "access-secret")
 	t.Setenv("JWT_REFRESH_SECRET", "refresh-secret")
 	t.Setenv("JWT_ACCESS_TTL_MINUTES", "15")
@@ -453,6 +458,87 @@ func TestMetricsEnabledConfig(t *testing.T) {
 		}
 		if cfg.MetricsEnabled {
 			t.Fatal("expected MetricsEnabled false for non-boolean value")
+		}
+	})
+}
+
+func TestDatabaseURLConstruction(t *testing.T) {
+	t.Run("constructs URL from DB vars", func(t *testing.T) {
+		setBaseEnv(t)
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		want := "postgres://user:pass@localhost:5432/nursery?sslmode=disable"
+		if cfg.DatabaseURL != want {
+			t.Fatalf("expected DatabaseURL %q, got %q", want, cfg.DatabaseURL)
+		}
+	})
+
+	t.Run("DB_PORT defaults to 5432", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("DB_PORT", "")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.DBPort != 5432 {
+			t.Fatalf("expected DBPort 5432, got %d", cfg.DBPort)
+		}
+		if cfg.DatabaseURL != "postgres://user:pass@localhost:5432/nursery?sslmode=disable" {
+			t.Fatalf("expected default port in URL, got %q", cfg.DatabaseURL)
+		}
+	})
+
+	t.Run("local APP_ENV uses sslmode=disable", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("APP_ENV", "local")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !strings.Contains(cfg.DatabaseURL, "sslmode=disable") {
+			t.Fatalf("expected sslmode=disable for local, got %q", cfg.DatabaseURL)
+		}
+	})
+
+	t.Run("staging APP_ENV uses sslmode=require", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("APP_ENV", "staging")
+		t.Setenv("STRIPE_SECRET_KEY", "sk_test")
+		t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !strings.Contains(cfg.DatabaseURL, "sslmode=require") {
+			t.Fatalf("expected sslmode=require for staging, got %q", cfg.DatabaseURL)
+		}
+	})
+
+	t.Run("prod APP_ENV uses sslmode=require", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("APP_ENV", "prod")
+		t.Setenv("STRIPE_SECRET_KEY", "sk_test")
+		t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !strings.Contains(cfg.DatabaseURL, "sslmode=require") {
+			t.Fatalf("expected sslmode=require for prod, got %q", cfg.DatabaseURL)
+		}
+	})
+
+	t.Run("password with special characters is URL-encoded", func(t *testing.T) {
+		setBaseEnv(t)
+		t.Setenv("DB_PASSWORD", "p@ss:word/test?foo")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if !strings.Contains(cfg.DatabaseURL, "p%40ss%3Aword%2Ftest%3Ffoo") {
+			t.Fatalf("expected URL-encoded password, got %q", cfg.DatabaseURL)
 		}
 	})
 }
