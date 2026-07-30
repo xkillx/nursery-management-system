@@ -39,6 +39,7 @@ import (
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	childpostgres "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 	emailhandler "nursery-management-system/api/internal/modules/email/interfaces/http"
 	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
 	holidayperiodshttphandler "nursery-management-system/api/internal/modules/holiday_periods/interfaces/http"
@@ -182,8 +183,8 @@ func provideParentUserCreatorAdapter(pool *pgxpool.Pool) *parentUserCreatorAdapt
 	return &parentUserCreatorAdapter{pool: pool}
 }
 
-func provideParentEmailSenderAdapter(sender email.Sender, cfg config.Config) *parentEmailSenderAdapter {
-	return &parentEmailSenderAdapter{sender: sender, baseURL: cfg.WebBaseURL}
+func provideParentEmailSenderAdapter(enqueuer emaildomain.EmailEnqueuer) *parentEmailSenderAdapter {
+	return &parentEmailSenderAdapter{enqueuer: enqueuer}
 }
 
 func provideSiteProfileHandler(
@@ -242,7 +243,7 @@ func provideBillingNotificationAdapter(
 	repo billingdomain.BillingRepository,
 	parentContacts billingapp.ParentContactLookup,
 	siteProfiles billingapp.SiteProfileLookup,
-	sender email.Sender,
+	enqueuer emaildomain.EmailEnqueuer,
 	auditWriter *audit.Writer,
 	webBaseURL string,
 ) *billingNotificationAdapter {
@@ -250,7 +251,7 @@ func provideBillingNotificationAdapter(
 		repo:           repo,
 		parentContacts: parentContacts,
 		siteProfiles:   siteProfiles,
-		sender:         sender,
+		enqueuer:       enqueuer,
 		auditWriter:    auditWriter,
 		webBaseURL:     webBaseURL,
 	}
@@ -308,8 +309,8 @@ func provideInviteTokenGeneratorAdapter(gen *invitetokens.Manager) *inviteTokenG
 	return &inviteTokenGeneratorAdapter{gen: gen}
 }
 
-func provideEmailSenderAdapter(sender email.Sender, cfg config.Config) *emailSenderAdapter {
-	return &emailSenderAdapter{sender: sender, baseURL: cfg.WebBaseURL}
+func provideEmailSenderAdapter(enqueuer emaildomain.EmailEnqueuer, cfg config.Config) *emailSenderAdapter {
+	return &emailSenderAdapter{enqueuer: enqueuer, baseURL: cfg.WebBaseURL}
 }
 
 func provideConsumedMinutesProviderAdapter(

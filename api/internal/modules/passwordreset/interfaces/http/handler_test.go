@@ -215,7 +215,7 @@ type mockHandlerEmail struct {
 	captured []string
 }
 
-func (m *mockHandlerEmail) SendPasswordReset(_ context.Context, to string, resetURL string) error {
+func (m *mockHandlerEmail) SendPasswordReset(_ context.Context, tenantID, branchID uuid.UUID, to string, resetURL string) error {
 	m.captured = append(m.captured, to+"|"+resetURL)
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/email/application"
+	"nursery-management-system/api/internal/modules/email/domain"
 	"nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 )
@@ -19,6 +20,7 @@ type Handler struct {
 	getEmail   *application.GetEmail
 	retryEmail *application.RetryEmail
 	getStats   *application.GetEmailStats
+	repo       domain.OutboxRepository
 }
 
 func NewHandler(
@@ -27,6 +29,7 @@ func NewHandler(
 	getEmail *application.GetEmail,
 	retryEmail *application.RetryEmail,
 	getStats *application.GetEmailStats,
+	repo domain.OutboxRepository,
 ) *Handler {
 	return &Handler{
 		logger:     logger,
@@ -34,6 +37,7 @@ func NewHandler(
 		getEmail:   getEmail,
 		retryEmail: retryEmail,
 		getStats:   getStats,
+		repo:       repo,
 	}
 }
 
@@ -43,6 +47,7 @@ func (h *Handler) RegisterRoutes(api *gin.RouterGroup) {
 	email.GET("/outbox/:id", h.GetEmail)
 	email.POST("/outbox/:id/retry", h.RetryEmail)
 	email.GET("/stats", h.GetStats)
+	email.POST("/webhooks/postmark", h.HandlePostmarkWebhook)
 }
 
 func (h *Handler) ListEmails(c *gin.Context) {
@@ -165,4 +170,14 @@ func (h *Handler) GetStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+func (h *Handler) HandlePostmarkWebhook(c *gin.Context) {
+	h.logger.Warn("webhook_received_but_no_provider_configured",
+		"message", "Webhook received but no provider configured for delivery tracking",
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Webhook received",
+	})
 }

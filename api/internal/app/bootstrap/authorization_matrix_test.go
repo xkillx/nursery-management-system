@@ -18,10 +18,10 @@ import (
 
 	authdomain "nursery-management-system/api/internal/modules/authentication/domain"
 	authtokens "nursery-management-system/api/internal/modules/authentication/infrastructure/tokens"
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 	"nursery-management-system/api/internal/modules/payments/domain"
 	"nursery-management-system/api/internal/platform/config"
 	"nursery-management-system/api/internal/platform/dbtest"
-	"nursery-management-system/api/internal/platform/email"
 )
 
 // ---------------------------------------------------------------------------
@@ -151,7 +151,7 @@ func setupAuthzHarness(t *testing.T) *authzHarness {
 	h.cfg.StripeSecretKey = ""
 
 	h.router = BootstrapWithOptions(h.cfg, h.logger, pool, BootstrapOptions{
-		EmailSender:      email.NewFakeSender(),
+		EmailEnqueuer:    emaildomain.NewFakeEnqueuer(),
 		CheckoutProvider: &fakeCheckoutProvider{result: domain.CheckoutSessionResult{CheckoutSessionID: "cs_test", CheckoutURL: "https://test", PaymentIntentID: "pi_test"}},
 	})
 

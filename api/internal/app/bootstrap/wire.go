@@ -74,6 +74,8 @@ import (
 
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
 
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
+
 	ownerapp "nursery-management-system/api/internal/modules/owner/application"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
 	ownerpostgres "nursery-management-system/api/internal/modules/owner/infrastructure/postgres"
@@ -791,8 +793,9 @@ func provideEmailHandler(
 	getEmail *emailapp.GetEmail,
 	retryEmail *emailapp.RetryEmail,
 	getStats *emailapp.GetEmailStats,
+	repo *emailpostgres.OutboxRepository,
 ) *emailhandler.Handler {
-	return emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getStats)
+	return emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getStats, repo)
 }
 
 var emailSet = wire.NewSet(
@@ -800,6 +803,7 @@ var emailSet = wire.NewSet(
 	provideEmailProvider,
 	provideEmailRenderer,
 	emailapp.NewEnqueueEmail,
+	wire.Bind(new(emaildomain.EmailEnqueuer), new(*emailapp.EnqueueEmail)),
 	emailapp.NewSendPendingEmails,
 	emailapp.NewListEmails,
 	emailapp.NewGetEmail,

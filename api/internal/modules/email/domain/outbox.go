@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,5 +59,5 @@ type EnqueueParams struct {
 }
 
 type EmailEnqueuer interface {
-	Enqueue(params EnqueueParams) OutboxMessage
+	Enqueue(ctx context.Context, tenantID, branchID uuid.UUID, params EnqueueParams) (uuid.UUID, error)
 }

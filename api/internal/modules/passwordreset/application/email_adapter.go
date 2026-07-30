@@ -2,25 +2,38 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"nursery-management-system/api/internal/platform/email"
+	"github.com/google/uuid"
+
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 )
 
 type EmailAdapter struct {
-	sender email.Sender
-	from   string
+	enqueuer emaildomain.EmailEnqueuer
 }
 
-func NewEmailAdapter(sender email.Sender) *EmailAdapter {
-	return &EmailAdapter{sender: sender}
+func NewEmailAdapter(enqueuer emaildomain.EmailEnqueuer) *EmailAdapter {
+	return &EmailAdapter{enqueuer: enqueuer}
 }
 
-func (a *EmailAdapter) SendPasswordReset(ctx context.Context, toEmail string, resetURL string) error {
-	msg := email.Message{
-		To:      toEmail,
-		Subject: "Reset your password",
-		Text:    fmt.Sprintf("You requested a password reset. Click the link below to set a new password:\n\n%s\n\nIf you did not request this, ignore this email.", resetURL),
+func (a *EmailAdapter) SendPasswordReset(ctx context.Context, tenantID, branchID uuid.UUID, toEmail string, resetURL string) error {
+	payloadJSON, err := json.Marshal(map[string]string{
+		"reset_url": resetURL,
+	})
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
 	}
-	return a.sender.Send(ctx, msg)
+
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "password_reset",
+		Recipient:       toEmail,
+		Subject:         "Reset your password",
+		TemplateName:    "password_reset",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        toEmail,
+	})
+	return err
 }

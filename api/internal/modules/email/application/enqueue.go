@@ -18,7 +18,7 @@ func NewEnqueueEmail(repo domain.OutboxRepository) *EnqueueEmail {
 	return &EnqueueEmail{repo: repo}
 }
 
-func (uc *EnqueueEmail) Execute(ctx context.Context, tenantID, branchID uuid.UUID, params domain.EnqueueParams) (uuid.UUID, error) {
+func (uc *EnqueueEmail) Enqueue(ctx context.Context, tenantID, branchID uuid.UUID, params domain.EnqueueParams) (uuid.UUID, error) {
 	idempotencyKey := fmt.Sprintf("%s_%s_1", params.EventType, params.EntityID)
 
 	msg := domain.OutboxMessage{

@@ -73,5 +73,5 @@ type InviteTokenGenerator interface {
 }
 
 type ManagerInviteSender interface {
-	SendManagerInvite(ctx context.Context, toEmail, acceptURL string) error
+	SendManagerInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, acceptURL string) error
 }

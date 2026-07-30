@@ -14,5 +14,5 @@ type Repository interface {
 }
 
 type EmailSender interface {
-	SendPasswordReset(ctx context.Context, toEmail string, resetURL string) error
+	SendPasswordReset(ctx context.Context, tenantID, branchID uuid.UUID, toEmail string, resetURL string) error
 }

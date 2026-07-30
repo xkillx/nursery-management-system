@@ -2,11 +2,13 @@ package application
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"nursery-management-system/api/internal/platform/email"
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 )
 
@@ -19,7 +21,7 @@ type UserCreator interface {
 }
 
 type EmailSender interface {
-	SendParentPortalInvite(ctx context.Context, toEmail, acceptURL string) error
+	SendParentPortalInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, acceptURL string) error
 }
 
 type ParentChildExistenceChecker interface {
@@ -29,23 +31,31 @@ type ParentChildExistenceChecker interface {
 var _ EmailSender = (*emailSenderAdapter)(nil)
 
 type emailSenderAdapter struct {
-	sender  email.Sender
-	baseURL string
+	enqueuer emaildomain.EmailEnqueuer
 }
 
-func NewEmailSenderAdapter(sender email.Sender, baseURL string) *emailSenderAdapter {
-	return &emailSenderAdapter{sender: sender, baseURL: baseURL}
+func NewEmailSenderAdapter(enqueuer emaildomain.EmailEnqueuer) *emailSenderAdapter {
+	return &emailSenderAdapter{enqueuer: enqueuer}
 }
 
-func (a *emailSenderAdapter) SendParentPortalInvite(ctx context.Context, toEmail, acceptURL string) error {
-	msg := email.Message{
-		To:      toEmail,
-		Subject: "You're invited to access the parent portal",
-		Text: "You have been invited to access the parent portal.\n\n" +
-			"Click the link below to set up your account:\n" + acceptURL + "\n\n" +
-			"This invitation expires in 7 days.",
+func (a *emailSenderAdapter) SendParentPortalInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, acceptURL string) error {
+	payloadJSON, err := json.Marshal(map[string]string{
+		"accept_url": acceptURL,
+	})
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
 	}
-	return a.sender.Send(ctx, msg)
+
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "portal_invite",
+		Recipient:       toEmail,
+		Subject:         "You're invited to access the parent portal",
+		TemplateName:    "portal_invite",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        toEmail,
+	})
+	return err
 }
 
 var _ ParentChildExistenceChecker = (*childExistenceCheckerAdapter)(nil)

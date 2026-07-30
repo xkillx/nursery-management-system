@@ -53,7 +53,7 @@ func (uc *InviteToPortalUseCase) Execute(ctx context.Context, actor ActorContext
 		}
 
 		acceptURL := fmt.Sprintf("%s/accept-invite?user_id=%s", uc.webBaseURL, userID.String())
-		if err := uc.emailSender.SendParentPortalInvite(ctx, *parent.Email, acceptURL); err != nil {
+		if err := uc.emailSender.SendParentPortalInvite(ctx, actor.TenantID, actor.BranchID, *parent.Email, acceptURL); err != nil {
 			return fmt.Errorf("send invite email: %w", err)
 		}
 

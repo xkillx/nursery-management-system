@@ -61,12 +61,15 @@ import (
 
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
-	"nursery-management-system/api/internal/platform/email"
 	"nursery-management-system/api/internal/platform/events"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
+
+	emailapp "nursery-management-system/api/internal/modules/email/application"
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
+	emailpostgres "nursery-management-system/api/internal/modules/email/infrastructure/postgres"
 
 	resetapp "nursery-management-system/api/internal/modules/passwordreset/application"
 	resetpostgres "nursery-management-system/api/internal/modules/passwordreset/infrastructure/postgres"
@@ -102,7 +105,7 @@ import (
 type BootstrapOptions struct {
 	CheckoutProvider paymentsdomain.CheckoutProvider
 	WebhookVerifier  paymentsdomain.WebhookVerifier
-	EmailSender      email.Sender
+	EmailEnqueuer    emaildomain.EmailEnqueuer
 	MetricsRegistry  *prometheus.Registry
 	MetricsRecorder  *metrics.Recorder
 }
@@ -155,11 +158,13 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	resetTokenMgr := resettokens.NewManager(cfg.PasswordResetTokenSecret, cfg.PasswordResetTokenTTLMinutes)
 	resetRepo := resetpostgres.NewRepository(pool)
 	resetTokenGen := resetapp.NewTokenGeneratorAdapter(resetTokenMgr)
-	emailSender := opts.EmailSender
-	if emailSender == nil {
-		emailSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
+	emailEnqueuer := opts.EmailEnqueuer
+	if emailEnqueuer == nil {
+		// Create a real email enqueuer using the outbox repository
+		outboxRepo := emailpostgres.NewOutboxRepository(pool)
+		emailEnqueuer = emailapp.NewEnqueueEmail(outboxRepo)
 	}
-	resetEmailAdapter := resetapp.NewEmailAdapter(emailSender)
+	resetEmailAdapter := resetapp.NewEmailAdapter(emailEnqueuer)
 	requestResetUC := resetapp.NewRequestResetUseCase(resetRepo, resetEmailAdapter, resetTokenGen, cfg.WebBaseURL, logger)
 	setPasswordUC := resetapp.NewSetNewPasswordUseCase(resetRepo, logger)
 	resetEmailLimiter := ratelimit.NewFixedWindowLimiter(5, 15*time.Minute)
@@ -248,7 +253,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	parentsRepo := parentspostgres.NewParentRepository(pool)
 	parentsChildChecker := &parentsChildExistenceCheckerAdapter{repo: childRepo}
 	parentsUserCreator := &parentUserCreatorAdapter{pool: pool}
-	parentsEmailSender := &parentEmailSenderAdapter{sender: emailSender, baseURL: cfg.WebBaseURL}
+	parentsEmailSender := &parentEmailSenderAdapter{enqueuer: emailEnqueuer}
 	parentsHandler := parentshandler.NewHandler(
 		parentsapp.NewCreateParentUseCase(parentsRepo, auditWriter, txManager),
 		parentsapp.NewUpdateParentUseCase(parentsRepo, auditWriter, txManager),
@@ -423,7 +428,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	inviteTokenMgr := invitetokens.NewManager(cfg.InviteTokenSecret, cfg.InviteTokenTTLHours)
 	inviteRepo := invitepostgres.NewRepository(pool, auditWriter)
 	inviteTokenGen := inviteapp.NewTokenGeneratorAdapter(inviteTokenMgr)
-	inviteEmailAdapter := inviteapp.NewInviteEmailAdapter(emailSender)
+	inviteEmailAdapter := inviteapp.NewInviteEmailAdapter(emailEnqueuer)
 	createInviteUC := inviteapp.NewCreateInviteUseCase(inviteRepo, inviteTokenGen, inviteEmailAdapter, cfg.WebBaseURL, logger)
 	listInvitesUC := inviteapp.NewListInvitesUseCase(inviteRepo)
 	resendInviteUC := inviteapp.NewResendInviteUseCase(inviteRepo, inviteTokenGen, inviteEmailAdapter, cfg.WebBaseURL, logger)
@@ -437,7 +442,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	ownerSummariesUC := ownerapp.NewGetSiteSummariesUseCase(ownerRepo)
 	ownerListAccessUC := ownerapp.NewListManagerAccessUseCase(ownerRepo)
 	ownerTokenAdapter := &inviteTokenGeneratorAdapter{gen: inviteTokenMgr}
-	ownerEmailAdapter := &emailSenderAdapter{sender: emailSender, baseURL: cfg.WebBaseURL}
+	ownerEmailAdapter := &emailSenderAdapter{enqueuer: emailEnqueuer}
 	ownerGrantUC := ownerapp.NewGrantManagerAccessUseCase(ownerRepo, ownerTokenAdapter, ownerEmailAdapter, cfg.WebBaseURL)
 	ownerDeactivateUC := ownerapp.NewDeactivateManagerAccessUseCase(ownerRepo)
 	ownerReactivateUC := ownerapp.NewReactivateManagerAccessUseCase(ownerRepo)
