@@ -1105,10 +1105,6 @@ func formatMoney(m billingdomain.Money) string {
 }
 
 func (a *billingNotificationAdapter) writeAudit(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID uuid.UUID, emailAddr, actionType string, sendErr error) {
-	actor := tenant.ActorContext{
-		TenantID: tenantID,
-		BranchID: branchID,
-	}
 	details := map[string]any{
 		"invoice_id":        invoiceID.String(),
 		"notification_type": actionType,
@@ -1122,7 +1118,7 @@ func (a *billingNotificationAdapter) writeAudit(ctx context.Context, tx pgx.Tx, 
 	if sendErr != nil {
 		details["error"] = sendErr.Error()
 	}
-	_ = a.auditWriter.WriteWithTx(ctx, tx, actor, audit.WriteParams{
+	_ = a.auditWriter.WriteSystemWithTx(ctx, tx, tenantID, branchID, "", audit.WriteParams{
 		ActionType: actionType,
 		EntityType: "invoice",
 		EntityID:   invoiceID,
