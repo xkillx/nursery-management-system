@@ -1,0 +1,17 @@
+Dear Parent/Carer,
+
+This is a friendly reminder that an invoice for {{.ChildName}} at {{.NurseryName}} is due soon.
+
+Invoice Details:
+- Invoice Number: {{.InvoiceNumber}}
+- Amount Due: {{.TotalDue}}
+- Due Date: {{.DueDate}}
+
+Please ensure payment is made by the due date to avoid any late fees.
+
+View your invoice: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

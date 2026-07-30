@@ -1,0 +1,16 @@
+Dear Parent/Carer,
+
+This is a reminder that the following invoice for {{.ChildName}} at {{.NurseryName}} is now overdue.
+
+Invoice Details:
+- Invoice Number: {{.InvoiceNumber}}
+- Amount Due: {{.TotalDue}}
+
+Please arrange payment as soon as possible to avoid any disruption to your child's place.
+
+Pay now: {{.PortalLink}}
+
+If you have already made payment, please disregard this reminder. If you are experiencing difficulties, please contact the nursery to discuss payment options.
+
+Best regards,
+{{.NurseryName}}

@@ -112,6 +112,12 @@ import (
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
 	"time"
+
+	emailscheduler "nursery-management-system/api/internal/modules/email"
+	emailapp "nursery-management-system/api/internal/modules/email/application"
+	emailpostgres "nursery-management-system/api/internal/modules/email/infrastructure/postgres"
+	emailsmtp "nursery-management-system/api/internal/modules/email/infrastructure/smtp"
+	emailhandler "nursery-management-system/api/internal/modules/email/interfaces/http"
 )
 
 // Injectors from wire.go:
@@ -484,6 +490,19 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	queryDateRange := application7.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
 	httpHandler := http.NewHandler(queryCalendarDay, queryDateRange, logger)
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
+	outboxRepository := emailpostgres.NewOutboxRepository(pool)
+	emailProvider := emailsmtp.NewProvider(sender)
+	emailRenderer := emailapp.NewRenderer()
+	enqueueEmail := emailapp.NewEnqueueEmail(outboxRepository)
+	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
+	listEmails := emailapp.NewListEmails(outboxRepository)
+	getEmail := emailapp.NewGetEmail(outboxRepository)
+	retryEmail := emailapp.NewRetryEmail(outboxRepository)
+	getEmailStats := emailapp.NewGetEmailStats(outboxRepository)
+	emailScheduler := emailscheduler.NewScheduler(logger, sendPendingEmails, recorder, cfg.Email.PollIntervalSeconds)
+	emailHandler := emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getEmailStats)
+	_ = enqueueEmail
+	_ = emailScheduler
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
 		Config:                  cfg,
@@ -514,6 +533,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		HolidayPeriodHandler:    httphpHandler,
 		NurseryCalendarHandler:  httpHandler,
 		SiteProfileHandler:      handler2,
+		EmailHandler:            emailHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
 	return engine, nil
@@ -887,6 +907,19 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	queryDateRange := application7.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
 	httpHandler := http.NewHandler(queryCalendarDay, queryDateRange, logger)
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
+	outboxRepository := emailpostgres.NewOutboxRepository(pool)
+	emailProvider := emailsmtp.NewProvider(sender)
+	emailRenderer := emailapp.NewRenderer()
+	enqueueEmail := emailapp.NewEnqueueEmail(outboxRepository)
+	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
+	listEmails := emailapp.NewListEmails(outboxRepository)
+	getEmail := emailapp.NewGetEmail(outboxRepository)
+	retryEmail := emailapp.NewRetryEmail(outboxRepository)
+	getEmailStats := emailapp.NewGetEmailStats(outboxRepository)
+	emailScheduler := emailscheduler.NewScheduler(logger, sendPendingEmails, recorder, cfg.Email.PollIntervalSeconds)
+	emailHandler := emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getEmailStats)
+	_ = enqueueEmail
+	_ = emailScheduler
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
 		Config:                  cfg,
@@ -917,6 +950,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		HolidayPeriodHandler:    httphpHandler,
 		NurseryCalendarHandler:  httpHandler,
 		SiteProfileHandler:      handler2,
+		EmailHandler:            emailHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
 	return engine, nil

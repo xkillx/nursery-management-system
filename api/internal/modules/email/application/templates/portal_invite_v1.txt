@@ -1,0 +1,14 @@
+Hello,
+
+You have been invited to access the parent portal at {{.NurseryName}}.
+
+Click the link below to set up your account:
+
+{{.AcceptURL}}
+
+This invitation expires in 7 days.
+
+If you did not expect this invitation, please ignore this email.
+
+Best regards,
+{{.NurseryName}}

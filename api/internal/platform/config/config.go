@@ -47,6 +47,17 @@ type Config struct {
 
 	CORSAllowedOrigins string
 	MaxBodySizeBytes   int64
+
+	Email WorkerConfig
+}
+
+type WorkerConfig struct {
+	Enabled             bool
+	PollIntervalSeconds int
+	BatchSize           int
+	RatePerSecond       float64
+	RetryBackoffSeconds []int
+	MaxAttempts         int
 }
 
 func Load() (Config, error) {
@@ -71,6 +82,27 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	inviteTTLMHours, err := getEnvInt("INVITE_TOKEN_TTL_HOURS", 168)
+	if err != nil {
+		return Config{}, err
+	}
+
+	emailPollInterval, err := getEnvInt("EMAIL_WORKER_POLL_INTERVAL_SECONDS", 5)
+	if err != nil {
+		return Config{}, err
+	}
+	emailBatchSize, err := getEnvInt("EMAIL_WORKER_BATCH_SIZE", 100)
+	if err != nil {
+		return Config{}, err
+	}
+	emailRatePerSecond, err := getEnvFloat("EMAIL_RATE_PER_SECOND", 10.0)
+	if err != nil {
+		return Config{}, err
+	}
+	emailMaxAttempts, err := getEnvInt("EMAIL_MAX_ATTEMPTS", 8)
+	if err != nil {
+		return Config{}, err
+	}
+	emailBackoffSeconds, err := getEnvIntSlice("EMAIL_RETRY_BACKOFF_SECONDS", []int{5, 30, 120, 600, 3600, 21600})
 	if err != nil {
 		return Config{}, err
 	}
@@ -113,6 +145,15 @@ func Load() (Config, error) {
 
 		CORSAllowedOrigins: strings.TrimSpace(os.Getenv("CORS_ALLOWED_ORIGINS")),
 		MaxBodySizeBytes:   resolveMaxBodySizeBytes(os.Getenv("MAX_BODY_SIZE_BYTES")),
+
+		Email: WorkerConfig{
+			Enabled:             resolveEmailWorkerEnabled(os.Getenv("EMAIL_WORKER_ENABLED")),
+			PollIntervalSeconds: emailPollInterval,
+			BatchSize:           emailBatchSize,
+			RatePerSecond:       emailRatePerSecond,
+			RetryBackoffSeconds: emailBackoffSeconds,
+			MaxAttempts:         emailMaxAttempts,
+		},
 	}
 
 	if !isAllowedAppEnv(cfg.AppEnv) {
@@ -198,6 +239,22 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("LOG_LEVEL must be one of debug, info, warn, error: %q", cfg.LogLevel)
 	}
 
+	if cfg.Email.PollIntervalSeconds < 1 {
+		return Config{}, errors.New("EMAIL_WORKER_POLL_INTERVAL_SECONDS must be >= 1")
+	}
+	if cfg.Email.BatchSize < 1 {
+		return Config{}, errors.New("EMAIL_WORKER_BATCH_SIZE must be >= 1")
+	}
+	if cfg.Email.RatePerSecond <= 0 {
+		return Config{}, errors.New("EMAIL_RATE_PER_SECOND must be > 0")
+	}
+	if cfg.Email.MaxAttempts < 1 {
+		return Config{}, errors.New("EMAIL_MAX_ATTEMPTS must be >= 1")
+	}
+	if len(cfg.Email.RetryBackoffSeconds) == 0 {
+		return Config{}, errors.New("EMAIL_RETRY_BACKOFF_SECONDS must not be empty")
+	}
+
 	return cfg, nil
 }
 
@@ -281,4 +338,48 @@ func resolveMaxBodySizeBytes(raw string) int64 {
 		return 1048576
 	}
 	return v
+}
+
+func resolveEmailWorkerEnabled(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return true
+	}
+	return strings.EqualFold(raw, "true") || raw == "1"
+}
+
+func getEnvFloat(key string, fallback float64) (float64, error) {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a number", key)
+	}
+	return parsed, nil
+}
+
+func getEnvIntSlice(key string, fallback []int) ([]int, error) {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback, nil
+	}
+	parts := strings.Split(v, ",")
+	result := make([]int, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			return nil, fmt.Errorf("%s must be comma-separated integers: %w", key, err)
+		}
+		result = append(result, n)
+	}
+	if len(result) == 0 {
+		return fallback, nil
+	}
+	return result, nil
 }

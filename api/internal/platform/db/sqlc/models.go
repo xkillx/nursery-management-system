@@ -537,6 +537,37 @@ type ChildSafeguardingProfile struct {
 	UpdatedAt                 pgtype.Timestamptz
 }
 
+type EmailDelivery struct {
+	ID                pgtype.UUID
+	ProviderMessageID string
+	EmailOutboxID     pgtype.UUID
+	Status            string
+	ResponseJson      []byte
+	CreatedAt         pgtype.Timestamptz
+}
+
+type EmailOutbox struct {
+	ID                pgtype.UUID
+	TenantID          pgtype.UUID
+	BranchID          pgtype.UUID
+	IdempotencyKey    string
+	EventType         string
+	Recipient         string
+	RecipientName     pgtype.Text
+	Subject           string
+	TemplateName      string
+	TemplateVersion   int32
+	PayloadJson       []byte
+	Status            string
+	Attempts          int32
+	MaxAttempts       int32
+	NextRetryAt       pgtype.Timestamptz
+	LastError         pgtype.Text
+	ProviderMessageID pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+}
+
 type HolidayPeriod struct {
 	ID        pgtype.UUID
 	TenantID  pgtype.UUID
