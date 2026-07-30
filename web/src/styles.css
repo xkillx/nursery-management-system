@@ -58,6 +58,21 @@ layer(base);
   --color-primary-container: #465fff;
   --color-on-primary-container: #ffffff;
 
+  --color-surface: #f9f9ff;
+  --color-surface-dim: #d0daf2;
+  --color-surface-bright: #f9f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f0f3ff;
+  --color-surface-container: #e8eeff;
+  --color-surface-container-high: #dfe8ff;
+  --color-surface-container-highest: #d9e3fb;
+  --color-on-surface: #111c2d;
+  --color-on-surface-variant: #444656;
+  --color-border-subtle: #e2e8f0;
+  --color-primary-fixed-dim: #bbc3ff;
+  --color-tertiary-fixed: #ffdbcc;
+  --color-tertiary: #993c00;
+
   --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
   --color-blue-light-100: #e0f2fe;

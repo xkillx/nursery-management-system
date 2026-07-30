@@ -53,7 +53,7 @@ export class ConfirmationDialogComponent {
   @Input() message = '';
   @Input() confirmText = 'Confirm';
   @Input() cancelText = 'Cancel';
-  @Input() variant: 'primary' | 'danger' = 'primary';
+  @Input() variant: 'primary' | 'danger' | 'success' = 'primary';
   @Input() loading = false;
   @Input() disabled = false;
 
@@ -64,6 +64,9 @@ export class ConfirmationDialogComponent {
     const base = 'inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white shadow-theme-xs disabled:opacity-50';
     if (this.variant === 'danger') {
       return `${base} bg-error-500 hover:bg-error-600`;
+    }
+    if (this.variant === 'success') {
+      return `${base} bg-success-500 hover:bg-success-600`;
     }
     return `${base} bg-brand-500 hover:bg-brand-600`;
   }

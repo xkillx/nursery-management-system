@@ -563,20 +563,22 @@ describe('ManagerInvoiceDetailComponent', () => {
   it('calls issueInvoice and refreshes on confirm', () => {
     createFixture(draftDetail, null, []);
     apiService.issueInvoice.and.returnValue(of({ invoiceId: 'inv-3', status: 'issued' }));
-    spyOn(window, 'confirm').and.returnValue(true);
     const component = fixture.componentInstance;
-    component.issueInvoice();
-    expect(window.confirm).toHaveBeenCalled();
+    component.openIssueConfirmation();
+    expect(component.isConfirmIssueOpen).toBe(true);
+    component.confirmIssue();
     expect(apiService.issueInvoice).toHaveBeenCalledWith('inv-3');
     expect(apiService.getInvoice).toHaveBeenCalledTimes(2);
+    expect(component.isConfirmIssueOpen).toBe(false);
   });
 
   it('does not call API when confirm is cancelled', () => {
     createFixture(draftDetail, null, []);
-    spyOn(window, 'confirm').and.returnValue(false);
     const component = fixture.componentInstance;
-    component.issueInvoice();
-    expect(window.confirm).toHaveBeenCalled();
+    component.openIssueConfirmation();
+    expect(component.isConfirmIssueOpen).toBe(true);
+    component.cancelIssue();
+    expect(component.isConfirmIssueOpen).toBe(false);
     expect(apiService.issueInvoice).not.toHaveBeenCalled();
   });
 
@@ -586,17 +588,15 @@ describe('ManagerInvoiceDetailComponent', () => {
       error: { code: 'invalid_state', message: 'Invoice already issued', request_id: 'req-err-1' },
       status: 409,
     })));
-    spyOn(window, 'confirm').and.returnValue(true);
     const toastSpy = spyOn(TestBed.inject(ToastService), 'error');
     const component = fixture.componentInstance;
-    component.issueInvoice();
+    component.confirmIssue();
     expect(toastSpy).toHaveBeenCalled();
     expect(component.isIssuing).toBe(false);
   });
 
   it('disables button and shows loading text while issuing', () => {
     createFixture(draftDetail, null, []);
-    spyOn(window, 'confirm').and.returnValue(true);
     apiService.issueInvoice.and.returnValue(of({ invoiceId: 'inv-3', status: 'issued' }));
     const component = fixture.componentInstance;
     component.isIssuing = true;

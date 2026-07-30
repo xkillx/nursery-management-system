@@ -199,6 +199,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   isPaymentLinkLoading = false;
   isDownloadingPdf = false;
   isIssuing = false;
+  isConfirmIssueOpen = false;
   isConfirmDeleteOpen = false;
   isDeleting = false;
 
@@ -466,14 +467,19 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
     });
   }
 
-  issueInvoice(): void {
+  openIssueConfirmation(): void {
+    if (!this.detail || this.isIssuing) return;
+    this.isConfirmIssueOpen = true;
+  }
+
+  cancelIssue(): void {
+    this.isConfirmIssueOpen = false;
+  }
+
+  confirmIssue(): void {
     if (!this.detail || this.isIssuing) return;
 
-    const childName = this.detail.childName;
-    const amount = formatGbp(this.detail.totalDueMinor);
-    const confirmed = confirm(`Issue invoice for ${childName} — ${amount}? This will lock the invoice and make it visible to the parent.`);
-    if (!confirmed) return;
-
+    this.isConfirmIssueOpen = false;
     this.isIssuing = true;
 
     this.apiService.issueInvoice(this.detail.invoiceId).subscribe({
@@ -488,6 +494,10 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
         this.isIssuing = false;
       },
     });
+  }
+
+  issueInvoice(): void {
+    this.confirmIssue();
   }
 
   copyPaymentLink(): void {
