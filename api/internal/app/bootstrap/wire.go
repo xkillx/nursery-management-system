@@ -815,7 +815,7 @@ var emailSet = wire.NewSet(
 
 // ── Injector ────────────────────────────────────────────────────────────
 
-func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
+func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, *emailscheduler.Scheduler, error) {
 	wire.Build(
 		provideTxManager,
 		wire.Bind(new(childapp.TxManager), new(*transaction.Manager)),
@@ -874,10 +874,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
-	return nil, nil
+	return nil, nil, nil
 }
 
-func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
+func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, *emailscheduler.Scheduler, error) {
 	wire.Build(
 		provideTxManager,
 		wire.Bind(new(childapp.TxManager), new(*transaction.Manager)),
@@ -936,5 +936,5 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
-	return nil, nil
+	return nil, nil, nil
 }

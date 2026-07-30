@@ -35,7 +35,7 @@ const getEmailByID = `-- name: GetEmailByID :one
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
 `
@@ -69,6 +69,7 @@ func (q *Queries) GetEmailByID(ctx context.Context, arg GetEmailByIDParams) (Ema
 		&i.ProviderMessageID,
 		&i.CreatedAt,
 		&i.SentAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -114,7 +115,7 @@ const getPendingEmails = `-- name: GetPendingEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE status = 'pending'
   AND next_retry_at <= now()
@@ -152,6 +153,7 @@ func (q *Queries) GetPendingEmails(ctx context.Context, limit int32) ([]EmailOut
 			&i.ProviderMessageID,
 			&i.CreatedAt,
 			&i.SentAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -176,7 +178,7 @@ INSERT INTO email_outbox (
 RETURNING id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 `
 
 type InsertEmailOutboxParams struct {
@@ -230,6 +232,7 @@ func (q *Queries) InsertEmailOutbox(ctx context.Context, arg InsertEmailOutboxPa
 		&i.ProviderMessageID,
 		&i.CreatedAt,
 		&i.SentAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -238,7 +241,7 @@ const listEmails = `-- name: ListEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2
   AND ($3::text IS NULL OR status = $3::text)
@@ -289,6 +292,7 @@ func (q *Queries) ListEmails(ctx context.Context, arg ListEmailsParams) ([]Email
 			&i.ProviderMessageID,
 			&i.CreatedAt,
 			&i.SentAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

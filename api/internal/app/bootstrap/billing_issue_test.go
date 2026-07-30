@@ -38,7 +38,7 @@ func setupBillingIssueHarness(t *testing.T) *billingIssueHarness {
 	pool := dbtest.RequirePostgres(t)
 	dbtest.Reset(t, pool)
 
-	router, err := InitializeApp(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool)
+	router, _, err := InitializeApp(testConfig(), slog.New(slog.NewTextHandler(io.Discard, nil)), pool)
 	if err != nil {
 		t.Fatal(err)
 	}

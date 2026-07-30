@@ -122,7 +122,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
+func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, *emailscheduler.Scheduler, error) {
 	registry := provideMetricsRegistry(cfg)
 	recorder := provideMetricsRecorder(cfg, registry)
 	tokenManager := provideTokenManager(cfg)
@@ -502,7 +502,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	emailScheduler := emailscheduler.NewScheduler(logger, sendPendingEmails, recorder, cfg.Email.PollIntervalSeconds)
 	emailHandler := emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getEmailStats, outboxRepository)
 	_ = enqueueEmail
-	_ = emailScheduler
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
 		Config:                  cfg,
@@ -536,10 +535,10 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		EmailHandler:            emailHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
-	return engine, nil
+	return engine, emailScheduler, nil
 }
 
-func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
+func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, *emailscheduler.Scheduler, error) {
 	registry := provideMetricsRegistry(cfg)
 	recorder := provideMetricsRecorder(cfg, registry)
 	tokenManager := provideTokenManager(cfg)
@@ -919,7 +918,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	emailScheduler := emailscheduler.NewScheduler(logger, sendPendingEmails, recorder, cfg.Email.PollIntervalSeconds)
 	emailHandler := emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getEmailStats, outboxRepository)
 	_ = enqueueEmail
-	_ = emailScheduler
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
 		Config:                  cfg,
@@ -953,7 +951,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		EmailHandler:            emailHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
-	return engine, nil
+	return engine, emailScheduler, nil
 }
 
 // wire.go:

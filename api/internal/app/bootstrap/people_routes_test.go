@@ -861,7 +861,7 @@ func setupPeopleHarness(t *testing.T) *peopleHarness {
 
 	cfg := testConfig()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router, err := InitializeApp(cfg, logger, pool)
+	router, _, err := InitializeApp(cfg, logger, pool)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,13 +11,13 @@ INSERT INTO email_outbox (
 RETURNING id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at;
+    last_error, provider_message_id, created_at, sent_at, updated_at;
 
 -- name: GetPendingEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE status = 'pending'
   AND next_retry_at <= now()
@@ -40,7 +40,7 @@ WHERE id = $1;
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
 
@@ -48,7 +48,7 @@ WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
     payload_json, status, attempts, max_attempts, next_retry_at,
-    last_error, provider_message_id, created_at, sent_at
+    last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2
   AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status')::text)

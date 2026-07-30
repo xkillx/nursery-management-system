@@ -83,7 +83,7 @@ func main() {
 		}
 	}
 
-	router, err := bootstrap.InitializeApp(cfg, logger, pool)
+	router, emailScheduler, err := bootstrap.InitializeApp(cfg, logger, pool)
 	if err != nil {
 		logger.Error("failed to initialize app", "error", err)
 		os.Exit(1)
@@ -108,6 +108,10 @@ func main() {
 		scheduler.Start(ctx)
 	}
 
+	if emailScheduler != nil && cfg.Email.Enabled {
+		emailScheduler.Start(ctx)
+	}
+
 	select {
 	case <-ctx.Done():
 		logger.Info("shutdown signal received")
@@ -123,6 +127,10 @@ func main() {
 
 	if scheduler != nil {
 		scheduler.Stop(shutdownCtx)
+	}
+
+	if emailScheduler != nil {
+		emailScheduler.Stop(shutdownCtx)
 	}
 
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {

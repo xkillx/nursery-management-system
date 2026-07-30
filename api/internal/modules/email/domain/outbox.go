@@ -50,6 +50,7 @@ type OutboxMessage struct {
 	ProviderMessageID *string
 	CreatedAt         time.Time
 	SentAt            *time.Time
+	UpdatedAt         time.Time
 }
 
 type EnqueueParams struct {

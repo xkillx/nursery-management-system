@@ -94,6 +94,9 @@ func (r *OutboxRepository) UpdateStatus(ctx context.Context, id uuid.UUID, statu
 			nextRetry = pgtype.Timestamptz{Time: *t, Valid: true}
 		}
 	}
+	if !nextRetry.Valid {
+		nextRetry = pgtype.Timestamptz{Time: time.Now(), Valid: true}
+	}
 
 	return q.UpdateEmailStatus(ctx, sqlc.UpdateEmailStatusParams{
 		ID:                pgtype.UUID{Bytes: [16]byte(id), Valid: true},
@@ -261,5 +264,6 @@ func toDomainMessage(row sqlc.EmailOutbox) domain.OutboxMessage {
 		ProviderMessageID: providerMessageID,
 		CreatedAt:         row.CreatedAt.Time,
 		SentAt:            sentAt,
+		UpdatedAt:         row.UpdatedAt.Time,
 	}
 }

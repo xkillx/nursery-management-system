@@ -1,0 +1,1 @@
+ALTER TABLE email_outbox ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
