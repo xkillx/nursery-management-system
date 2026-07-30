@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -23,6 +24,30 @@ func NewOutboxRepository(pool *pgxpool.Pool) *OutboxRepository {
 
 func (r *OutboxRepository) Insert(ctx context.Context, msg domain.OutboxMessage) (domain.OutboxMessage, error) {
 	q := sqlc.New(r.pool)
+
+	result, err := q.InsertEmailOutbox(ctx, sqlc.InsertEmailOutboxParams{
+		ID:              pgtype.UUID{Bytes: [16]byte(msg.ID), Valid: true},
+		TenantID:        pgtype.UUID{Bytes: [16]byte(msg.TenantID), Valid: true},
+		BranchID:        pgtype.UUID{Bytes: [16]byte(msg.BranchID), Valid: true},
+		IdempotencyKey:  msg.IdempotencyKey,
+		EventType:       msg.EventType,
+		Recipient:       msg.Recipient,
+		RecipientName:   toPgText(msg.RecipientName),
+		Subject:         msg.Subject,
+		TemplateName:    msg.TemplateName,
+		TemplateVersion: int32(msg.TemplateVersion),
+		PayloadJson:     msg.PayloadJSON,
+		MaxAttempts:     int32(msg.MaxAttempts),
+	})
+	if err != nil {
+		return domain.OutboxMessage{}, fmt.Errorf("insert email outbox: %w", err)
+	}
+
+	return toDomainMessage(result), nil
+}
+
+func (r *OutboxRepository) InsertTx(ctx context.Context, tx domain.Tx, msg domain.OutboxMessage) (domain.OutboxMessage, error) {
+	q := sqlc.New(tx.(pgx.Tx))
 
 	result, err := q.InsertEmailOutbox(ctx, sqlc.InsertEmailOutboxParams{
 		ID:              pgtype.UUID{Bytes: [16]byte(msg.ID), Valid: true},

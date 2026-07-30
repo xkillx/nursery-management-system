@@ -19,3 +19,8 @@ func (f *FakeEnqueuer) Enqueue(_ context.Context, _, _ uuid.UUID, params Enqueue
 	f.Enqueued = append(f.Enqueued, params)
 	return uuid.New(), nil
 }
+
+func (f *FakeEnqueuer) EnqueueWithTx(_ context.Context, _ Tx, _, _ uuid.UUID, params EnqueueParams) (uuid.UUID, error) {
+	f.Enqueued = append(f.Enqueued, params)
+	return uuid.New(), nil
+}

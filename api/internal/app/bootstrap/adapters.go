@@ -807,7 +807,7 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+	_, err = a.enqueuer.EnqueueWithTx(ctx, tx, tenantID, branchID, emaildomain.EnqueueParams{
 		EventType:       "invoice_issued",
 		Recipient:       parent.Email,
 		Subject:         subject,
@@ -883,7 +883,7 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+	_, err = a.enqueuer.EnqueueWithTx(ctx, tx, tenantID, branchID, emaildomain.EnqueueParams{
 		EventType:       "invoice_overdue",
 		Recipient:       parent.Email,
 		Subject:         subject,
@@ -965,7 +965,7 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+	_, err = a.enqueuer.EnqueueWithTx(ctx, tx, tenantID, branchID, emaildomain.EnqueueParams{
 		EventType:       "invoice_due_soon",
 		Recipient:       parent.Email,
 		Subject:         subject,
@@ -1047,7 +1047,7 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+	_, err = a.enqueuer.EnqueueWithTx(ctx, tx, tenantID, branchID, emaildomain.EnqueueParams{
 		EventType:       "invoice_due_reminder",
 		Recipient:       parent.Email,
 		Subject:         subject,

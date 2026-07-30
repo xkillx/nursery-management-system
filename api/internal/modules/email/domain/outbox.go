@@ -7,6 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// Tx is an opaque transaction handle. The infrastructure layer casts it
+// to the concrete driver type (pgx.Tx). Defined as a type alias for any
+// so the domain layer never imports a driver package.
+type Tx = any
+
 type Status string
 
 const (
@@ -60,4 +65,5 @@ type EnqueueParams struct {
 
 type EmailEnqueuer interface {
 	Enqueue(ctx context.Context, tenantID, branchID uuid.UUID, params EnqueueParams) (uuid.UUID, error)
+	EnqueueWithTx(ctx context.Context, tx Tx, tenantID, branchID uuid.UUID, params EnqueueParams) (uuid.UUID, error)
 }

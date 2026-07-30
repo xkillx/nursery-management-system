@@ -8,6 +8,7 @@ import (
 
 type OutboxRepository interface {
 	Insert(ctx context.Context, msg OutboxMessage) (OutboxMessage, error)
+	InsertTx(ctx context.Context, tx Tx, msg OutboxMessage) (OutboxMessage, error)
 	GetPending(ctx context.Context, batchSize int) ([]OutboxMessage, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status Status, attempts int, nextRetryAt interface{}, lastError *string, providerMessageID *string) error
 	GetByID(ctx context.Context, tenantID, branchID, id uuid.UUID) (OutboxMessage, error)
