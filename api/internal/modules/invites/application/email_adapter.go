@@ -2,27 +2,39 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"nursery-management-system/api/internal/platform/email"
+	"github.com/google/uuid"
+
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 )
 
 type InviteEmailAdapter struct {
-	sender email.Sender
+	enqueuer emaildomain.EmailEnqueuer
 }
 
-func NewInviteEmailAdapter(sender email.Sender) *InviteEmailAdapter {
-	return &InviteEmailAdapter{sender: sender}
+func NewInviteEmailAdapter(enqueuer emaildomain.EmailEnqueuer) *InviteEmailAdapter {
+	return &InviteEmailAdapter{enqueuer: enqueuer}
 }
 
-func (a *InviteEmailAdapter) SendInvite(ctx context.Context, toEmail, role, acceptURL string) error {
-	msg := email.Message{
-		To:      toEmail,
-		Subject: fmt.Sprintf("You're invited to join as %s", role),
-		Text: fmt.Sprintf(
-			"You have been invited to join as a %s.\n\nClick the link below to accept:\n%s\n\nThis invitation expires in 7 days.",
-			role, acceptURL,
-		),
+func (a *InviteEmailAdapter) SendInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, role, acceptURL string) error {
+	payloadJSON, err := json.Marshal(map[string]string{
+		"role":       role,
+		"accept_url": acceptURL,
+	})
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
 	}
-	return a.sender.Send(ctx, msg)
+
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "invite",
+		Recipient:       toEmail,
+		Subject:         fmt.Sprintf("You're invited to join as %s", role),
+		TemplateName:    "invite",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        toEmail,
+	})
+	return err
 }

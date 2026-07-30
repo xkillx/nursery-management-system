@@ -59,7 +59,7 @@ func (uc *ResendInviteUseCase) Execute(ctx context.Context, actor tenant.ActorCo
 	acceptURL := fmt.Sprintf("%s/invite-accept?token=%s", uc.webBaseURL, url.QueryEscape(raw))
 
 	updated, err := uc.repo.ResendInvite(ctx, actor, invite.ID, hash, expiresAt, func() error {
-		return uc.email.SendInvite(ctx, invite.Email, invite.Role, acceptURL)
+		return uc.email.SendInvite(ctx, actor.TenantID, actor.BranchID, invite.Email, invite.Role, acceptURL)
 	})
 	if err != nil {
 		uc.logger.Error("resend_invite_failed", "error", err)

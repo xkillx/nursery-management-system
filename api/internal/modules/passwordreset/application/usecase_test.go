@@ -49,7 +49,7 @@ type mockEmailSender struct {
 	err      error
 }
 
-func (m *mockEmailSender) SendPasswordReset(_ context.Context, to string, resetURL string) error {
+func (m *mockEmailSender) SendPasswordReset(_ context.Context, tenantID, branchID uuid.UUID, to string, resetURL string) error {
 	m.captured = append(m.captured, to+"|"+resetURL)
 	if m.err != nil {
 		return m.err

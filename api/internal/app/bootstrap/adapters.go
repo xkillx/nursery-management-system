@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -54,10 +55,11 @@ import (
 	termcalendarpostgres "nursery-management-system/api/internal/modules/term_calendar/infrastructure/postgres"
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/db/sqlc"
-	"nursery-management-system/api/internal/platform/email"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 	"nursery-management-system/api/internal/platform/uid"
+
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 )
 
 type membershipCheckerAdapter struct {
@@ -129,19 +131,27 @@ var _ parentsapp.UserCreator = (*parentUserCreatorAdapter)(nil)
 
 // parentEmailSenderAdapter sends portal invite emails to parents.
 type parentEmailSenderAdapter struct {
-	sender  email.Sender
-	baseURL string
+	enqueuer emaildomain.EmailEnqueuer
 }
 
-func (a *parentEmailSenderAdapter) SendParentPortalInvite(ctx context.Context, toEmail, acceptURL string) error {
-	msg := email.Message{
-		To:      toEmail,
-		Subject: "You're invited to access the parent portal",
-		Text: "You have been invited to access the parent portal.\n\n" +
-			"Click the link below to set up your account:\n" + acceptURL + "\n\n" +
-			"This invitation expires in 7 days.",
+func (a *parentEmailSenderAdapter) SendParentPortalInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, acceptURL string) error {
+	payloadJSON, err := json.Marshal(map[string]string{
+		"accept_url": acceptURL,
+	})
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
 	}
-	return a.sender.Send(ctx, msg)
+
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "portal_invite",
+		Recipient:       toEmail,
+		Subject:         "You're invited to access the parent portal",
+		TemplateName:    "portal_invite",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        toEmail,
+	})
+	return err
 }
 
 var _ parentsapp.EmailSender = (*parentEmailSenderAdapter)(nil)
@@ -396,20 +406,28 @@ func (a *inviteTokenGeneratorAdapter) Generate() (string, string, time.Time, err
 }
 
 type emailSenderAdapter struct {
-	sender  email.Sender
-	baseURL string
+	enqueuer emaildomain.EmailEnqueuer
+	baseURL  string
 }
 
-func (a *emailSenderAdapter) SendManagerInvite(ctx context.Context, toEmail, acceptURL string) error {
-	msg := email.Message{
-		To:      toEmail,
-		Subject: "You're invited to join as manager",
-		Text: fmt.Sprintf(
-			"You have been invited to join as a manager.\n\nClick the link below to accept:\n%s\n\nThis invitation expires in 7 days.",
-			acceptURL,
-		),
+func (a *emailSenderAdapter) SendManagerInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, acceptURL string) error {
+	payloadJSON, err := json.Marshal(map[string]string{
+		"accept_url": acceptURL,
+	})
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
 	}
-	return a.sender.Send(ctx, msg)
+
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "manager_invite",
+		Recipient:       toEmail,
+		Subject:         "You're invited to join as manager",
+		TemplateName:    "invite",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        toEmail,
+	})
+	return err
 }
 
 type childCreatorAdapter struct{}
@@ -723,7 +741,7 @@ type billingNotificationAdapter struct {
 	repo           billingdomain.BillingRepository
 	parentContacts billingapp.ParentContactLookup
 	siteProfiles   billingapp.SiteProfileLookup
-	sender         email.Sender
+	enqueuer       emaildomain.EmailEnqueuer
 	auditWriter    *audit.Writer
 	webBaseURL     string
 }
@@ -783,21 +801,24 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 	}
 
 	subject := fmt.Sprintf("New Invoice %s - %s", invoiceNumber, site.NurseryName)
-	htmlBody, textBody, err := renderTemplates("issued", data)
+
+	payloadJSON, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("render templates: %w", err)
+		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	msg := email.Message{
-		To:      parent.Email,
-		Subject: subject,
-		Text:    textBody,
-		HTML:    htmlBody,
-	}
-
-	if err := a.sender.Send(ctx, msg); err != nil {
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "invoice_issued",
+		Recipient:       parent.Email,
+		Subject:         subject,
+		TemplateName:    "issued",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        invoiceID.String(),
+	})
+	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedFailed, err)
-		slog.ErrorContext(ctx, "notification_email_failed",
+		slog.ErrorContext(ctx, "notification_email_enqueue_failed",
 			"notification_type", "invoice_issued",
 			"invoice_id", invoiceID,
 			"error", err,
@@ -856,21 +877,24 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 	}
 
 	subject := fmt.Sprintf("Invoice Overdue %s - %s", invoiceNumber, site.NurseryName)
-	htmlBody, textBody, err := renderTemplates("overdue", data)
+
+	payloadJSON, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("render templates: %w", err)
+		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	msg := email.Message{
-		To:      parent.Email,
-		Subject: subject,
-		Text:    textBody,
-		HTML:    htmlBody,
-	}
-
-	if err := a.sender.Send(ctx, msg); err != nil {
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "invoice_overdue",
+		Recipient:       parent.Email,
+		Subject:         subject,
+		TemplateName:    "overdue",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        invoiceID.String(),
+	})
+	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceOverdueFailed, err)
-		slog.ErrorContext(ctx, "notification_email_failed",
+		slog.ErrorContext(ctx, "notification_email_enqueue_failed",
 			"notification_type", "invoice_overdue",
 			"invoice_id", invoiceID,
 			"error", err,
@@ -935,21 +959,24 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 	}
 
 	subject := fmt.Sprintf("Payment Reminder: Invoice %s Due Soon - %s", invoiceNumber, site.NurseryName)
-	htmlBody, textBody, err := renderTemplates("due-soon", data)
+
+	payloadJSON, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("render templates: %w", err)
+		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	msg := email.Message{
-		To:      parent.Email,
-		Subject: subject,
-		Text:    textBody,
-		HTML:    htmlBody,
-	}
-
-	if err := a.sender.Send(ctx, msg); err != nil {
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "invoice_due_soon",
+		Recipient:       parent.Email,
+		Subject:         subject,
+		TemplateName:    "due-soon",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        invoiceID.String(),
+	})
+	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueSoonFailed, err)
-		slog.ErrorContext(ctx, "notification_email_failed",
+		slog.ErrorContext(ctx, "notification_email_enqueue_failed",
 			"notification_type", "invoice_due_soon",
 			"invoice_id", invoiceID,
 			"error", err,
@@ -1014,21 +1041,24 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 	}
 
 	subject := fmt.Sprintf("Payment Due Today: Invoice %s - %s", invoiceNumber, site.NurseryName)
-	htmlBody, textBody, err := renderTemplates("due-reminder", data)
+
+	payloadJSON, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("render templates: %w", err)
+		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	msg := email.Message{
-		To:      parent.Email,
-		Subject: subject,
-		Text:    textBody,
-		HTML:    htmlBody,
-	}
-
-	if err := a.sender.Send(ctx, msg); err != nil {
+	_, err = a.enqueuer.Enqueue(ctx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "invoice_due_reminder",
+		Recipient:       parent.Email,
+		Subject:         subject,
+		TemplateName:    "due-reminder",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        invoiceID.String(),
+	})
+	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueReminderFailed, err)
-		slog.ErrorContext(ctx, "notification_email_failed",
+		slog.ErrorContext(ctx, "notification_email_enqueue_failed",
 			"notification_type", "invoice_due_reminder",
 			"invoice_id", invoiceID,
 			"error", err,

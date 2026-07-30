@@ -1,0 +1,17 @@
+Dear Parent/Carer,
+
+This is a reminder that payment for an invoice for {{.ChildName}} at {{.NurseryName}} is due today.
+
+Invoice Details:
+- Invoice Number: {{.InvoiceNumber}}
+- Amount Due: {{.TotalDue}}
+- Due Date: {{.DueDate}} (Today)
+
+Please make payment today to avoid any late fees.
+
+Pay now: {{.PortalLink}}
+
+If you have already made payment, please disregard this reminder. If you have any questions, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

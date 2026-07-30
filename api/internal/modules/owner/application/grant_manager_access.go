@@ -129,7 +129,7 @@ func (uc *GrantManagerAccessUseCase) handleNewUser(ctx context.Context, actor do
 	}
 
 	acceptURL := fmt.Sprintf("%s/invite-accept?token=%s", uc.webBaseURL, url.QueryEscape(raw))
-	_ = uc.emailSender.SendManagerInvite(ctx, emailAddr, acceptURL)
+	_ = uc.emailSender.SendManagerInvite(ctx, actor.TenantID, siteID, emailAddr, acceptURL)
 
 	return GrantManagerAccessResult{
 		Outcome: GrantOutcomeInvitePending,

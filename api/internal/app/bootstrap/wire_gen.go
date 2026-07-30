@@ -112,6 +112,12 @@ import (
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
 	"time"
+
+	emailscheduler "nursery-management-system/api/internal/modules/email"
+	emailapp "nursery-management-system/api/internal/modules/email/application"
+	emailpostgres "nursery-management-system/api/internal/modules/email/infrastructure/postgres"
+	emailsmtp "nursery-management-system/api/internal/modules/email/infrastructure/smtp"
+	emailhandler "nursery-management-system/api/internal/modules/email/interfaces/http"
 )
 
 // Injectors from wire.go:
@@ -129,7 +135,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	handler := httpauth.NewHandler(loginUseCase, refreshUseCase, logoutUseCase, switchMembershipUseCase, cfg, recorder, logger)
 	postgresRepository := postgres2.NewRepository(pool)
 	sender := provideEmailSender(cfg)
-	emailAdapter := application2.NewEmailAdapter(sender)
+	outboxRepository := emailpostgres.NewOutboxRepository(pool)
+	enqueueEmail := emailapp.NewEnqueueEmail(outboxRepository)
+	emailAdapter := application2.NewEmailAdapter(enqueueEmail)
 	manager := provideResetTokenManager(cfg)
 	tokenGeneratorAdapter := application2.NewTokenGeneratorAdapter(manager)
 	string2 := provideWebBaseURL(cfg)
@@ -153,7 +161,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	siteProfileRepository := postgres7.NewRepository(pool)
 	getSiteProfileUseCase := application4.NewGetSiteProfileUseCase(siteProfileRepository)
 	bootstrapSiteProfileLookupAdapter := provideSiteProfileLookupAdapter(getSiteProfileUseCase)
-	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, sender, writer, string2)
+	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, enqueueEmail, writer, string2)
 	eventDispatcher := provideEventDispatcher(transactionManager, bootstrapBillingNotificationAdapter)
 	markInactive := application3.NewMarkInactive(childRepository, eventDispatcher, writer)
 	v := provideClock()
@@ -261,7 +269,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	linkChildUseCase := application6.NewLinkChildUseCase(parentRepository, writer, transactionManager, bootstrapParentsChildExistenceCheckerAdapter)
 	unlinkChildUseCase := application6.NewUnlinkChildUseCase(parentRepository, writer, transactionManager)
 	bootstrapParentUserCreatorAdapter := provideParentUserCreatorAdapter(pool)
-	bootstrapParentEmailSenderAdapter := provideParentEmailSenderAdapter(sender, cfg)
+	bootstrapParentEmailSenderAdapter := provideParentEmailSenderAdapter(enqueueEmail)
 	inviteToPortalUseCase := application6.NewInviteToPortalUseCase(parentRepository, writer, transactionManager, bootstrapParentUserCreatorAdapter, bootstrapParentEmailSenderAdapter, string2)
 	revokePortalAccessUseCase := application6.NewRevokePortalAccessUseCase(parentRepository, writer, transactionManager)
 	httpparentsHandler := httpparents.NewHandler(createParentUseCase, updateParentUseCase, getParentUseCase, listParentsUseCase, listParentsByChildUseCase, softDeleteParentUseCase, linkChildUseCase, unlinkChildUseCase, inviteToPortalUseCase, revokePortalAccessUseCase, logger)
@@ -393,7 +401,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	repository7 := postgres18.NewRepository(pool, writer)
 	tokensManager := provideInviteTokenManager(cfg)
 	applicationTokenGeneratorAdapter := application13.NewTokenGeneratorAdapter(tokensManager)
-	inviteEmailAdapter := application13.NewInviteEmailAdapter(sender)
+	inviteEmailAdapter := application13.NewInviteEmailAdapter(enqueueEmail)
 	createInviteUseCase := application13.NewCreateInviteUseCase(repository7, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
 	listInvitesUseCase := application13.NewListInvitesUseCase(repository7)
 	resendInviteUseCase := application13.NewResendInviteUseCase(repository7, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
@@ -404,7 +412,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	getSiteSummariesUseCase := application14.NewGetSiteSummariesUseCase(ownerRepository)
 	listManagerAccessUseCase := application14.NewListManagerAccessUseCase(ownerRepository)
 	bootstrapInviteTokenGeneratorAdapter := provideInviteTokenGeneratorAdapter(tokensManager)
-	bootstrapEmailSenderAdapter := provideEmailSenderAdapter(sender, cfg)
+	bootstrapEmailSenderAdapter := provideEmailSenderAdapter(enqueueEmail, cfg)
 	grantManagerAccessUseCase := application14.NewGrantManagerAccessUseCase(ownerRepository, bootstrapInviteTokenGeneratorAdapter, bootstrapEmailSenderAdapter, string2)
 	deactivateManagerAccessUseCase := application14.NewDeactivateManagerAccessUseCase(ownerRepository)
 	reactivateManagerAccessUseCase := application14.NewReactivateManagerAccessUseCase(ownerRepository)
@@ -484,6 +492,17 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	queryDateRange := application7.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
 	httpHandler := http.NewHandler(queryCalendarDay, queryDateRange, logger)
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
+	emailProvider := emailsmtp.NewProvider(sender)
+	emailRenderer := emailapp.NewRenderer()
+	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
+	listEmails := emailapp.NewListEmails(outboxRepository)
+	getEmail := emailapp.NewGetEmail(outboxRepository)
+	retryEmail := emailapp.NewRetryEmail(outboxRepository)
+	getEmailStats := emailapp.NewGetEmailStats(outboxRepository)
+	emailScheduler := emailscheduler.NewScheduler(logger, sendPendingEmails, recorder, cfg.Email.PollIntervalSeconds)
+	emailHandler := emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getEmailStats, outboxRepository)
+	_ = enqueueEmail
+	_ = emailScheduler
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
 		Config:                  cfg,
@@ -514,6 +533,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		HolidayPeriodHandler:    httphpHandler,
 		NurseryCalendarHandler:  httpHandler,
 		SiteProfileHandler:      handler2,
+		EmailHandler:            emailHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
 	return engine, nil
@@ -532,7 +552,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	handler := httpauth.NewHandler(loginUseCase, refreshUseCase, logoutUseCase, switchMembershipUseCase, cfg, recorder, logger)
 	postgresRepository := postgres2.NewRepository(pool)
 	sender := provideEmailSender(cfg)
-	emailAdapter := application2.NewEmailAdapter(sender)
+	outboxRepository := emailpostgres.NewOutboxRepository(pool)
+	enqueueEmail := emailapp.NewEnqueueEmail(outboxRepository)
+	emailAdapter := application2.NewEmailAdapter(enqueueEmail)
 	manager := provideResetTokenManager(cfg)
 	tokenGeneratorAdapter := application2.NewTokenGeneratorAdapter(manager)
 	string2 := provideWebBaseURL(cfg)
@@ -556,7 +578,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	siteProfileRepository := postgres7.NewRepository(pool)
 	getSiteProfileUseCase := application4.NewGetSiteProfileUseCase(siteProfileRepository)
 	bootstrapSiteProfileLookupAdapter := provideSiteProfileLookupAdapter(getSiteProfileUseCase)
-	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, sender, writer, string2)
+	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, enqueueEmail, writer, string2)
 	eventDispatcher := provideEventDispatcher(transactionManager, bootstrapBillingNotificationAdapter)
 	markInactive := application3.NewMarkInactive(childRepository, eventDispatcher, writer)
 	v := provideClock()
@@ -664,7 +686,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	linkChildUseCase := application6.NewLinkChildUseCase(parentRepository, writer, transactionManager, bootstrapParentsChildExistenceCheckerAdapter)
 	unlinkChildUseCase := application6.NewUnlinkChildUseCase(parentRepository, writer, transactionManager)
 	bootstrapParentUserCreatorAdapter := provideParentUserCreatorAdapter(pool)
-	bootstrapParentEmailSenderAdapter := provideParentEmailSenderAdapter(sender, cfg)
+	bootstrapParentEmailSenderAdapter := provideParentEmailSenderAdapter(enqueueEmail)
 	inviteToPortalUseCase := application6.NewInviteToPortalUseCase(parentRepository, writer, transactionManager, bootstrapParentUserCreatorAdapter, bootstrapParentEmailSenderAdapter, string2)
 	revokePortalAccessUseCase := application6.NewRevokePortalAccessUseCase(parentRepository, writer, transactionManager)
 	httpparentsHandler := httpparents.NewHandler(createParentUseCase, updateParentUseCase, getParentUseCase, listParentsUseCase, listParentsByChildUseCase, softDeleteParentUseCase, linkChildUseCase, unlinkChildUseCase, inviteToPortalUseCase, revokePortalAccessUseCase, logger)
@@ -796,7 +818,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	repository7 := postgres18.NewRepository(pool, writer)
 	tokensManager := provideInviteTokenManager(cfg)
 	applicationTokenGeneratorAdapter := application13.NewTokenGeneratorAdapter(tokensManager)
-	inviteEmailAdapter := application13.NewInviteEmailAdapter(sender)
+	inviteEmailAdapter := application13.NewInviteEmailAdapter(enqueueEmail)
 	createInviteUseCase := application13.NewCreateInviteUseCase(repository7, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
 	listInvitesUseCase := application13.NewListInvitesUseCase(repository7)
 	resendInviteUseCase := application13.NewResendInviteUseCase(repository7, applicationTokenGeneratorAdapter, inviteEmailAdapter, string2, logger)
@@ -807,7 +829,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	getSiteSummariesUseCase := application14.NewGetSiteSummariesUseCase(ownerRepository)
 	listManagerAccessUseCase := application14.NewListManagerAccessUseCase(ownerRepository)
 	bootstrapInviteTokenGeneratorAdapter := provideInviteTokenGeneratorAdapter(tokensManager)
-	bootstrapEmailSenderAdapter := provideEmailSenderAdapter(sender, cfg)
+	bootstrapEmailSenderAdapter := provideEmailSenderAdapter(enqueueEmail, cfg)
 	grantManagerAccessUseCase := application14.NewGrantManagerAccessUseCase(ownerRepository, bootstrapInviteTokenGeneratorAdapter, bootstrapEmailSenderAdapter, string2)
 	deactivateManagerAccessUseCase := application14.NewDeactivateManagerAccessUseCase(ownerRepository)
 	reactivateManagerAccessUseCase := application14.NewReactivateManagerAccessUseCase(ownerRepository)
@@ -887,6 +909,17 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	queryDateRange := application7.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
 	httpHandler := http.NewHandler(queryCalendarDay, queryDateRange, logger)
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
+	emailProvider := emailsmtp.NewProvider(sender)
+	emailRenderer := emailapp.NewRenderer()
+	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
+	listEmails := emailapp.NewListEmails(outboxRepository)
+	getEmail := emailapp.NewGetEmail(outboxRepository)
+	retryEmail := emailapp.NewRetryEmail(outboxRepository)
+	getEmailStats := emailapp.NewGetEmailStats(outboxRepository)
+	emailScheduler := emailscheduler.NewScheduler(logger, sendPendingEmails, recorder, cfg.Email.PollIntervalSeconds)
+	emailHandler := emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getEmailStats, outboxRepository)
+	_ = enqueueEmail
+	_ = emailScheduler
 	bootstrapAppComponents := appComponents{
 		Logger:                  logger,
 		Config:                  cfg,
@@ -917,6 +950,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		HolidayPeriodHandler:    httphpHandler,
 		NurseryCalendarHandler:  httpHandler,
 		SiteProfileHandler:      handler2,
+		EmailHandler:            emailHandler,
 	}
 	engine := buildGinEngine(bootstrapAppComponents)
 	return engine, nil

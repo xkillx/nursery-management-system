@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"nursery-management-system/api/internal/modules/invites/domain"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
@@ -19,7 +21,7 @@ type TokenGenerator interface {
 }
 
 type EmailSender interface {
-	SendInvite(ctx context.Context, toEmail, role, acceptURL string) error
+	SendInvite(ctx context.Context, tenantID, branchID uuid.UUID, toEmail, role, acceptURL string) error
 }
 
 type CreateInviteUseCase struct {
@@ -80,7 +82,7 @@ func (uc *CreateInviteUseCase) Execute(ctx context.Context, actor tenant.ActorCo
 	}
 
 	created, isNew, err := uc.repo.CreateInvite(ctx, actor, inv, func() error {
-		return uc.email.SendInvite(ctx, emailAddr, role, acceptURL)
+		return uc.email.SendInvite(ctx, actor.TenantID, actor.BranchID, emailAddr, role, acceptURL)
 	})
 	if err != nil {
 		switch err {

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"nursery-management-system/api/internal/modules/passwordreset/domain"
 )
 
@@ -64,7 +66,7 @@ func (uc *RequestResetUseCase) Execute(ctx context.Context, email string) (Reque
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", uc.webBaseURL, url.QueryEscape(raw))
 
 	err = uc.repo.IssueResetToken(ctx, user.ID, hash, expiresAt, func() error {
-		return uc.email.SendPasswordReset(ctx, user.Email, resetURL)
+		return uc.email.SendPasswordReset(ctx, uuid.Nil, uuid.Nil, user.Email, resetURL)
 	})
 	if err != nil {
 		uc.logger.Error("password_reset_issue_failed", "user_id", user.ID, "error", err)

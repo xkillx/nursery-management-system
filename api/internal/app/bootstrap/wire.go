@@ -12,6 +12,7 @@ import (
 
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/config"
+	"nursery-management-system/api/internal/platform/email"
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
@@ -53,7 +54,7 @@ import (
 	fundingapp "nursery-management-system/api/internal/modules/funding/application"
 	fundingdomain "nursery-management-system/api/internal/modules/funding/domain"
 	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
-	fundinghandler "nursery-management-system/api/internal/modules/funding/interfaces/http"
+	httpfunding "nursery-management-system/api/internal/modules/funding/interfaces/http"
 
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
 	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
@@ -72,6 +73,8 @@ import (
 	invitehandler "nursery-management-system/api/internal/modules/invites/interfaces/http"
 
 	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
+
+	emaildomain "nursery-management-system/api/internal/modules/email/domain"
 
 	ownerapp "nursery-management-system/api/internal/modules/owner/application"
 	ownerdomain "nursery-management-system/api/internal/modules/owner/domain"
@@ -136,6 +139,12 @@ import (
 	nurserycalendarapp "nursery-management-system/api/internal/modules/nursery_calendar/application"
 	nurserycalendardomain "nursery-management-system/api/internal/modules/nursery_calendar/domain"
 	nurserycalendarhandler "nursery-management-system/api/internal/modules/nursery_calendar/interfaces/http"
+
+	emailscheduler "nursery-management-system/api/internal/modules/email"
+	emailapp "nursery-management-system/api/internal/modules/email/application"
+	emailpostgres "nursery-management-system/api/internal/modules/email/infrastructure/postgres"
+	emailsmtp "nursery-management-system/api/internal/modules/email/infrastructure/smtp"
+	emailhandler "nursery-management-system/api/internal/modules/email/interfaces/http"
 )
 
 // ── Auth module ─────────────────────────────────────────────────────────
@@ -755,6 +764,55 @@ var notificationsSet = wire.NewSet(
 	notificationsapp.NewInvoiceOverdueHandler,
 )
 
+// ── Email module ──────────────────────────────────────────────────────
+
+func provideEmailOutboxRepo(pool *pgxpool.Pool) *emailpostgres.OutboxRepository {
+	return emailpostgres.NewOutboxRepository(pool)
+}
+
+func provideEmailProvider(sender email.Sender) *emailsmtp.Provider {
+	return emailsmtp.NewProvider(sender)
+}
+
+func provideEmailRenderer() *emailapp.Renderer {
+	return emailapp.NewRenderer()
+}
+
+func provideEmailScheduler(
+	logger *slog.Logger,
+	sendPending *emailapp.SendPendingEmails,
+	recorder *metrics.Recorder,
+	cfg config.Config,
+) *emailscheduler.Scheduler {
+	return emailscheduler.NewScheduler(logger, sendPending, recorder, cfg.Email.PollIntervalSeconds)
+}
+
+func provideEmailHandler(
+	logger *slog.Logger,
+	listEmails *emailapp.ListEmails,
+	getEmail *emailapp.GetEmail,
+	retryEmail *emailapp.RetryEmail,
+	getStats *emailapp.GetEmailStats,
+	repo *emailpostgres.OutboxRepository,
+) *emailhandler.Handler {
+	return emailhandler.NewHandler(logger, listEmails, getEmail, retryEmail, getStats, repo)
+}
+
+var emailSet = wire.NewSet(
+	provideEmailOutboxRepo,
+	provideEmailProvider,
+	provideEmailRenderer,
+	emailapp.NewEnqueueEmail,
+	wire.Bind(new(emaildomain.EmailEnqueuer), new(*emailapp.EnqueueEmail)),
+	emailapp.NewSendPendingEmails,
+	emailapp.NewListEmails,
+	emailapp.NewGetEmail,
+	emailapp.NewRetryEmail,
+	emailapp.NewGetEmailStats,
+	provideEmailScheduler,
+	provideEmailHandler,
+)
+
 // ── Injector ────────────────────────────────────────────────────────────
 
 func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (*gin.Engine, error) {
@@ -812,6 +870,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		holidayPeriodsSet,
 		nurseryCalendarSet,
 		notificationsSet,
+		emailSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
@@ -873,6 +932,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		holidayPeriodsSet,
 		nurseryCalendarSet,
 		notificationsSet,
+		emailSet,
 		wire.Struct(new(appComponents), "*"),
 		buildGinEngine,
 	)
