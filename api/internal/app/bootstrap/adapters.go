@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -796,7 +797,12 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 
 	if err := a.sender.Send(ctx, msg); err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedFailed, err)
-		return fmt.Errorf("send email: %w", err)
+		slog.ErrorContext(ctx, "notification_email_failed",
+			"notification_type", "invoice_issued",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
 	}
 
 	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedSent, nil)
@@ -864,7 +870,12 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 
 	if err := a.sender.Send(ctx, msg); err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceOverdueFailed, err)
-		return fmt.Errorf("send email: %w", err)
+		slog.ErrorContext(ctx, "notification_email_failed",
+			"notification_type", "invoice_overdue",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
 	}
 
 	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceOverdueSent, nil)
@@ -938,7 +949,12 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 
 	if err := a.sender.Send(ctx, msg); err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueSoonFailed, err)
-		return fmt.Errorf("send email: %w", err)
+		slog.ErrorContext(ctx, "notification_email_failed",
+			"notification_type", "invoice_due_soon",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
 	}
 
 	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueSoonSent, nil)
@@ -1012,7 +1028,12 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 
 	if err := a.sender.Send(ctx, msg); err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueReminderFailed, err)
-		return fmt.Errorf("send email: %w", err)
+		slog.ErrorContext(ctx, "notification_email_failed",
+			"notification_type", "invoice_due_reminder",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
 	}
 
 	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueReminderSent, nil)
