@@ -193,7 +193,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   paymentEventsOffset = 0;
   readonly paymentEventsLimit = 50;
 
-  isPaymentReviewCollapsed = true;
+  isPaymentReviewCollapsed = false;
 
   paymentLinkUrl: string | null = null;
   isPaymentLinkLoading = false;
@@ -588,8 +588,6 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   }
 
   private loadPaymentDiagnostics(invoiceId: string): void {
-    if (!this.isPayable) return;
-
     this.isPaymentLoading = true;
     this.paymentErrorMessage = null;
 
