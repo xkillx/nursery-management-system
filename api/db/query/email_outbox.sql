@@ -2,21 +2,21 @@
 INSERT INTO email_outbox (
     id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, max_attempts
+    payload_json, attachments, entity_id, status, max_attempts
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
-    $11, 'pending', $12
+    $11, $12, $13, 'pending', $14
 )
 RETURNING id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at;
 
 -- name: GetPendingEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE status = 'pending'
@@ -39,7 +39,7 @@ WHERE id = $1;
 -- name: GetEmailByID :one
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
@@ -47,7 +47,7 @@ WHERE tenant_id = $1 AND branch_id = $2 AND id = $3;
 -- name: ListEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2

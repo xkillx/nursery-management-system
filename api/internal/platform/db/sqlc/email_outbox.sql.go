@@ -34,7 +34,7 @@ func (q *Queries) CountEmails(ctx context.Context, arg CountEmailsParams) (int64
 const getEmailByID = `-- name: GetEmailByID :one
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
@@ -46,9 +46,34 @@ type GetEmailByIDParams struct {
 	ID       pgtype.UUID
 }
 
-func (q *Queries) GetEmailByID(ctx context.Context, arg GetEmailByIDParams) (EmailOutbox, error) {
+type GetEmailByIDRow struct {
+	ID                pgtype.UUID
+	TenantID          pgtype.UUID
+	BranchID          pgtype.UUID
+	IdempotencyKey    string
+	EventType         string
+	Recipient         string
+	RecipientName     pgtype.Text
+	Subject           string
+	TemplateName      string
+	TemplateVersion   int32
+	PayloadJson       []byte
+	Attachments       []byte
+	EntityID          pgtype.Text
+	Status            string
+	Attempts          int32
+	MaxAttempts       int32
+	NextRetryAt       pgtype.Timestamptz
+	LastError         pgtype.Text
+	ProviderMessageID pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+func (q *Queries) GetEmailByID(ctx context.Context, arg GetEmailByIDParams) (GetEmailByIDRow, error) {
 	row := q.db.QueryRow(ctx, getEmailByID, arg.TenantID, arg.BranchID, arg.ID)
-	var i EmailOutbox
+	var i GetEmailByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -61,6 +86,8 @@ func (q *Queries) GetEmailByID(ctx context.Context, arg GetEmailByIDParams) (Ema
 		&i.TemplateName,
 		&i.TemplateVersion,
 		&i.PayloadJson,
+		&i.Attachments,
+		&i.EntityID,
 		&i.Status,
 		&i.Attempts,
 		&i.MaxAttempts,
@@ -114,7 +141,7 @@ func (q *Queries) GetEmailStats(ctx context.Context, arg GetEmailStatsParams) ([
 const getPendingEmails = `-- name: GetPendingEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE status = 'pending'
@@ -124,15 +151,40 @@ FOR UPDATE SKIP LOCKED
 LIMIT $1
 `
 
-func (q *Queries) GetPendingEmails(ctx context.Context, limit int32) ([]EmailOutbox, error) {
+type GetPendingEmailsRow struct {
+	ID                pgtype.UUID
+	TenantID          pgtype.UUID
+	BranchID          pgtype.UUID
+	IdempotencyKey    string
+	EventType         string
+	Recipient         string
+	RecipientName     pgtype.Text
+	Subject           string
+	TemplateName      string
+	TemplateVersion   int32
+	PayloadJson       []byte
+	Attachments       []byte
+	EntityID          pgtype.Text
+	Status            string
+	Attempts          int32
+	MaxAttempts       int32
+	NextRetryAt       pgtype.Timestamptz
+	LastError         pgtype.Text
+	ProviderMessageID pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+func (q *Queries) GetPendingEmails(ctx context.Context, limit int32) ([]GetPendingEmailsRow, error) {
 	rows, err := q.db.Query(ctx, getPendingEmails, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []EmailOutbox
+	var items []GetPendingEmailsRow
 	for rows.Next() {
-		var i EmailOutbox
+		var i GetPendingEmailsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -145,6 +197,8 @@ func (q *Queries) GetPendingEmails(ctx context.Context, limit int32) ([]EmailOut
 			&i.TemplateName,
 			&i.TemplateVersion,
 			&i.PayloadJson,
+			&i.Attachments,
+			&i.EntityID,
 			&i.Status,
 			&i.Attempts,
 			&i.MaxAttempts,
@@ -169,15 +223,15 @@ const insertEmailOutbox = `-- name: InsertEmailOutbox :one
 INSERT INTO email_outbox (
     id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, max_attempts
+    payload_json, attachments, entity_id, status, max_attempts
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
-    $11, 'pending', $12
+    $11, $12, $13, 'pending', $14
 )
 RETURNING id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 `
 
@@ -193,10 +247,37 @@ type InsertEmailOutboxParams struct {
 	TemplateName    string
 	TemplateVersion int32
 	PayloadJson     []byte
+	Attachments     []byte
+	EntityID        pgtype.Text
 	MaxAttempts     int32
 }
 
-func (q *Queries) InsertEmailOutbox(ctx context.Context, arg InsertEmailOutboxParams) (EmailOutbox, error) {
+type InsertEmailOutboxRow struct {
+	ID                pgtype.UUID
+	TenantID          pgtype.UUID
+	BranchID          pgtype.UUID
+	IdempotencyKey    string
+	EventType         string
+	Recipient         string
+	RecipientName     pgtype.Text
+	Subject           string
+	TemplateName      string
+	TemplateVersion   int32
+	PayloadJson       []byte
+	Attachments       []byte
+	EntityID          pgtype.Text
+	Status            string
+	Attempts          int32
+	MaxAttempts       int32
+	NextRetryAt       pgtype.Timestamptz
+	LastError         pgtype.Text
+	ProviderMessageID pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+func (q *Queries) InsertEmailOutbox(ctx context.Context, arg InsertEmailOutboxParams) (InsertEmailOutboxRow, error) {
 	row := q.db.QueryRow(ctx, insertEmailOutbox,
 		arg.ID,
 		arg.TenantID,
@@ -209,9 +290,11 @@ func (q *Queries) InsertEmailOutbox(ctx context.Context, arg InsertEmailOutboxPa
 		arg.TemplateName,
 		arg.TemplateVersion,
 		arg.PayloadJson,
+		arg.Attachments,
+		arg.EntityID,
 		arg.MaxAttempts,
 	)
-	var i EmailOutbox
+	var i InsertEmailOutboxRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -224,6 +307,8 @@ func (q *Queries) InsertEmailOutbox(ctx context.Context, arg InsertEmailOutboxPa
 		&i.TemplateName,
 		&i.TemplateVersion,
 		&i.PayloadJson,
+		&i.Attachments,
+		&i.EntityID,
 		&i.Status,
 		&i.Attempts,
 		&i.MaxAttempts,
@@ -240,7 +325,7 @@ func (q *Queries) InsertEmailOutbox(ctx context.Context, arg InsertEmailOutboxPa
 const listEmails = `-- name: ListEmails :many
 SELECT id, tenant_id, branch_id, idempotency_key, event_type,
     recipient, recipient_name, subject, template_name, template_version,
-    payload_json, status, attempts, max_attempts, next_retry_at,
+    payload_json, attachments, entity_id, status, attempts, max_attempts, next_retry_at,
     last_error, provider_message_id, created_at, sent_at, updated_at
 FROM email_outbox
 WHERE tenant_id = $1 AND branch_id = $2
@@ -257,7 +342,32 @@ type ListEmailsParams struct {
 	Limit    pgtype.Int4
 }
 
-func (q *Queries) ListEmails(ctx context.Context, arg ListEmailsParams) ([]EmailOutbox, error) {
+type ListEmailsRow struct {
+	ID                pgtype.UUID
+	TenantID          pgtype.UUID
+	BranchID          pgtype.UUID
+	IdempotencyKey    string
+	EventType         string
+	Recipient         string
+	RecipientName     pgtype.Text
+	Subject           string
+	TemplateName      string
+	TemplateVersion   int32
+	PayloadJson       []byte
+	Attachments       []byte
+	EntityID          pgtype.Text
+	Status            string
+	Attempts          int32
+	MaxAttempts       int32
+	NextRetryAt       pgtype.Timestamptz
+	LastError         pgtype.Text
+	ProviderMessageID pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+func (q *Queries) ListEmails(ctx context.Context, arg ListEmailsParams) ([]ListEmailsRow, error) {
 	rows, err := q.db.Query(ctx, listEmails,
 		arg.TenantID,
 		arg.BranchID,
@@ -269,9 +379,9 @@ func (q *Queries) ListEmails(ctx context.Context, arg ListEmailsParams) ([]Email
 		return nil, err
 	}
 	defer rows.Close()
-	var items []EmailOutbox
+	var items []ListEmailsRow
 	for rows.Next() {
-		var i EmailOutbox
+		var i ListEmailsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -284,6 +394,8 @@ func (q *Queries) ListEmails(ctx context.Context, arg ListEmailsParams) ([]Email
 			&i.TemplateName,
 			&i.TemplateVersion,
 			&i.PayloadJson,
+			&i.Attachments,
+			&i.EntityID,
 			&i.Status,
 			&i.Attempts,
 			&i.MaxAttempts,

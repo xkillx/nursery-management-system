@@ -771,7 +771,7 @@ func provideEmailOutboxRepo(pool *pgxpool.Pool) *emailpostgres.OutboxRepository 
 }
 
 func provideEmailProvider(sender email.Sender) *emailsmtp.Provider {
-	return emailsmtp.NewProvider(sender)
+	return emailsmtp.NewProvider(sender, nil)
 }
 
 func provideEmailRenderer() *emailapp.Renderer {

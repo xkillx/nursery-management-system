@@ -7,8 +7,15 @@ type Sender interface {
 }
 
 type Message struct {
-	To      string
-	Subject string
-	Text    string
-	HTML    string
+	To          string
+	Subject     string
+	Text        string
+	HTML        string
+	Attachments []Attachment
+}
+
+type Attachment struct {
+	Filename    string
+	ContentType string
+	Data        []byte
 }

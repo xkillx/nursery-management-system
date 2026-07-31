@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -21,6 +22,15 @@ func NewEnqueueEmail(repo domain.OutboxRepository) *EnqueueEmail {
 func (uc *EnqueueEmail) Enqueue(ctx context.Context, tenantID, branchID uuid.UUID, params domain.EnqueueParams) (uuid.UUID, error) {
 	idempotencyKey := fmt.Sprintf("%s_%s_1", params.EventType, params.EntityID)
 
+	var attachmentsJSON []byte
+	if len(params.AttachmentRefs) > 0 {
+		var err error
+		attachmentsJSON, err = json.Marshal(params.AttachmentRefs)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("marshal attachment refs: %w", err)
+		}
+	}
+
 	msg := domain.OutboxMessage{
 		ID:              uuid.New(),
 		TenantID:        tenantID,
@@ -33,9 +43,12 @@ func (uc *EnqueueEmail) Enqueue(ctx context.Context, tenantID, branchID uuid.UUI
 		TemplateName:    params.TemplateName,
 		TemplateVersion: params.TemplateVersion,
 		PayloadJSON:     params.PayloadJSON,
+		Attachments:     params.AttachmentRefs,
+		EntityID:        params.EntityID,
 		Status:          domain.StatusPending,
 		MaxAttempts:     8,
 	}
+	_ = attachmentsJSON
 
 	inserted, err := uc.repo.Insert(ctx, msg)
 	if err != nil {
@@ -72,6 +85,8 @@ func (uc *EnqueueEmail) EnqueueWithTx(ctx context.Context, tx domain.Tx, tenantI
 		TemplateName:    params.TemplateName,
 		TemplateVersion: params.TemplateVersion,
 		PayloadJSON:     params.PayloadJSON,
+		Attachments:     params.AttachmentRefs,
+		EntityID:        params.EntityID,
 		Status:          domain.StatusPending,
 		MaxAttempts:     8,
 	}

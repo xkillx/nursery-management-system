@@ -42,6 +42,8 @@ type OutboxMessage struct {
 	TemplateName      string
 	TemplateVersion   int
 	PayloadJSON       []byte
+	Attachments       []AttachmentRef
+	EntityID          string
 	Status            Status
 	Attempts          int
 	MaxAttempts       int
@@ -53,6 +55,18 @@ type OutboxMessage struct {
 	UpdatedAt         time.Time
 }
 
+type Attachment struct {
+	Filename    string
+	ContentType string
+	Data        []byte
+}
+
+type AttachmentRef struct {
+	Filename    string `json:"filename"`
+	ContentType string `json:"content_type"`
+	S3Key       string `json:"s3_key"`
+}
+
 type EnqueueParams struct {
 	EventType       string
 	Recipient       string
@@ -62,6 +76,7 @@ type EnqueueParams struct {
 	TemplateVersion int
 	PayloadJSON     []byte
 	EntityID        string
+	AttachmentRefs  []AttachmentRef
 }
 
 type EmailEnqueuer interface {

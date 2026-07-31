@@ -567,6 +567,8 @@ type EmailOutbox struct {
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
 	UpdatedAt         pgtype.Timestamptz
+	Attachments       []byte
+	EntityID          pgtype.Text
 }
 
 type HolidayPeriod struct {

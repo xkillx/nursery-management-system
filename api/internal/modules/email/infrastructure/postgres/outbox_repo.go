@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -25,6 +26,20 @@ func NewOutboxRepository(pool *pgxpool.Pool) *OutboxRepository {
 func (r *OutboxRepository) Insert(ctx context.Context, msg domain.OutboxMessage) (domain.OutboxMessage, error) {
 	q := sqlc.New(r.pool)
 
+	var attachmentsJSON []byte
+	if len(msg.Attachments) > 0 {
+		var err error
+		attachmentsJSON, err = json.Marshal(msg.Attachments)
+		if err != nil {
+			return domain.OutboxMessage{}, fmt.Errorf("marshal attachments: %w", err)
+		}
+	}
+
+	var entityID pgtype.Text
+	if msg.EntityID != "" {
+		entityID = pgtype.Text{String: msg.EntityID, Valid: true}
+	}
+
 	result, err := q.InsertEmailOutbox(ctx, sqlc.InsertEmailOutboxParams{
 		ID:              pgtype.UUID{Bytes: [16]byte(msg.ID), Valid: true},
 		TenantID:        pgtype.UUID{Bytes: [16]byte(msg.TenantID), Valid: true},
@@ -37,18 +52,40 @@ func (r *OutboxRepository) Insert(ctx context.Context, msg domain.OutboxMessage)
 		TemplateName:    msg.TemplateName,
 		TemplateVersion: int32(msg.TemplateVersion),
 		PayloadJson:     msg.PayloadJSON,
+		Attachments:     attachmentsJSON,
+		EntityID:        entityID,
 		MaxAttempts:     int32(msg.MaxAttempts),
 	})
 	if err != nil {
 		return domain.OutboxMessage{}, fmt.Errorf("insert email outbox: %w", err)
 	}
 
-	return toDomainMessage(result), nil
+	return convertEmailRow(
+		result.ID, result.TenantID, result.BranchID, result.IdempotencyKey, result.EventType,
+		result.Recipient, result.RecipientName, result.Subject, result.TemplateName, result.TemplateVersion,
+		result.PayloadJson, result.Attachments, result.EntityID, result.Status, result.Attempts,
+		result.MaxAttempts, result.NextRetryAt, result.LastError, result.ProviderMessageID,
+		result.CreatedAt, result.SentAt, result.UpdatedAt,
+	), nil
 }
 
 func (r *OutboxRepository) InsertTx(ctx context.Context, tx domain.Tx, msg domain.OutboxMessage) (domain.OutboxMessage, error) {
 	q := sqlc.New(tx.(pgx.Tx))
 
+	var attachmentsJSON []byte
+	if len(msg.Attachments) > 0 {
+		var err error
+		attachmentsJSON, err = json.Marshal(msg.Attachments)
+		if err != nil {
+			return domain.OutboxMessage{}, fmt.Errorf("marshal attachments: %w", err)
+		}
+	}
+
+	var entityID pgtype.Text
+	if msg.EntityID != "" {
+		entityID = pgtype.Text{String: msg.EntityID, Valid: true}
+	}
+
 	result, err := q.InsertEmailOutbox(ctx, sqlc.InsertEmailOutboxParams{
 		ID:              pgtype.UUID{Bytes: [16]byte(msg.ID), Valid: true},
 		TenantID:        pgtype.UUID{Bytes: [16]byte(msg.TenantID), Valid: true},
@@ -61,13 +98,21 @@ func (r *OutboxRepository) InsertTx(ctx context.Context, tx domain.Tx, msg domai
 		TemplateName:    msg.TemplateName,
 		TemplateVersion: int32(msg.TemplateVersion),
 		PayloadJson:     msg.PayloadJSON,
+		Attachments:     attachmentsJSON,
+		EntityID:        entityID,
 		MaxAttempts:     int32(msg.MaxAttempts),
 	})
 	if err != nil {
 		return domain.OutboxMessage{}, fmt.Errorf("insert email outbox: %w", err)
 	}
 
-	return toDomainMessage(result), nil
+	return convertEmailRow(
+		result.ID, result.TenantID, result.BranchID, result.IdempotencyKey, result.EventType,
+		result.Recipient, result.RecipientName, result.Subject, result.TemplateName, result.TemplateVersion,
+		result.PayloadJson, result.Attachments, result.EntityID, result.Status, result.Attempts,
+		result.MaxAttempts, result.NextRetryAt, result.LastError, result.ProviderMessageID,
+		result.CreatedAt, result.SentAt, result.UpdatedAt,
+	), nil
 }
 
 func (r *OutboxRepository) GetPending(ctx context.Context, batchSize int) ([]domain.OutboxMessage, error) {
@@ -80,7 +125,13 @@ func (r *OutboxRepository) GetPending(ctx context.Context, batchSize int) ([]dom
 
 	result := make([]domain.OutboxMessage, len(rows))
 	for i, row := range rows {
-		result[i] = toDomainMessage(row)
+		result[i] = convertEmailRow(
+			row.ID, row.TenantID, row.BranchID, row.IdempotencyKey, row.EventType,
+			row.Recipient, row.RecipientName, row.Subject, row.TemplateName, row.TemplateVersion,
+			row.PayloadJson, row.Attachments, row.EntityID, row.Status, row.Attempts,
+			row.MaxAttempts, row.NextRetryAt, row.LastError, row.ProviderMessageID,
+			row.CreatedAt, row.SentAt, row.UpdatedAt,
+		)
 	}
 	return result, nil
 }
@@ -120,7 +171,13 @@ func (r *OutboxRepository) GetByID(ctx context.Context, tenantID, branchID, id u
 		return domain.OutboxMessage{}, fmt.Errorf("get email by id: %w", err)
 	}
 
-	return toDomainMessage(row), nil
+	return convertEmailRow(
+		row.ID, row.TenantID, row.BranchID, row.IdempotencyKey, row.EventType,
+		row.Recipient, row.RecipientName, row.Subject, row.TemplateName, row.TemplateVersion,
+		row.PayloadJson, row.Attachments, row.EntityID, row.Status, row.Attempts,
+		row.MaxAttempts, row.NextRetryAt, row.LastError, row.ProviderMessageID,
+		row.CreatedAt, row.SentAt, row.UpdatedAt,
+	), nil
 }
 
 func (r *OutboxRepository) List(ctx context.Context, tenantID, branchID uuid.UUID, status *string, limit, offset int) ([]domain.OutboxMessage, int, error) {
@@ -153,7 +210,13 @@ func (r *OutboxRepository) List(ctx context.Context, tenantID, branchID uuid.UUI
 
 	result := make([]domain.OutboxMessage, len(rows))
 	for i, row := range rows {
-		result[i] = toDomainMessage(row)
+		result[i] = convertEmailRow(
+			row.ID, row.TenantID, row.BranchID, row.IdempotencyKey, row.EventType,
+			row.Recipient, row.RecipientName, row.Subject, row.TemplateName, row.TemplateVersion,
+			row.PayloadJson, row.Attachments, row.EntityID, row.Status, row.Attempts,
+			row.MaxAttempts, row.NextRetryAt, row.LastError, row.ProviderMessageID,
+			row.CreatedAt, row.SentAt, row.UpdatedAt,
+		)
 	}
 	return result, int(count), nil
 }
@@ -224,46 +287,77 @@ func toPgText(s *string) pgtype.Text {
 }
 
 func toDomainMessage(row sqlc.EmailOutbox) domain.OutboxMessage {
-	var recipientName *string
-	if row.RecipientName.Valid {
-		recipientName = &row.RecipientName.String
+	return convertEmailRow(
+		row.ID, row.TenantID, row.BranchID, row.IdempotencyKey, row.EventType,
+		row.Recipient, row.RecipientName, row.Subject, row.TemplateName, row.TemplateVersion,
+		row.PayloadJson, row.Attachments, row.EntityID, row.Status, row.Attempts,
+		row.MaxAttempts, row.NextRetryAt, row.LastError, row.ProviderMessageID,
+		row.CreatedAt, row.SentAt, row.UpdatedAt,
+	)
+}
+
+func convertEmailRow(
+	id pgtype.UUID, tenantID pgtype.UUID, branchID pgtype.UUID,
+	idempotencyKey string, eventType string, recipient string,
+	recipientName pgtype.Text, subject string, templateName string,
+	templateVersion int32, payloadJson []byte, attachments []byte,
+	entityID pgtype.Text, status string, attempts int32, maxAttempts int32,
+	nextRetryAt pgtype.Timestamptz, lastError pgtype.Text,
+	providerMessageID pgtype.Text, createdAt pgtype.Timestamptz,
+	sentAt pgtype.Timestamptz, updatedAt pgtype.Timestamptz,
+) domain.OutboxMessage {
+	var recipientNamePtr *string
+	if recipientName.Valid {
+		recipientNamePtr = &recipientName.String
 	}
 
-	var lastError *string
-	if row.LastError.Valid {
-		lastError = &row.LastError.String
+	var lastErrorPtr *string
+	if lastError.Valid {
+		lastErrorPtr = &lastError.String
 	}
 
-	var providerMessageID *string
-	if row.ProviderMessageID.Valid {
-		providerMessageID = &row.ProviderMessageID.String
+	var providerMessageIDPtr *string
+	if providerMessageID.Valid {
+		providerMessageIDPtr = &providerMessageID.String
 	}
 
-	var sentAt *time.Time
-	if row.SentAt.Valid {
-		sentAt = &row.SentAt.Time
+	var sentAtPtr *time.Time
+	if sentAt.Valid {
+		sentAtPtr = &sentAt.Time
+	}
+
+	var attRefs []domain.AttachmentRef
+	if len(attachments) > 0 {
+		_ = json.Unmarshal(attachments, &attRefs)
+	}
+
+	var eid string
+	if entityID.Valid {
+		eid = entityID.String
 	}
 
 	return domain.OutboxMessage{
-		ID:                uuid.UUID(row.ID.Bytes),
-		TenantID:          uuid.UUID(row.TenantID.Bytes),
-		BranchID:          uuid.UUID(row.BranchID.Bytes),
-		IdempotencyKey:    row.IdempotencyKey,
-		EventType:         row.EventType,
-		Recipient:         row.Recipient,
-		RecipientName:     recipientName,
-		Subject:           row.Subject,
-		TemplateName:      row.TemplateName,
-		TemplateVersion:   int(row.TemplateVersion),
-		PayloadJSON:       row.PayloadJson,
-		Status:            domain.Status(row.Status),
-		Attempts:          int(row.Attempts),
-		MaxAttempts:       int(row.MaxAttempts),
-		NextRetryAt:       row.NextRetryAt.Time,
-		LastError:         lastError,
-		ProviderMessageID: providerMessageID,
-		CreatedAt:         row.CreatedAt.Time,
-		SentAt:            sentAt,
-		UpdatedAt:         row.UpdatedAt.Time,
+		ID:                uuid.UUID(id.Bytes),
+		TenantID:          uuid.UUID(tenantID.Bytes),
+		BranchID:          uuid.UUID(branchID.Bytes),
+		IdempotencyKey:    idempotencyKey,
+		EventType:         eventType,
+		Recipient:         recipient,
+		RecipientName:     recipientNamePtr,
+		Subject:           subject,
+		TemplateName:      templateName,
+		TemplateVersion:   int(templateVersion),
+		PayloadJSON:       payloadJson,
+		Attachments:       attRefs,
+		EntityID:          eid,
+		Status:            domain.Status(status),
+		Attempts:          int(attempts),
+		MaxAttempts:       int(maxAttempts),
+		NextRetryAt:       nextRetryAt.Time,
+		LastError:         lastErrorPtr,
+		ProviderMessageID: providerMessageIDPtr,
+		CreatedAt:         createdAt.Time,
+		SentAt:            sentAtPtr,
+		UpdatedAt:         updatedAt.Time,
 	}
 }
