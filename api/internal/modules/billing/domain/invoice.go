@@ -449,6 +449,7 @@ func (inv *Invoice) Issue(invoiceNumber string, issuedAt time.Time) error {
 	}
 	inv.InvoiceNumber = invoiceNumber
 	inv.IssuedAt = issuedAt
+	inv.DueDate = issuedAt.Add(30 * 24 * time.Hour)
 	inv.Status = InvoiceStatusIssued
 	return nil
 }

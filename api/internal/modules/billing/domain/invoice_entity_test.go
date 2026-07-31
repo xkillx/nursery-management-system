@@ -35,6 +35,10 @@ func TestInvoiceIssue(t *testing.T) {
 		if !inv.IssuedAt.Equal(issuedAt) {
 			t.Errorf("IssuedAt = %v, want %v", inv.IssuedAt, issuedAt)
 		}
+		expectedDue := issuedAt.Add(30 * 24 * time.Hour)
+		if !inv.DueDate.Equal(expectedDue) {
+			t.Errorf("DueDate = %v, want %v", inv.DueDate, expectedDue)
+		}
 	})
 
 	t.Run("non-draft invoice cannot be issued", func(t *testing.T) {
@@ -188,5 +192,68 @@ func TestInvoiceIsIssued(t *testing.T) {
 	inv.Status = InvoiceStatusIssued
 	if !inv.IsIssued() {
 		t.Error("issued invoice should be issued")
+	}
+}
+
+func TestPaymentCompletedImplementsDomainEvent(t *testing.T) {
+	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+	event := PaymentCompleted{
+		InvoiceID:   uuid.New(),
+		TenantID:    uuid.New(),
+		BranchID:    uuid.New(),
+		AmountPaid:  15000,
+		PaymentDate: now,
+		Occurred:    now,
+	}
+	if !event.OccurredAt().Equal(now) {
+		t.Errorf("OccurredAt = %v, want %v", event.OccurredAt(), now)
+	}
+}
+
+func TestInvoiceDueReminderImplementsDomainEvent(t *testing.T) {
+	now := time.Date(2026, 8, 1, 8, 0, 0, 0, time.UTC)
+	event := InvoiceDueReminder{
+		InvoiceID:       uuid.New(),
+		TenantID:        uuid.New(),
+		BranchID:        uuid.New(),
+		DueDate:         now.Add(7 * 24 * time.Hour),
+		DaysBefore:      7,
+		CheckoutURL:     "https://checkout.stripe.com/xxx",
+		AttachmentS3Key: "pdfs/inv-001.pdf",
+		Occurred:        now,
+	}
+	if !event.OccurredAt().Equal(now) {
+		t.Errorf("OccurredAt = %v, want %v", event.OccurredAt(), now)
+	}
+	if event.DaysBefore != 7 {
+		t.Errorf("DaysBefore = %d, want 7", event.DaysBefore)
+	}
+}
+
+func TestInvoiceIssuedCarriesExtendedFields(t *testing.T) {
+	userID := uuid.New()
+	membershipID := uuid.New()
+	now := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
+	event := InvoiceIssued{
+		InvoiceID:       uuid.New(),
+		TenantID:        uuid.New(),
+		BranchID:        uuid.New(),
+		UserID:          userID,
+		MembershipID:    membershipID,
+		CheckoutURL:     "https://checkout.stripe.com/xxx",
+		AttachmentS3Key: "pdfs/inv-001.pdf",
+		Occurred:        now,
+	}
+	if event.UserID != userID {
+		t.Errorf("UserID = %v, want %v", event.UserID, userID)
+	}
+	if event.MembershipID != membershipID {
+		t.Errorf("MembershipID = %v, want %v", event.MembershipID, membershipID)
+	}
+	if event.CheckoutURL != "https://checkout.stripe.com/xxx" {
+		t.Errorf("CheckoutURL = %q, want %q", event.CheckoutURL, "https://checkout.stripe.com/xxx")
+	}
+	if event.AttachmentS3Key != "pdfs/inv-001.pdf" {
+		t.Errorf("AttachmentS3Key = %q, want %q", event.AttachmentS3Key, "pdfs/inv-001.pdf")
 	}
 }
