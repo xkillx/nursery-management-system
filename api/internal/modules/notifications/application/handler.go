@@ -87,3 +87,23 @@ func (h *InvoiceDueReminderHandler) Handle(ctx context.Context, tx pgx.Tx, event
 	}
 	return nil
 }
+
+// PaymentCompletedHandler handles PaymentCompleted domain events by sending
+// receipt emails to parents.
+type PaymentCompletedHandler struct {
+	sender InvoiceNotificationSender
+}
+
+// NewPaymentCompletedHandler creates a new handler for PaymentCompleted events.
+func NewPaymentCompletedHandler(sender InvoiceNotificationSender) *PaymentCompletedHandler {
+	return &PaymentCompletedHandler{sender: sender}
+}
+
+// Handle implements events.TypedHandler[billingdomain.PaymentCompleted].
+func (h *PaymentCompletedHandler) Handle(ctx context.Context, tx pgx.Tx, event billingdomain.PaymentCompleted) error {
+	paymentDate := event.PaymentDate.Format("2 January 2006")
+	if err := h.sender.SendReceiptEmail(ctx, tx, event.InvoiceID, event.TenantID, event.BranchID, event.AmountPaid, paymentDate); err != nil {
+		return fmt.Errorf("send receipt email: %w", err)
+	}
+	return nil
+}

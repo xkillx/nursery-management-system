@@ -28,14 +28,19 @@ type SystemAuditParams struct {
 	Details    map[string]any
 }
 
+type PaymentCompletedNotifier interface {
+	OnPaymentCompleted(ctx context.Context, tx domain.Tx, invoiceID, tenantID, branchID uuid.UUID, amountPaid int, paymentDate string)
+}
+
 type HandleStripeWebhook struct {
-	repo     domain.WebhookRepository
-	verifier domain.WebhookVerifier
-	txMgr    domain.TxManager
-	auditW   SystemAuditWriter
-	newUUID  func() uuid.UUID
-	logger   *slog.Logger
-	recorder *metrics.Recorder
+	repo            domain.WebhookRepository
+	verifier        domain.WebhookVerifier
+	txMgr           domain.TxManager
+	auditW          SystemAuditWriter
+	paymentNotifier PaymentCompletedNotifier
+	newUUID         func() uuid.UUID
+	logger          *slog.Logger
+	recorder        *metrics.Recorder
 }
 
 func NewHandleStripeWebhook(
@@ -53,15 +58,29 @@ func NewHandleStripeWebhook(
 	}
 }
 
+func (uc *HandleStripeWebhook) WithPaymentNotifier(notifier PaymentCompletedNotifier) *HandleStripeWebhook {
+	return &HandleStripeWebhook{
+		repo:            uc.repo,
+		verifier:        uc.verifier,
+		txMgr:           uc.txMgr,
+		auditW:          uc.auditW,
+		paymentNotifier: notifier,
+		newUUID:         uc.newUUID,
+		logger:          uc.logger,
+		recorder:        uc.recorder,
+	}
+}
+
 func (uc *HandleStripeWebhook) WithObservability(logger *slog.Logger, recorder *metrics.Recorder) *HandleStripeWebhook {
 	return &HandleStripeWebhook{
-		repo:     uc.repo,
-		verifier: uc.verifier,
-		txMgr:    uc.txMgr,
-		auditW:   uc.auditW,
-		newUUID:  uc.newUUID,
-		logger:   logger,
-		recorder: recorder,
+		repo:            uc.repo,
+		verifier:        uc.verifier,
+		txMgr:           uc.txMgr,
+		auditW:          uc.auditW,
+		paymentNotifier: uc.paymentNotifier,
+		newUUID:         uc.newUUID,
+		logger:          logger,
+		recorder:        recorder,
 	}
 }
 
@@ -348,6 +367,14 @@ func (uc *HandleStripeWebhook) handleSuccess(
 			"error", logging.SafeErr(err),
 		)
 		return WebhookResult{}, fmt.Errorf("mark invoice paid: %w", err)
+	}
+
+	// Notify about payment completion (best-effort, inside transaction)
+	if uc.paymentNotifier != nil {
+		tenantUUID, _ := uuid.Parse(tenantID)
+		branchUUID, _ := uuid.Parse(branchID)
+		invoiceUUID, _ := uuid.Parse(invoiceID)
+		uc.paymentNotifier.OnPaymentCompleted(ctx, tx, invoiceUUID, tenantUUID, branchUUID, int(row.AttemptAmountMinor), "")
 	}
 
 	reasonCode := domain.ReasonPaid

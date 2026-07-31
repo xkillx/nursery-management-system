@@ -1070,6 +1070,83 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 	return nil
 }
 
+func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID, amountPaid int, paymentDate string) error {
+	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	if err != nil {
+		return fmt.Errorf("get invoice: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("invoice %s not found", invoiceID)
+	}
+
+	parent, err := a.parentContacts.GetForInvoice(ctx, tenantID, branchID, invoice.ChildID)
+	if err != nil {
+		return fmt.Errorf("get parent contact: %w", err)
+	}
+	if parent == nil || parent.Email == "" {
+		return nil
+	}
+
+	site, err := a.siteProfiles.GetForInvoice(ctx, tenantID, branchID)
+	if err != nil {
+		return fmt.Errorf("get site profile: %w", err)
+	}
+	if site == nil {
+		return fmt.Errorf("site profile not found")
+	}
+
+	childName := invoice.ChildFirstName
+	if invoice.ChildLastName != nil {
+		childName += " " + *invoice.ChildLastName
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	totalDue := formatMoney(invoice.TotalDue)
+	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
+
+	data := notificationTemplateData{
+		NurseryName:   site.NurseryName,
+		ChildName:     childName,
+		InvoiceNumber: invoiceNumber,
+		TotalDue:      totalDue,
+		DueDate:       paymentDate,
+		PortalLink:    portalLink,
+	}
+
+	subject := fmt.Sprintf("Payment Received - Invoice %s - %s", invoiceNumber, site.NurseryName)
+
+	payloadJSON, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
+	}
+
+	_, err = a.enqueuer.EnqueueWithTx(ctx, tx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "payment_receipt",
+		Recipient:       parent.Email,
+		Subject:         subject,
+		TemplateName:    "receipt",
+		TemplateVersion: 1,
+		PayloadJSON:     payloadJSON,
+		EntityID:        invoiceID.String(),
+	})
+	if err != nil {
+		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationReceiptFailed, err)
+		slog.ErrorContext(ctx, "notification_email_enqueue_failed",
+			"notification_type", "payment_receipt",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
+	}
+
+	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationReceiptSent, nil)
+	return nil
+}
+
 func renderTemplates(name string, data notificationTemplateData) (htmlBody, textBody string, err error) {
 	htmlTmpl, err := template.ParseFS(notificationTemplatesFS, "templates/"+name+".html")
 	if err != nil {

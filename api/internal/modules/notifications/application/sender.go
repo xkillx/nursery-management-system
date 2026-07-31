@@ -15,6 +15,7 @@ type InvoiceNotificationSender interface {
 	SendInvoiceOverdueEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error
 	SendInvoiceDueSoonEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error
 	SendInvoiceDueReminderEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error
+	SendReceiptEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID, amountPaid int, paymentDate string) error
 }
 
 // Audit action types for notification events.
@@ -27,4 +28,6 @@ const (
 	AuditNotificationInvoiceDueReminderSent   = "notification_invoice_due_reminder_sent"
 	AuditNotificationInvoiceDueSoonFailed     = "notification_invoice_due_soon_failed"
 	AuditNotificationInvoiceDueReminderFailed = "notification_invoice_due_reminder_failed"
+	AuditNotificationReceiptSent              = "notification_receipt_sent"
+	AuditNotificationReceiptFailed            = "notification_receipt_failed"
 )
