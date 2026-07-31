@@ -163,7 +163,7 @@ func TestMarkOverdue_LondonDateNotUTC(t *testing.T) {
 	// London date = July 15, cutoff = 2026-07-15 00:00 London = 2026-07-14 23:00 UTC
 	now := time.Date(2026, 7, 15, 1, 30, 0, 0, time.UTC)
 	repo := &stubBillingRepo{lockAcquired: true}
-	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -182,7 +182,7 @@ func TestMarkOverdue_BSTBoundary(t *testing.T) {
 	// London date = July 15, cutoff = 2026-07-15 00:00 London = 2026-07-14 23:00 UTC
 	now := time.Date(2026, 7, 14, 23, 30, 0, 0, time.UTC)
 	repo := &stubBillingRepo{lockAcquired: true}
-	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -200,7 +200,7 @@ func TestMarkOverdue_GMTBoundary(t *testing.T) {
 	// London date = Jan 15, cutoff = 2026-01-15 00:00 UTC
 	now := time.Date(2026, 1, 15, 0, 30, 0, 0, time.UTC)
 	repo := &stubBillingRepo{lockAcquired: true}
-	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -214,7 +214,7 @@ func TestMarkOverdue_GMTBoundary(t *testing.T) {
 
 func TestMarkOverdue_LockNotAcquired(t *testing.T) {
 	repo := &stubBillingRepo{lockAcquired: false}
-	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return time.Now() })
+	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return time.Now() }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -233,7 +233,7 @@ func TestMarkOverdue_RepositoryError(t *testing.T) {
 		lockAcquired: true,
 		overdueErr:   context.DeadlineExceeded,
 	}
-	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return time.Now() })
+	uc := NewMarkOverdueInvoices(repo, events.NewEventDispatcher(&stubTxMgr{repo: repo}), func() time.Time { return time.Now() }, nil, nil, nil, nil, nil)
 
 	_, err := uc.Execute(context.Background())
 	if err == nil {
@@ -249,7 +249,7 @@ func TestMarkOverdue_IdempotentDoubleRun(t *testing.T) {
 		lockAcquired:    true,
 		overdueInvoices: []domain.OverdueTransitionedInvoice{{ID: uuid.New(), TenantID: uuid.New(), BranchID: uuid.New()}},
 	}
-	uc := NewMarkOverdueInvoices(repo1, events.NewEventDispatcher(&stubTxMgr{repo: repo1}), func() time.Time { return now })
+	uc := NewMarkOverdueInvoices(repo1, events.NewEventDispatcher(&stubTxMgr{repo: repo1}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -261,7 +261,7 @@ func TestMarkOverdue_IdempotentDoubleRun(t *testing.T) {
 
 	// Second run returns nothing (SQL is idempotent)
 	repo2 := &stubBillingRepo{lockAcquired: true}
-	uc2 := NewMarkOverdueInvoices(repo2, events.NewEventDispatcher(&stubTxMgr{repo: repo2}), func() time.Time { return now })
+	uc2 := NewMarkOverdueInvoices(repo2, events.NewEventDispatcher(&stubTxMgr{repo: repo2}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result2, err := uc2.Execute(context.Background())
 	if err != nil {

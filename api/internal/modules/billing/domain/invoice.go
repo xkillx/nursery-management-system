@@ -371,9 +371,11 @@ type ExtraLineSnapshot struct {
 
 // OverdueTransitionedInvoice represents an invoice transitioned to overdue.
 type OverdueTransitionedInvoice struct {
-	ID       uuid.UUID
-	TenantID uuid.UUID
-	BranchID uuid.UUID
+	ID              uuid.UUID
+	TenantID        uuid.UUID
+	BranchID        uuid.UUID
+	CheckoutURL     string
+	AttachmentS3Key string
 }
 
 // OverdueTransitionResult is the result of an overdue transition job run.
