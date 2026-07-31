@@ -111,6 +111,8 @@ import (
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
 	"nursery-management-system/api/internal/platform/transaction"
+
+	platformstorage "nursery-management-system/api/internal/platform/storage"
 	"time"
 
 	emailscheduler "nursery-management-system/api/internal/modules/email"
@@ -230,7 +232,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Get: getChildFunding,
 	}
 	getLeavingRecord := application3.NewGetLeavingRecord(childRepository)
-	fileStorage := provideFileStorage()
+	fileStorage := provideFileStorage(cfg)
 	uploadPhoto := application3.NewUploadPhoto(childRepository, fileStorage)
 	removePhoto := application3.NewRemovePhoto(childRepository, fileStorage)
 	photoUseCases := httpchild.PhotoUseCases{
@@ -250,6 +252,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Funding:         fundingUseCases,
 		LeavingRecord:   getLeavingRecord,
 		Photo:           photoUseCases,
+		FileStorage:     fileStorage,
 	}
 	httpchildHandler := httpchild.NewHandler(childrenHandlerConfig, logger)
 	parentChildMappingRepository := postgres8.NewParentChildMappingRepository(pool)
@@ -646,7 +649,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Get: getChildFunding,
 	}
 	getLeavingRecord := application3.NewGetLeavingRecord(childRepository)
-	fileStorage := provideFileStorage()
+	fileStorage := provideFileStorage(cfg)
 	uploadPhoto := application3.NewUploadPhoto(childRepository, fileStorage)
 	removePhoto := application3.NewRemovePhoto(childRepository, fileStorage)
 	photoUseCases := httpchild.PhotoUseCases{
@@ -666,6 +669,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Funding:         fundingUseCases,
 		LeavingRecord:   getLeavingRecord,
 		Photo:           photoUseCases,
+		FileStorage:     fileStorage,
 	}
 	httpchildHandler := httpchild.NewHandler(childrenHandlerConfig, logger)
 	parentChildMappingRepository := postgres8.NewParentChildMappingRepository(pool)
@@ -981,7 +985,21 @@ var passwordResetSet = wire.NewSet(
 	provideResetTokenManager, postgres2.NewRepository, wire.Bind(new(domain3.Repository), new(*postgres2.Repository)), application2.NewTokenGeneratorAdapter, wire.Bind(new(application2.TokenGenerator), new(*application2.TokenGeneratorAdapter)), application2.NewEmailAdapter, wire.Bind(new(domain3.EmailSender), new(*application2.EmailAdapter)), application2.NewRequestResetUseCase, application2.NewSetNewPasswordUseCase, provideResetHandler,
 )
 
-func provideFileStorage() domain4.FileStorage {
+func provideFileStorage(cfg config.Config) domain4.FileStorage {
+	if cfg.S3.AccessKey != "" {
+		s3svc, err := platformstorage.NewS3Service(platformstorage.S3Config{
+			Endpoint:   cfg.S3.Endpoint,
+			AccessKey:  cfg.S3.AccessKey,
+			SecretKey:  cfg.S3.SecretKey,
+			BucketName: cfg.S3.BucketName,
+			Region:     cfg.S3.Region,
+			UseSSL:     cfg.S3.UseSSL,
+		})
+		if err != nil {
+			panic("create S3 service: " + err.Error())
+		}
+		return storage.NewS3FileStorage(s3svc)
+	}
 	return storage.NewLocalStorage(".")
 }
 

@@ -116,6 +116,18 @@ func (h *Handler) getPhotoHandler(c *gin.Context) {
 		return
 	}
 
+	url, err := h.fileStorage.GetURL(c.Request.Context(), *child.ProfilePhotoPath)
+	if err != nil {
+		h.logger.Error("failed to get photo URL", "error", err, "child_id", c.Param("child_id"))
+		httpserver.WriteError(c, http.StatusInternalServerError, "internal_error", "Failed to get photo URL.", nil)
+		return
+	}
+
+	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+		c.Redirect(http.StatusFound, url)
+		return
+	}
+
 	ext := strings.ToLower(filepath.Ext(*child.ProfilePhotoPath))
 	contentType := "application/octet-stream"
 	switch ext {

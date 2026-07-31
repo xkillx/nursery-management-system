@@ -55,6 +55,16 @@ type Config struct {
 	MaxBodySizeBytes   int64
 
 	Email WorkerConfig
+	S3    S3Config
+}
+
+type S3Config struct {
+	Endpoint   string
+	AccessKey  string
+	SecretKey  string
+	BucketName string
+	Region     string
+	UseSSL     bool
 }
 
 type WorkerConfig struct {
@@ -169,6 +179,14 @@ func Load() (Config, error) {
 			RatePerSecond:       emailRatePerSecond,
 			RetryBackoffSeconds: emailBackoffSeconds,
 			MaxAttempts:         emailMaxAttempts,
+		},
+		S3: S3Config{
+			Endpoint:   strings.TrimSpace(os.Getenv("S3_ENDPOINT")),
+			AccessKey:  strings.TrimSpace(os.Getenv("S3_ACCESS_KEY")),
+			SecretKey:  strings.TrimSpace(os.Getenv("S3_SECRET_KEY")),
+			BucketName: getEnv("S3_BUCKET_NAME", "nursery-invoice-pdfs"),
+			Region:     getEnv("S3_REGION", ""),
+			UseSSL:     resolveS3UseSSL(os.Getenv("S3_USE_SSL")),
 		},
 	}
 
@@ -379,6 +397,14 @@ func resolveEmailWorkerEnabled(raw string) bool {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return true
+	}
+	return strings.EqualFold(raw, "true") || raw == "1"
+}
+
+func resolveS3UseSSL(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false
 	}
 	return strings.EqualFold(raw, "true") || raw == "1"
 }

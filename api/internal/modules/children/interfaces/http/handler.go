@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"nursery-management-system/api/internal/modules/children/application"
+	"nursery-management-system/api/internal/modules/children/domain"
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/http/pagination"
 	"nursery-management-system/api/internal/platform/http/queryparams"
@@ -83,6 +84,7 @@ type (
 		Funding         FundingUseCases
 		LeavingRecord   *application.GetLeavingRecord
 		Photo           PhotoUseCases
+		FileStorage     domain.FileStorage
 	}
 )
 
@@ -126,6 +128,8 @@ type Handler struct {
 
 	uploadPhoto *application.UploadPhoto
 	removePhoto *application.RemovePhoto
+
+	fileStorage domain.FileStorage
 }
 
 func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
@@ -158,6 +162,7 @@ func NewHandler(cfg ChildrenHandlerConfig, logger *slog.Logger) *Handler {
 		getLeavingRecord:      cfg.LeavingRecord,
 		uploadPhoto:           cfg.Photo.Upload,
 		removePhoto:           cfg.Photo.Remove,
+		fileStorage:           cfg.FileStorage,
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -70,4 +71,12 @@ func (s *S3Service) Delete(ctx context.Context, key string) error {
 		return fmt.Errorf("delete object %s: %w", key, err)
 	}
 	return nil
+}
+
+func (s *S3Service) GetPresignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
+	u, err := s.client.PresignedGetObject(ctx, s.bucketName, key, expiry, nil)
+	if err != nil {
+		return "", fmt.Errorf("presign get object %s: %w", key, err)
+	}
+	return u.String(), nil
 }

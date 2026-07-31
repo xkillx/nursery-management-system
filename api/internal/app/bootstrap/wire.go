@@ -31,6 +31,8 @@ import (
 	childstorage "nursery-management-system/api/internal/modules/children/infrastructure/storage"
 	childhandler "nursery-management-system/api/internal/modules/children/interfaces/http"
 
+	platformstorage "nursery-management-system/api/internal/platform/storage"
+
 	parentchildapp "nursery-management-system/api/internal/modules/parentchildmappings/application"
 	parentchilddomain "nursery-management-system/api/internal/modules/parentchildmappings/domain"
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
@@ -200,7 +202,21 @@ var passwordResetSet = wire.NewSet(
 
 // ── Children module ────────────────────────────────────────────────────
 
-func provideFileStorage() childdomain.FileStorage {
+func provideFileStorage(cfg config.Config) childdomain.FileStorage {
+	if cfg.S3.AccessKey != "" {
+		s3svc, err := platformstorage.NewS3Service(platformstorage.S3Config{
+			Endpoint:   cfg.S3.Endpoint,
+			AccessKey:  cfg.S3.AccessKey,
+			SecretKey:  cfg.S3.SecretKey,
+			BucketName: cfg.S3.BucketName,
+			Region:     cfg.S3.Region,
+			UseSSL:     cfg.S3.UseSSL,
+		})
+		if err != nil {
+			panic("create S3 service: " + err.Error())
+		}
+		return childstorage.NewS3FileStorage(s3svc)
+	}
 	return childstorage.NewLocalStorage(".")
 }
 

@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 )
 
 type FakeService struct {
-	mu          sync.Mutex
-	Objects     map[string][]byte
-	UploadErr   error
-	DownloadErr error
-	DeleteErr   error
+	mu              sync.Mutex
+	Objects         map[string][]byte
+	UploadErr       error
+	DownloadErr     error
+	DeleteErr       error
+	PresignedURLErr error
 }
 
 func NewFakeService() *FakeService {
@@ -51,4 +53,11 @@ func (f *FakeService) Delete(_ context.Context, key string) error {
 	defer f.mu.Unlock()
 	delete(f.Objects, key)
 	return nil
+}
+
+func (f *FakeService) GetPresignedURL(_ context.Context, key string, _ time.Duration) (string, error) {
+	if f.PresignedURLErr != nil {
+		return "", f.PresignedURLErr
+	}
+	return "https://fake-s3.example.com/" + key, nil
 }
