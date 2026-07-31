@@ -144,7 +144,7 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 			}
 		}
 
-		issueResult, issueErr := uc.issueUC.executeIssue(ctx, tx, emitter, actor, invoiceID, billingMonth, domain.MustGBP(totalDueMinor))
+		issueResult, issueErr := uc.issueUC.executeIssue(ctx, tx, emitter, actor, invoiceID, billingMonth, domain.MustGBP(totalDueMinor), IssueContext{})
 		if issueErr != nil {
 			return issueErr
 		}

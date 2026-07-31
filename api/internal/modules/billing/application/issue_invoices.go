@@ -26,6 +26,14 @@ type IssueInvoice struct {
 	dispatcher *events.EventDispatcher
 }
 
+// IssueContext carries pre-computed data from the orchestrator (checkout URL, S3 key)
+// to be included in the InvoiceIssued event. When nil, the event has empty checkout fields
+// and the scheduler safety net handles checkout creation.
+type IssueContext struct {
+	CheckoutURL     string
+	AttachmentS3Key string
+}
+
 func NewIssueInvoice(
 	repo domain.BillingRepository,
 	txMgr *transaction.Manager,
@@ -36,6 +44,10 @@ func NewIssueInvoice(
 }
 
 func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string, confirm bool) (domain.IssueInvoiceResult, error) {
+	return uc.ExecuteWithContext(ctx, actor, invoiceIDRaw, confirm, IssueContext{})
+}
+
+func (uc *IssueInvoice) ExecuteWithContext(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string, confirm bool, issueCtx IssueContext) (domain.IssueInvoiceResult, error) {
 	invoiceID, err := uuid.Parse(invoiceIDRaw)
 	if err != nil {
 		return domain.IssueInvoiceResult{}, domainerrors.Validation("Invalid invoice ID format.", "invoice_id")
@@ -63,7 +75,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 			return domainerrors.Conflict(domain.IssueBlockerInvoiceNotDraft, "Invoice is not a draft.")
 		}
 
-		issueResult, issueErr := uc.executeIssue(ctx, tx, emitter, actor, invoiceID, candidate.BillingMonth, domain.MustGBP(candidate.TotalDue.Minor()))
+		issueResult, issueErr := uc.executeIssue(ctx, tx, emitter, actor, invoiceID, candidate.BillingMonth, domain.MustGBP(candidate.TotalDue.Minor()), issueCtx)
 		if issueErr != nil {
 			return issueErr
 		}
@@ -84,7 +96,7 @@ func (uc *IssueInvoice) Execute(ctx context.Context, actor tenant.ActorContext, 
 // executeIssue performs the common issue steps: create run, allocate number,
 // mark issued, write audit, complete run, emit event. Called from IssueInvoice.Execute
 // and CreateAndIssueInvoiceFromForm.Execute.
-func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter events.Emitter, actor tenant.ActorContext, invoiceID uuid.UUID, billingMonth time.Time, totalDue domain.Money) (domain.IssueInvoiceResult, error) {
+func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter events.Emitter, actor tenant.ActorContext, invoiceID uuid.UUID, billingMonth time.Time, totalDue domain.Money, issueCtx IssueContext) (domain.IssueInvoiceResult, error) {
 	runID := uid.NewUUID()
 
 	if runErr := uc.repo.CreateInvoiceRun(ctx, tx, domain.InvoiceRunCreateParams{
@@ -166,10 +178,14 @@ func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter eve
 	}
 
 	emitter.Emit(domain.InvoiceIssued{
-		InvoiceID: invoiceID,
-		TenantID:  actor.TenantID,
-		BranchID:  actor.BranchID,
-		Occurred:  issueTime,
+		InvoiceID:       invoiceID,
+		TenantID:        actor.TenantID,
+		BranchID:        actor.BranchID,
+		UserID:          actor.UserID,
+		MembershipID:    actor.MembershipID,
+		CheckoutURL:     issueCtx.CheckoutURL,
+		AttachmentS3Key: issueCtx.AttachmentS3Key,
+		Occurred:        issueTime,
 	})
 
 	return domain.IssueInvoiceResult{
