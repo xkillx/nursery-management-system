@@ -21,6 +21,12 @@ type fakeRepo struct {
 	markedFailed   domain.PaymentAttemptCheckoutCreationFailedParams
 	markCreatedErr error
 	markFailedErr  error
+	activeCheckout *domain.ActiveCheckoutSession
+	activeFound    bool
+}
+
+func (f *fakeRepo) GetActiveCheckoutForInvoice(_ context.Context, _, _, _ string) (*domain.ActiveCheckoutSession, bool, error) {
+	return f.activeCheckout, f.activeFound, nil
 }
 
 func (f *fakeRepo) GetParentInvoiceForCheckoutForUpdate(_ context.Context, _ domain.Tx, _, _, _, _ string) (domain.CheckoutInvoiceCandidate, bool, error) {
@@ -353,6 +359,60 @@ func TestCreateCheckoutSession_SeparateCallsUseSeparateAttemptIDs(t *testing.T) 
 	}
 	if r1.PaymentAttemptID == r2.PaymentAttemptID {
 		t.Fatal("expected different attempt IDs for separate calls")
+	}
+}
+
+func TestCreateCheckoutSession_IdempotentReturnsExistingSession(t *testing.T) {
+	existing := &domain.ActiveCheckoutSession{
+		AttemptID:         "existing-attempt-id",
+		CheckoutSessionID: "cs_existing",
+		CheckoutURL:       "https://checkout.stripe.com/existing",
+	}
+	repo := &fakeRepo{
+		candidateFound: true,
+		candidate:      payableCandidate(),
+		activeCheckout: existing,
+		activeFound:    true,
+	}
+	uc := newUC(repo, &fakeProvider{})
+	result, err := uc.Execute(context.Background(), "t", "b", "m", "u", repo.candidate.ID, "req")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.CheckoutSessionID != "cs_existing" {
+		t.Fatalf("expected cs_existing, got %s", result.CheckoutSessionID)
+	}
+	if result.CheckoutURL != "https://checkout.stripe.com/existing" {
+		t.Fatalf("expected existing URL, got %s", result.CheckoutURL)
+	}
+	if result.PaymentAttemptID != "existing-attempt-id" {
+		t.Fatalf("expected existing-attempt-id, got %s", result.PaymentAttemptID)
+	}
+	// Should not have created a new attempt
+	if repo.createdAttempt.ID != "" {
+		t.Fatal("expected no new attempt created for idempotent call")
+	}
+}
+
+func TestCreateCheckoutSession_NoActiveCheckoutCreatesNew(t *testing.T) {
+	repo := &fakeRepo{
+		candidateFound: true,
+		candidate:      payableCandidate(),
+		stateFound:     true,
+		paymentState:   payableState(),
+		activeFound:    false,
+	}
+	provider := &fakeProvider{result: domain.CheckoutSessionResult{CheckoutSessionID: "cs_new", CheckoutURL: "https://checkout.stripe.com/new"}}
+	uc := newUC(repo, provider)
+	result, err := uc.Execute(context.Background(), "t", "b", "m", "u", repo.candidate.ID, "req")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.CheckoutSessionID != "cs_new" {
+		t.Fatalf("expected cs_new, got %s", result.CheckoutSessionID)
+	}
+	if repo.createdAttempt.Status != domain.AttemptStatusCheckoutCreationStarted {
+		t.Fatalf("expected checkout_creation_started, got %s", repo.createdAttempt.Status)
 	}
 }
 

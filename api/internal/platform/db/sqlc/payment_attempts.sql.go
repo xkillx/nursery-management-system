@@ -48,6 +48,68 @@ func (q *Queries) CreatePaymentAttempt(ctx context.Context, arg CreatePaymentAtt
 	return err
 }
 
+const getActiveCheckoutForInvoice = `-- name: GetActiveCheckoutForInvoice :one
+SELECT
+    id,
+    tenant_id,
+    branch_id,
+    invoice_id,
+    stripe_checkout_session_id,
+    stripe_checkout_url,
+    stripe_payment_intent_id,
+    stripe_expires_at,
+    status,
+    amount_minor,
+    currency_code
+FROM payment_attempts
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND invoice_id = $3
+  AND status = 'checkout_created'
+  AND (stripe_expires_at IS NULL OR stripe_expires_at > now())
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetActiveCheckoutForInvoiceParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+type GetActiveCheckoutForInvoiceRow struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	InvoiceID               pgtype.UUID
+	StripeCheckoutSessionID pgtype.Text
+	StripeCheckoutUrl       pgtype.Text
+	StripePaymentIntentID   pgtype.Text
+	StripeExpiresAt         pgtype.Timestamptz
+	Status                  string
+	AmountMinor             int32
+	CurrencyCode            string
+}
+
+func (q *Queries) GetActiveCheckoutForInvoice(ctx context.Context, arg GetActiveCheckoutForInvoiceParams) (GetActiveCheckoutForInvoiceRow, error) {
+	row := q.db.QueryRow(ctx, getActiveCheckoutForInvoice, arg.TenantID, arg.BranchID, arg.InvoiceID)
+	var i GetActiveCheckoutForInvoiceRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.InvoiceID,
+		&i.StripeCheckoutSessionID,
+		&i.StripeCheckoutUrl,
+		&i.StripePaymentIntentID,
+		&i.StripeExpiresAt,
+		&i.Status,
+		&i.AmountMinor,
+		&i.CurrencyCode,
+	)
+	return i, err
+}
+
 const getInvoicePaymentState = `-- name: GetInvoicePaymentState :one
 SELECT invoice_kind, status, currency_code, total_due_minor, amount_paid_minor
 FROM invoices

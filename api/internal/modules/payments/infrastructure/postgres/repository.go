@@ -147,6 +147,28 @@ func (r *Repository) MarkPaymentAttemptCheckoutCreationFailed(ctx context.Contex
 	return nil
 }
 
+func (r *Repository) GetActiveCheckoutForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*domain.ActiveCheckoutSession, bool, error) {
+	row, err := sqlc.New(r.pool).GetActiveCheckoutForInvoice(ctx, sqlc.GetActiveCheckoutForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return &domain.ActiveCheckoutSession{
+		AttemptID:         pgtypeUUIDToStr(row.ID),
+		CheckoutSessionID: pgtypeTextToStr(row.StripeCheckoutSessionID),
+		CheckoutURL:       pgtypeTextToStr(row.StripeCheckoutUrl),
+		PaymentIntentID:   pgtypeTextToStr(row.StripePaymentIntentID),
+		AmountMinor:       int(row.AmountMinor),
+		CurrencyCode:      row.CurrencyCode,
+	}, true, nil
+}
+
 func mustParseUUID(s string) uuid.UUID {
 	id, err := uuid.Parse(s)
 	if err != nil {

@@ -92,6 +92,21 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 		return CreateCheckoutSessionResult{}, domainerrors.New("payment_provider_unconfigured", "Payment provider is not configured.")
 	}
 
+	// Idempotency check: return existing active checkout session if one exists.
+	if active, found, _ := uc.repo.GetActiveCheckoutForInvoice(ctx, tenantID, branchID, invoiceID.String()); found && active != nil {
+		uc.logDebug("checkout_session_idempotent",
+			"operation", "get_active_checkout_for_invoice",
+			"request_id", requestID,
+			"invoice_id", invoiceID.String(),
+			"attempt_id", active.AttemptID,
+		)
+		return CreateCheckoutSessionResult{
+			CheckoutSessionID: active.CheckoutSessionID,
+			CheckoutURL:       active.CheckoutURL,
+			PaymentAttemptID:  active.AttemptID,
+		}, nil
+	}
+
 	var candidate domain.CheckoutInvoiceCandidate
 	var attemptID uuid.UUID
 

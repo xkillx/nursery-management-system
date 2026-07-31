@@ -62,3 +62,25 @@ WHERE tenant_id = $1
   AND branch_id = $2
   AND id = $3
   AND status = 'checkout_creation_started';
+
+-- name: GetActiveCheckoutForInvoice :one
+SELECT
+    id,
+    tenant_id,
+    branch_id,
+    invoice_id,
+    stripe_checkout_session_id,
+    stripe_checkout_url,
+    stripe_payment_intent_id,
+    stripe_expires_at,
+    status,
+    amount_minor,
+    currency_code
+FROM payment_attempts
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND invoice_id = $3
+  AND status = 'checkout_created'
+  AND (stripe_expires_at IS NULL OR stripe_expires_at > now())
+ORDER BY created_at DESC
+LIMIT 1;

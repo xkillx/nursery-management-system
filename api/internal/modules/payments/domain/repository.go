@@ -12,4 +12,15 @@ type PaymentRepository interface {
 	GetInvoicePaymentState(ctx context.Context, tenantID, branchID, invoiceID string) (InvoicePaymentState, bool, error)
 	MarkPaymentAttemptCheckoutCreated(ctx context.Context, params PaymentAttemptCheckoutCreatedParams) error
 	MarkPaymentAttemptCheckoutCreationFailed(ctx context.Context, params PaymentAttemptCheckoutCreationFailedParams) error
+	GetActiveCheckoutForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*ActiveCheckoutSession, bool, error)
+}
+
+// ActiveCheckoutSession represents an existing active checkout session for an invoice.
+type ActiveCheckoutSession struct {
+	AttemptID         string
+	CheckoutSessionID string
+	CheckoutURL       string
+	PaymentIntentID   string
+	AmountMinor       int
+	CurrencyCode      string
 }
