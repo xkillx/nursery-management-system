@@ -73,7 +73,7 @@ func main() {
 		txMgr := transaction.NewManager(pool)
 		eventDispatcher := events.NewEventDispatcher(txMgr)
 		overdueUC := billingapp.NewMarkOverdueInvoices(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() }, nil, nil, nil, nil, nil)
-		reminderUC := billingapp.NewSendDueSoonReminders(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() })
+		reminderUC := billingapp.NewSendDueSoonReminders(billingRepo, eventDispatcher, func() time.Time { return time.Now().UTC() }, nil, nil, nil, nil, nil)
 
 		var schedErr error
 		scheduler, schedErr = invoicerun.NewScheduler(logger, overdueUC, nil, nil, reminderUC)

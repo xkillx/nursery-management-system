@@ -3,22 +3,49 @@ package application
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
+	paymentsapp "nursery-management-system/api/internal/modules/payments/application"
 	"nursery-management-system/api/internal/platform/events"
+	"nursery-management-system/api/internal/platform/storage"
 )
 
 type SendDueSoonReminders struct {
-	repo       domain.BillingRepository
-	dispatcher *events.EventDispatcher
-	now        func() time.Time
+	repo          domain.BillingRepository
+	dispatcher    *events.EventDispatcher
+	now           func() time.Time
+	checkoutUC    *paymentsapp.CreateCheckoutSession
+	pdfGen        *InvoicePDFGenerator
+	storage       storage.Service
+	parentContact ParentContactLookup
+	siteProfile   SiteProfileLookup
 }
 
-func NewSendDueSoonReminders(repo domain.BillingRepository, dispatcher *events.EventDispatcher, now func() time.Time) *SendDueSoonReminders {
-	return &SendDueSoonReminders{repo: repo, dispatcher: dispatcher, now: now}
+func NewSendDueSoonReminders(
+	repo domain.BillingRepository,
+	dispatcher *events.EventDispatcher,
+	now func() time.Time,
+	checkoutUC *paymentsapp.CreateCheckoutSession,
+	pdfGen *InvoicePDFGenerator,
+	storage storage.Service,
+	parentContact ParentContactLookup,
+	siteProfile SiteProfileLookup,
+) *SendDueSoonReminders {
+	return &SendDueSoonReminders{
+		repo:          repo,
+		dispatcher:    dispatcher,
+		now:           now,
+		checkoutUC:    checkoutUC,
+		pdfGen:        pdfGen,
+		storage:       storage,
+		parentContact: parentContact,
+		siteProfile:   siteProfile,
+	}
 }
 
 func (uc *SendDueSoonReminders) Execute(ctx context.Context) (domain.ReminderJobResult, error) {
@@ -44,12 +71,16 @@ func (uc *SendDueSoonReminders) Execute(ctx context.Context) (domain.ReminderJob
 		result.DueSoon = dueSoon
 
 		for _, inv := range dueSoon {
-			emitter.Emit(domain.InvoiceDueSoon{
-				InvoiceID: inv.ID,
-				TenantID:  inv.TenantID,
-				BranchID:  inv.BranchID,
-				DueDate:   inv.DueDate,
-				Occurred:  nowUTC,
+			checkoutURL, s3Key := uc.enrichReminder(ctx, inv.ID, inv.TenantID, inv.BranchID)
+			emitter.Emit(domain.InvoiceDueReminder{
+				InvoiceID:       inv.ID,
+				TenantID:        inv.TenantID,
+				BranchID:        inv.BranchID,
+				DueDate:         inv.DueDate,
+				DaysBefore:      7,
+				CheckoutURL:     checkoutURL,
+				AttachmentS3Key: s3Key,
+				Occurred:        nowUTC,
 			})
 			if logErr := uc.repo.InsertInvoiceReminderLog(ctx, tx, inv.TenantID, inv.BranchID, inv.ID, "due_soon"); logErr != nil {
 				return fmt.Errorf("insert reminder log for %s: %w", inv.ID, logErr)
@@ -63,12 +94,16 @@ func (uc *SendDueSoonReminders) Execute(ctx context.Context) (domain.ReminderJob
 		result.DueToday = dueToday
 
 		for _, inv := range dueToday {
+			checkoutURL, s3Key := uc.enrichReminder(ctx, inv.ID, inv.TenantID, inv.BranchID)
 			emitter.Emit(domain.InvoiceDueReminder{
-				InvoiceID: inv.ID,
-				TenantID:  inv.TenantID,
-				BranchID:  inv.BranchID,
-				DueDate:   inv.DueDate,
-				Occurred:  nowUTC,
+				InvoiceID:       inv.ID,
+				TenantID:        inv.TenantID,
+				BranchID:        inv.BranchID,
+				DueDate:         inv.DueDate,
+				DaysBefore:      0,
+				CheckoutURL:     checkoutURL,
+				AttachmentS3Key: s3Key,
+				Occurred:        nowUTC,
 			})
 			if logErr := uc.repo.InsertInvoiceReminderLog(ctx, tx, inv.TenantID, inv.BranchID, inv.ID, "due_today"); logErr != nil {
 				return fmt.Errorf("insert reminder log for %s: %w", inv.ID, logErr)
@@ -83,4 +118,61 @@ func (uc *SendDueSoonReminders) Execute(ctx context.Context) (domain.ReminderJob
 	}
 
 	return result, nil
+}
+
+func (uc *SendDueSoonReminders) enrichReminder(ctx context.Context, invoiceID, tenantID, branchID uuid.UUID) (checkoutURL, s3Key string) {
+	if uc.checkoutUC == nil {
+		return "", ""
+	}
+
+	checkoutResult, checkoutErr := uc.checkoutUC.Execute(ctx,
+		tenantID.String(),
+		branchID.String(),
+		"", // membershipID — system-initiated
+		"", // userID — system-initiated
+		invoiceID.String(),
+		"reminder-dispatch",
+	)
+	if checkoutErr != nil {
+		slog.WarnContext(ctx, "reminder_checkout_creation_failed",
+			"invoice_id", invoiceID,
+			"error", checkoutErr,
+		)
+		return "", ""
+	}
+
+	checkoutURL = checkoutResult.CheckoutURL
+
+	if uc.pdfGen != nil && uc.storage != nil {
+		siteProfile, spErr := uc.siteProfile.GetForInvoice(ctx, tenantID, branchID)
+		if spErr != nil || siteProfile == nil {
+			return checkoutURL, ""
+		}
+
+		parent, _ := uc.parentContact.GetForInvoice(ctx, tenantID, branchID, uuid.Nil)
+		parentName := ""
+		if parent != nil {
+			parentName = parent.FullName
+		}
+
+		pdfData := InvoicePDFData{
+			Invoice:     domain.Invoice{ID: invoiceID},
+			SiteProfile: *siteProfile,
+			ParentName:  parentName,
+			CheckoutURL: checkoutURL,
+		}
+
+		pdfBytes, pdfErr := uc.pdfGen.Generate(ctx, pdfData)
+		if pdfErr != nil {
+			return checkoutURL, ""
+		}
+
+		key := fmt.Sprintf("invoices/%s/reminder.pdf", invoiceID.String())
+		if uploadErr := uc.storage.Upload(ctx, key, pdfBytes, "application/pdf"); uploadErr != nil {
+			return checkoutURL, ""
+		}
+		s3Key = key
+	}
+
+	return checkoutURL, s3Key
 }

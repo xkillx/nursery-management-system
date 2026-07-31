@@ -190,7 +190,7 @@ func TestSendDueSoonReminders_HappyPath(t *testing.T) {
 			{ID: invoice3ID, TenantID: uuid.New(), BranchID: uuid.New(), DueDate: time.Date(2026, 7, 12, 0, 0, 0, 0, time.UTC)},
 		},
 	}
-	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -217,7 +217,7 @@ func TestSendDueSoonReminders_NoInvoices(t *testing.T) {
 		dueSoon:      []domain.InvoiceReminderRow{},
 		dueToday:     []domain.InvoiceReminderRow{},
 	}
-	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -240,7 +240,7 @@ func TestSendDueSoonReminders_NoInvoices(t *testing.T) {
 func TestSendDueSoonReminders_LockNotAcquired(t *testing.T) {
 	now := time.Date(2026, 7, 12, 8, 0, 0, 0, time.UTC)
 	repo := &stubReminderRepo{lockAcquired: false}
-	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	result, err := uc.Execute(context.Background())
 	if err != nil {
@@ -260,7 +260,7 @@ func TestSendDueSoonReminders_RepositoryError(t *testing.T) {
 		lockAcquired: true,
 		dueSoonErr:   context.DeadlineExceeded,
 	}
-	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now })
+	uc := NewSendDueSoonReminders(repo, events.NewEventDispatcher(&stubReminderTxMgr{repo: repo}), func() time.Time { return now }, nil, nil, nil, nil, nil)
 
 	_, err := uc.Execute(context.Background())
 	if err == nil {
