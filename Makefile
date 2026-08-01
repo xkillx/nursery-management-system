@@ -1,4 +1,4 @@
-.PHONY: run-api run-web build-api migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories swagger-generate swagger-validate
+.PHONY: run-api run-web build-api migrate-up migrate-down migrate-down-all migrate-reset migrate-version migrate-create migrate-verify sqlc-generate test-api-repositories swagger-generate swagger-validate minio-start minio-setup
 
 API_DIR := api
 WEB_DIR := web
@@ -89,3 +89,12 @@ swagger-generate:
 swagger-validate:
 	@cd "$(API_DIR)" && go tool swag fmt --dir cmd,internal
 	@echo "Swagger annotations formatted."
+
+minio-start:
+	@mkdir -p /tmp/minio-data
+	@minio server /tmp/minio-data --console-address :9001
+
+minio-setup:
+	@mc alias set local http://localhost:9000 minioadmin minioadmin 2>/dev/null
+	@mc mb --ignore-existing local/nursery-local
+	@echo "MinIO bucket 'nursery-local' ready."
