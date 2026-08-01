@@ -2,6 +2,7 @@ package httpayment
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -37,12 +38,18 @@ type CreatePaymentLinkUseCase interface {
 	Execute(ctx context.Context, actor tenant.ActorContext, invoiceIDRaw string) (application.CreatePaymentLinkResult, error)
 }
 
+type TestPayLookupUseCase interface {
+	Execute(ctx context.Context, attemptID string) (*application.TestPayLookupResult, error)
+}
+
 type Handler struct {
 	createCheckoutSession CreateCheckoutSessionUseCase
 	handleWebhook         HandleWebhookUseCase
 	getManagerStatus      GetManagerPaymentStatusUseCase
 	listManagerEvents     ListManagerPaymentEventsUseCase
 	createPaymentLink     CreatePaymentLinkUseCase
+	testPayLookup         TestPayLookupUseCase
+	webBaseURL            string
 	logger                *slog.Logger
 	recorder              *metrics.Recorder
 }
@@ -75,6 +82,12 @@ func NewHandler(
 	}
 }
 
+func (h *Handler) WithTestPay(lookup *application.TestPayLookup, webBaseURL string) *Handler {
+	h.testPayLookup = lookup
+	h.webBaseURL = webBaseURL
+	return h
+}
+
 func (h *Handler) recordWebhookOutcome(provider, eventType, outcome, reason string) {
 	if h.recorder != nil {
 		h.recorder.WebhookOutcome(provider, eventType, outcome, reason)
@@ -93,6 +106,10 @@ func (h *Handler) RegisterParentRoutes(parent *gin.RouterGroup) {
 
 func (h *Handler) RegisterStripeRoutes(api *gin.RouterGroup) {
 	api.POST("/stripe/webhooks", h.stripeWebhookHandler)
+}
+
+func (h *Handler) RegisterTestRoutes(api *gin.RouterGroup) {
+	api.GET("/test/pay/:attempt_id", h.testPayHandler)
 }
 
 func (h *Handler) RegisterManagerRoutes(manager *gin.RouterGroup) {
@@ -301,6 +318,58 @@ func (h *Handler) createPaymentLinkHandler(c *gin.Context) {
 
 func (h *Handler) handleError(c *gin.Context, err error) {
 	httpserver.WriteMappedError(c, h.logger, err)
+}
+
+func (h *Handler) testPayHandler(c *gin.Context) {
+	if h.testPayLookup == nil || h.handleWebhook == nil {
+		httpserver.WriteError(c, http.StatusServiceUnavailable, "test_mode_disabled", "Test mode is not enabled.", nil)
+		return
+	}
+
+	attemptID := c.Param("attempt_id")
+	if _, err := uuid.Parse(attemptID); err != nil {
+		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid attempt ID format.", nil)
+		return
+	}
+
+	attempt, err := h.testPayLookup.Execute(c.Request.Context(), attemptID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	if attempt == nil {
+		httpserver.WriteError(c, http.StatusNotFound, "not_found", "Payment attempt not found.", nil)
+		return
+	}
+
+	payload, _ := json.Marshal(map[string]any{
+		"id":   "evt_test_" + attemptID,
+		"type": "checkout.session.completed",
+		"data": map[string]any{
+			"object": map[string]any{
+				"id":             attempt.StripeCheckoutSessionID,
+				"payment_status": "paid",
+				"amount_total":   attempt.AmountMinor,
+				"currency":       attempt.CurrencyCode,
+				"payment_intent": map[string]any{"id": "pi_test_" + attemptID},
+				"metadata": map[string]string{
+					"tenant_id":          attempt.TenantID,
+					"branch_id":          attempt.BranchID,
+					"invoice_id":         attempt.InvoiceID,
+					"payment_attempt_id": attempt.ID,
+				},
+			},
+		},
+	})
+
+	requestID := httpserver.RequestIDFromContext(c)
+	_, err = h.handleWebhook.Execute(c.Request.Context(), payload, "", requestID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.Redirect(http.StatusFound, h.webBaseURL+"/parent/invoices/"+attempt.InvoiceID+"?checkout=success")
 }
 
 func domainErrorPaymentProviderUnconfigured() *domainerrors.DomainError {

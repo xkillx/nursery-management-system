@@ -63,6 +63,19 @@ WHERE tenant_id = $1
   AND id = $3
   AND status = 'checkout_creation_started';
 
+-- name: GetAttemptForTest :one
+SELECT
+    id,
+    tenant_id,
+    branch_id,
+    invoice_id,
+    amount_minor,
+    currency_code,
+    stripe_checkout_session_id,
+    status
+FROM payment_attempts
+WHERE id = $1;
+
 -- name: GetActiveCheckoutForInvoice :one
 SELECT
     id,

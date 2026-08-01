@@ -72,3 +72,14 @@ type PaymentAttemptCheckoutCreationFailedParams struct {
 	ProviderErrorCode    string
 	ProviderErrorMessage string
 }
+
+type AttemptTestInfo struct {
+	ID                      string
+	TenantID                string
+	BranchID                string
+	InvoiceID               string
+	AmountMinor             int
+	CurrencyCode            string
+	StripeCheckoutSessionID string
+	Status                  string
+}

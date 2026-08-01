@@ -45,6 +45,7 @@ type Config struct {
 	StripeSecretKey      string
 	StripeWebhookSecret  string
 	StripePublishableKey string
+	StripeTestMode       bool
 
 	LogLevel       string
 	MetricsEnabled bool
@@ -163,6 +164,7 @@ func Load() (Config, error) {
 		StripeSecretKey:      strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
 		StripeWebhookSecret:  strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
 		StripePublishableKey: strings.TrimSpace(os.Getenv("STRIPE_PUBLISHABLE_KEY")),
+		StripeTestMode:       strings.EqualFold(strings.TrimSpace(os.Getenv("STRIPE_TEST_MODE")), "true"),
 
 		LogLevel:       getEnv("LOG_LEVEL", "info"),
 		MetricsEnabled: resolveMetricsEnabled(os.Getenv("METRICS_ENABLED"), getEnv("APP_ENV", "local")),

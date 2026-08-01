@@ -110,6 +110,47 @@ func (q *Queries) GetActiveCheckoutForInvoice(ctx context.Context, arg GetActive
 	return i, err
 }
 
+const getAttemptForTest = `-- name: GetAttemptForTest :one
+SELECT
+    id,
+    tenant_id,
+    branch_id,
+    invoice_id,
+    amount_minor,
+    currency_code,
+    stripe_checkout_session_id,
+    status
+FROM payment_attempts
+WHERE id = $1
+`
+
+type GetAttemptForTestRow struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	InvoiceID               pgtype.UUID
+	AmountMinor             int32
+	CurrencyCode            string
+	StripeCheckoutSessionID pgtype.Text
+	Status                  string
+}
+
+func (q *Queries) GetAttemptForTest(ctx context.Context, id pgtype.UUID) (GetAttemptForTestRow, error) {
+	row := q.db.QueryRow(ctx, getAttemptForTest, id)
+	var i GetAttemptForTestRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.InvoiceID,
+		&i.AmountMinor,
+		&i.CurrencyCode,
+		&i.StripeCheckoutSessionID,
+		&i.Status,
+	)
+	return i, err
+}
+
 const getInvoicePaymentState = `-- name: GetInvoicePaymentState :one
 SELECT invoice_kind, status, currency_code, total_due_minor, amount_paid_minor
 FROM invoices

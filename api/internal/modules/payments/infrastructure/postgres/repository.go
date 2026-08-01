@@ -89,6 +89,26 @@ func (r *Repository) CreatePaymentAttempt(ctx context.Context, tx domain.Tx, par
 	})
 }
 
+func (r *Repository) GetAttemptForTest(ctx context.Context, attemptID string) (*domain.AttemptTestInfo, bool, error) {
+	row, err := sqlc.New(r.pool).GetAttemptForTest(ctx, uuidToPgtype(mustParseUUID(attemptID)))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return &domain.AttemptTestInfo{
+		ID:                      pgtypeUUIDToStr(row.ID),
+		TenantID:                pgtypeUUIDToStr(row.TenantID),
+		BranchID:                pgtypeUUIDToStr(row.BranchID),
+		InvoiceID:               pgtypeUUIDToStr(row.InvoiceID),
+		AmountMinor:             int(row.AmountMinor),
+		CurrencyCode:            row.CurrencyCode,
+		StripeCheckoutSessionID: pgtypeTextToStr(row.StripeCheckoutSessionID),
+		Status:                  row.Status,
+	}, true, nil
+}
+
 func (r *Repository) GetInvoicePaymentState(ctx context.Context, tenantID, branchID, invoiceID string) (domain.InvoicePaymentState, bool, error) {
 	row, err := sqlc.New(r.pool).GetInvoicePaymentState(ctx, sqlc.GetInvoicePaymentStateParams{
 		TenantID: uuidToPgtype(mustParseUUID(tenantID)),

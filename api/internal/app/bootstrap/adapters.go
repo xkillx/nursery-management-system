@@ -47,6 +47,7 @@ import (
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	parentsapp "nursery-management-system/api/internal/modules/parents/application"
 	parentsdomain "nursery-management-system/api/internal/modules/parents/domain"
+	paymentsdomain "nursery-management-system/api/internal/modules/payments/domain"
 	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
 	sessiontypepostgres "nursery-management-system/api/internal/modules/sessiontypes/infrastructure/postgres"
@@ -1708,4 +1709,12 @@ var _ attendancedomain.ChildFundingLookup = (*attendanceChildFundingLookupAdapte
 
 func provideAttendanceChildFundingLookupAdapter(repo *fundingpostgres.FundingRecordRepositoryImpl) *attendanceChildFundingLookupAdapter {
 	return &attendanceChildFundingLookupAdapter{repo: repo}
+}
+
+type paymentCompletedNotifierAdapter struct {
+	billing *billingNotificationAdapter
+}
+
+func (a *paymentCompletedNotifierAdapter) OnPaymentCompleted(ctx context.Context, tx paymentsdomain.Tx, invoiceID, tenantID, branchID uuid.UUID, amountPaid int, paymentDate string) {
+	_ = a.billing.SendReceiptEmail(ctx, tx.(pgx.Tx), invoiceID, tenantID, branchID, amountPaid, paymentDate)
 }
