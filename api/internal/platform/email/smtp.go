@@ -47,6 +47,7 @@ func (s *SMTPSender) Send(ctx context.Context, msg Message) error {
 	} else if msg.HTML != "" {
 		s.buildMultipartAlternative(&body, msg)
 	} else {
+		body.WriteString("\r\nContent-Type: text/plain; charset=\"UTF-8\"")
 		body.WriteString("\r\n\r\n")
 		body.WriteString(msg.Text)
 	}

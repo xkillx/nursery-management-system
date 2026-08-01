@@ -568,6 +568,21 @@ func (r *Repository) GetInvoiceForManagerReview(ctx context.Context, tenantID, b
 	return mapInvoiceReviewRowFromGet(row), true, nil
 }
 
+func (r *Repository) GetInvoiceForManagerReviewTx(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
+	row, err := r.queriesTx(tx).InvoiceGetForManagerReview(ctx, sqlc.InvoiceGetForManagerReviewParams{
+		TenantID: uuidToPgtype(tenantID),
+		BranchID: uuidToPgtype(branchID),
+		ID:       uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return domain.InvoiceReviewRow{}, false, nil
+		}
+		return domain.InvoiceReviewRow{}, false, err
+	}
+	return mapInvoiceReviewRowFromGet(row), true, nil
+}
+
 func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	q := sqlc.New(r.pool)
 	rows, err := q.InvoiceLinesForManagerReview(ctx, sqlc.InvoiceLinesForManagerReviewParams{

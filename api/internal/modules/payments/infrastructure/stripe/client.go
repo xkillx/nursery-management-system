@@ -14,6 +14,9 @@ import (
 type Client struct{}
 
 func NewClient(secretKey string) *Client {
+	if secretKey == "" {
+		return nil
+	}
 	stripe.Key = secretKey
 	return &Client{}
 }

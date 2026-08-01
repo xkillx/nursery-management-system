@@ -36,15 +36,16 @@ type (
 	}
 
 	LifecycleUseCases struct {
-		ListInvoices          *application.ListInvoices
-		GetInvoice            *application.GetInvoice
-		IssueInvoice          *application.IssueInvoice
-		BulkIssueInvoices     *application.BulkIssueInvoices
-		OverrideAttendanceBlk *application.OverrideAttendanceBlockUseCase
-		VoidInvoice           *application.VoidInvoice
-		DeleteInvoice         *application.DeleteInvoice
-		BulkDeleteInvoices    *application.BulkDeleteInvoices
-		ManageInvoiceLines    *application.ManageInvoiceLines
+		ListInvoices             *application.ListInvoices
+		GetInvoice               *application.GetInvoice
+		IssueInvoice             *application.IssueInvoice
+		IssueInvoiceWithCheckout *application.IssueInvoiceWithCheckout
+		BulkIssueInvoices        *application.BulkIssueInvoices
+		OverrideAttendanceBlk    *application.OverrideAttendanceBlockUseCase
+		VoidInvoice              *application.VoidInvoice
+		DeleteInvoice            *application.DeleteInvoice
+		BulkDeleteInvoices       *application.BulkDeleteInvoices
+		ManageInvoiceLines       *application.ManageInvoiceLines
 	}
 
 	ParentInvoiceUseCases struct {
@@ -74,56 +75,58 @@ type (
 )
 
 type Handler struct {
-	logger                 *slog.Logger
-	preflight              *application.PreflightDraftInvoices
-	generation             *application.GenerateDraftInvoicesUseCase
-	computePrefill         *application.ComputeInvoicePrefill
-	createDraft            *application.CreateDraftInvoice
-	createAndIssueFromForm *application.CreateAndIssueInvoiceFromForm
-	listInvoices           *application.ListInvoices
-	getInvoice             *application.GetInvoice
-	issueInvoice           *application.IssueInvoice
-	bulkIssueInvoices      *application.BulkIssueInvoices
-	overrideAttendanceBlk  *application.OverrideAttendanceBlockUseCase
-	voidInvoice            *application.VoidInvoice
-	deleteInvoice          *application.DeleteInvoice
-	bulkDeleteInvoices     *application.BulkDeleteInvoices
-	manageInvoiceLines     *application.ManageInvoiceLines
-	listParentInvoices     *application.ListParentInvoices
-	getParentInvoice       *application.GetParentInvoice
-	updateSiteRate         *application.UpdateSiteRateUseCase
-	updateBranchSettings   *application.UpdateBranchSettingsUseCase
-	exportInvoices         *application.ExportInvoices
-	invoiceSummary         *application.InvoiceSummary
-	overdueSummary         *application.OverdueSummary
-	pdf                    InvoicePDFRenderer
+	logger                   *slog.Logger
+	preflight                *application.PreflightDraftInvoices
+	generation               *application.GenerateDraftInvoicesUseCase
+	computePrefill           *application.ComputeInvoicePrefill
+	createDraft              *application.CreateDraftInvoice
+	createAndIssueFromForm   *application.CreateAndIssueInvoiceFromForm
+	listInvoices             *application.ListInvoices
+	getInvoice               *application.GetInvoice
+	issueInvoice             *application.IssueInvoice
+	issueInvoiceWithCheckout *application.IssueInvoiceWithCheckout
+	bulkIssueInvoices        *application.BulkIssueInvoices
+	overrideAttendanceBlk    *application.OverrideAttendanceBlockUseCase
+	voidInvoice              *application.VoidInvoice
+	deleteInvoice            *application.DeleteInvoice
+	bulkDeleteInvoices       *application.BulkDeleteInvoices
+	manageInvoiceLines       *application.ManageInvoiceLines
+	listParentInvoices       *application.ListParentInvoices
+	getParentInvoice         *application.GetParentInvoice
+	updateSiteRate           *application.UpdateSiteRateUseCase
+	updateBranchSettings     *application.UpdateBranchSettingsUseCase
+	exportInvoices           *application.ExportInvoices
+	invoiceSummary           *application.InvoiceSummary
+	overdueSummary           *application.OverdueSummary
+	pdf                      InvoicePDFRenderer
 }
 
 func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 	return &Handler{
-		logger:                 logger,
-		preflight:              cfg.Drafting.Preflight,
-		generation:             cfg.Drafting.Generation,
-		computePrefill:         cfg.Drafting.ComputePrefill,
-		createDraft:            cfg.Drafting.CreateDraft,
-		createAndIssueFromForm: cfg.Drafting.CreateAndIssueFromForm,
-		listInvoices:           cfg.Lifecycle.ListInvoices,
-		getInvoice:             cfg.Lifecycle.GetInvoice,
-		issueInvoice:           cfg.Lifecycle.IssueInvoice,
-		bulkIssueInvoices:      cfg.Lifecycle.BulkIssueInvoices,
-		overrideAttendanceBlk:  cfg.Lifecycle.OverrideAttendanceBlk,
-		voidInvoice:            cfg.Lifecycle.VoidInvoice,
-		deleteInvoice:          cfg.Lifecycle.DeleteInvoice,
-		bulkDeleteInvoices:     cfg.Lifecycle.BulkDeleteInvoices,
-		manageInvoiceLines:     cfg.Lifecycle.ManageInvoiceLines,
-		listParentInvoices:     cfg.Parent.List,
-		getParentInvoice:       cfg.Parent.Get,
-		updateSiteRate:         cfg.Admin.UpdateSiteRate,
-		updateBranchSettings:   cfg.Admin.UpdateBranchSettings,
-		exportInvoices:         cfg.Export.Export,
-		invoiceSummary:         cfg.Export.Summary,
-		overdueSummary:         cfg.Export.OverdueSummary,
-		pdf:                    cfg.PDF,
+		logger:                   logger,
+		preflight:                cfg.Drafting.Preflight,
+		generation:               cfg.Drafting.Generation,
+		computePrefill:           cfg.Drafting.ComputePrefill,
+		createDraft:              cfg.Drafting.CreateDraft,
+		createAndIssueFromForm:   cfg.Drafting.CreateAndIssueFromForm,
+		listInvoices:             cfg.Lifecycle.ListInvoices,
+		getInvoice:               cfg.Lifecycle.GetInvoice,
+		issueInvoice:             cfg.Lifecycle.IssueInvoice,
+		issueInvoiceWithCheckout: cfg.Lifecycle.IssueInvoiceWithCheckout,
+		bulkIssueInvoices:        cfg.Lifecycle.BulkIssueInvoices,
+		overrideAttendanceBlk:    cfg.Lifecycle.OverrideAttendanceBlk,
+		voidInvoice:              cfg.Lifecycle.VoidInvoice,
+		deleteInvoice:            cfg.Lifecycle.DeleteInvoice,
+		bulkDeleteInvoices:       cfg.Lifecycle.BulkDeleteInvoices,
+		manageInvoiceLines:       cfg.Lifecycle.ManageInvoiceLines,
+		listParentInvoices:       cfg.Parent.List,
+		getParentInvoice:         cfg.Parent.Get,
+		updateSiteRate:           cfg.Admin.UpdateSiteRate,
+		updateBranchSettings:     cfg.Admin.UpdateBranchSettings,
+		exportInvoices:           cfg.Export.Export,
+		invoiceSummary:           cfg.Export.Summary,
+		overdueSummary:           cfg.Export.OverdueSummary,
+		pdf:                      cfg.PDF,
 	}
 }
 
@@ -557,6 +560,18 @@ func (h *Handler) issueInvoiceHandler(c *gin.Context) {
 	var req issueInvoiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httpserver.WriteError(c, http.StatusBadRequest, "validation_error", "Invalid request body.", nil)
+		return
+	}
+
+	// Use the orchestrator when available (creates Stripe checkout, generates PDF, uploads to S3).
+	// Falls back to direct issue when orchestrator is not wired.
+	if h.issueInvoiceWithCheckout != nil {
+		result, err := h.issueInvoiceWithCheckout.Execute(c.Request.Context(), actor, c.Param("invoice_id"), req.Confirm)
+		if err != nil {
+			h.handleError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, toIssueInvoiceResponse(result))
 		return
 	}
 

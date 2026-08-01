@@ -30,6 +30,9 @@ func (s *deleteInvoiceRepoStub) DeleteInvoice(_ context.Context, _ domain.Tx, _,
 func (s *deleteInvoiceRepoStub) GetInvoiceForManagerReview(_ context.Context, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	return domain.InvoiceReviewRow{}, s.invoiceFound, nil
 }
+func (s *deleteInvoiceRepoStub) GetInvoiceForManagerReviewTx(_ context.Context, _ any, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
+	return domain.InvoiceReviewRow{}, false, nil
+}
 
 // Unused methods required by BillingRepository interface
 func (s *deleteInvoiceRepoStub) ListActiveBookingsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
@@ -372,6 +375,9 @@ func (s *mixedDeleteRepoStub) DeleteInvoice(_ context.Context, _ domain.Tx, _, _
 
 func (s *mixedDeleteRepoStub) GetInvoiceForManagerReview(_ context.Context, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	return domain.InvoiceReviewRow{}, false, nil // Not found
+}
+func (s *mixedDeleteRepoStub) GetInvoiceForManagerReviewTx(_ context.Context, _ any, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
+	return domain.InvoiceReviewRow{}, false, nil
 }
 
 // Unused methods required by BillingRepository interface

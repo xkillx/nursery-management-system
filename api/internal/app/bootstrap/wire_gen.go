@@ -347,16 +347,24 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	deleteInvoice := application10.NewDeleteInvoice(repository2, writer, eventDispatcher)
 	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
+	invoicePDFGenerator := application10.NewInvoicePDFGenerator()
+	billingStorage := provideBillingStorage(cfg)
+	repository6 := postgres17.NewRepository(pool)
+	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
+	client := provideStripeClient(cfg)
+	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
+	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession, invoicePDFGenerator, billingStorage, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
-		ListInvoices:          listInvoices,
-		GetInvoice:            getInvoice,
-		IssueInvoice:          issueInvoice,
-		BulkIssueInvoices:     bulkIssueInvoices,
-		OverrideAttendanceBlk: overrideAttendanceBlockUseCase,
-		VoidInvoice:           voidInvoice,
-		DeleteInvoice:         deleteInvoice,
-		BulkDeleteInvoices:    bulkDeleteInvoices,
-		ManageInvoiceLines:    manageInvoiceLines,
+		ListInvoices:             listInvoices,
+		GetInvoice:               getInvoice,
+		IssueInvoice:             issueInvoice,
+		IssueInvoiceWithCheckout: issueInvoiceWithCheckout,
+		BulkIssueInvoices:        bulkIssueInvoices,
+		OverrideAttendanceBlk:    overrideAttendanceBlockUseCase,
+		VoidInvoice:              voidInvoice,
+		DeleteInvoice:            deleteInvoice,
+		BulkDeleteInvoices:       bulkDeleteInvoices,
+		ManageInvoiceLines:       manageInvoiceLines,
 	}
 	listParentInvoices := application10.NewListParentInvoices(repository2)
 	getParentInvoice := application10.NewGetParentInvoice(repository2, bootstrapSiteProfileLookupAdapter)
@@ -389,10 +397,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		PDF:       renderer,
 	}
 	httpbillingHandler := httpbilling.NewHandler(billingHandlerConfig, logger)
-	repository6 := postgres17.NewRepository(pool)
-	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
-	client := provideStripeClient(cfg)
-	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	webhookVerifier := provideWebhookVerifier(cfg)
 	bootstrapAuditSystemWriterAdapter := provideAuditSystemWriterAdapter(writer)
 	handleStripeWebhook := provideHandleStripeWebhook(repository6, webhookVerifier, bootstrapTxManagerAdapter, bootstrapAuditSystemWriterAdapter, logger, recorder)
@@ -764,16 +768,24 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	deleteInvoice := application10.NewDeleteInvoice(repository2, writer, eventDispatcher)
 	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
+	invoicePDFGenerator := application10.NewInvoicePDFGenerator()
+	billingStorage := provideBillingStorage(cfg)
+	repository6 := postgres17.NewRepository(pool)
+	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
+	client := provideStripeClient(cfg)
+	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
+	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession, invoicePDFGenerator, billingStorage, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
-		ListInvoices:          listInvoices,
-		GetInvoice:            getInvoice,
-		IssueInvoice:          issueInvoice,
-		BulkIssueInvoices:     bulkIssueInvoices,
-		OverrideAttendanceBlk: overrideAttendanceBlockUseCase,
-		VoidInvoice:           voidInvoice,
-		DeleteInvoice:         deleteInvoice,
-		BulkDeleteInvoices:    bulkDeleteInvoices,
-		ManageInvoiceLines:    manageInvoiceLines,
+		ListInvoices:             listInvoices,
+		GetInvoice:               getInvoice,
+		IssueInvoice:             issueInvoice,
+		IssueInvoiceWithCheckout: issueInvoiceWithCheckout,
+		BulkIssueInvoices:        bulkIssueInvoices,
+		OverrideAttendanceBlk:    overrideAttendanceBlockUseCase,
+		VoidInvoice:              voidInvoice,
+		DeleteInvoice:            deleteInvoice,
+		BulkDeleteInvoices:       bulkDeleteInvoices,
+		ManageInvoiceLines:       manageInvoiceLines,
 	}
 	listParentInvoices := application10.NewListParentInvoices(repository2)
 	getParentInvoice := application10.NewGetParentInvoice(repository2, bootstrapSiteProfileLookupAdapter)
@@ -806,10 +818,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		PDF:       renderer,
 	}
 	httpbillingHandler := httpbilling.NewHandler(billingHandlerConfig, logger)
-	repository6 := postgres17.NewRepository(pool)
-	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
-	client := provideStripeClient(cfg)
-	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	webhookVerifier := provideWebhookVerifier(cfg)
 	bootstrapAuditSystemWriterAdapter := provideAuditSystemWriterAdapter(writer)
 	handleStripeWebhook := provideHandleStripeWebhook(repository6, webhookVerifier, bootstrapTxManagerAdapter, bootstrapAuditSystemWriterAdapter, logger, recorder)
@@ -1001,6 +1009,24 @@ func provideFileStorage(cfg config.Config) domain4.FileStorage {
 		return storage.NewS3FileStorage(s3svc)
 	}
 	return storage.NewLocalStorage(".")
+}
+
+func provideBillingStorage(cfg config.Config) platformstorage.Service {
+	if cfg.S3.AccessKey != "" {
+		s3svc, err := platformstorage.NewS3Service(platformstorage.S3Config{
+			Endpoint:   cfg.S3.Endpoint,
+			AccessKey:  cfg.S3.AccessKey,
+			SecretKey:  cfg.S3.SecretKey,
+			BucketName: cfg.S3.BucketName,
+			Region:     cfg.S3.Region,
+			UseSSL:     cfg.S3.UseSSL,
+		})
+		if err != nil {
+			return nil
+		}
+		return s3svc
+	}
+	return nil
 }
 
 var childrenSet = wire.NewSet(postgres3.NewChildRepository, wire.Bind(new(domain4.Repository), new(*postgres3.ChildRepository)), provideFileStorage,

@@ -60,6 +60,10 @@ type BillingRepository interface {
 	ListInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceReviewFilters) ([]InvoiceReviewRow, error)
 	CountInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceReviewFilters) (int, error)
 	GetInvoiceForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
+	// GetInvoiceForManagerReviewTx reads invoice detail within an existing transaction,
+	// ensuring uncommitted changes (e.g. invoice_number, due_at from MarkInvoiceIssued)
+	// are visible to the caller.
+	GetInvoiceForManagerReviewTx(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
 	ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
 
 	// Invoice Export — read-only, no pagination.

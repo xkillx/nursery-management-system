@@ -81,6 +81,9 @@ func (s *stubPrefillRepo) CountInvoicesForManagerReview(_ context.Context, _, _ 
 func (s *stubPrefillRepo) GetInvoiceForManagerReview(_ context.Context, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	panic("unused")
 }
+func (s *stubPrefillRepo) GetInvoiceForManagerReviewTx(_ context.Context, _ any, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
+	return domain.InvoiceReviewRow{}, false, nil
+}
 
 func (s *stubPrefillRepo) ListInvoiceLinesForManagerReview(_ context.Context, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	panic("unused")

@@ -748,7 +748,7 @@ type billingNotificationAdapter struct {
 }
 
 func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
-	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
 	if err != nil {
 		return fmt.Errorf("get invoice: %w", err)
 	}
@@ -832,7 +832,7 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 }
 
 func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
-	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
 	if err != nil {
 		return fmt.Errorf("get invoice: %w", err)
 	}
@@ -908,7 +908,7 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 }
 
 func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
-	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
 	if err != nil {
 		return fmt.Errorf("get invoice: %w", err)
 	}
@@ -990,7 +990,7 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 }
 
 func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
-	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
 	if err != nil {
 		return fmt.Errorf("get invoice: %w", err)
 	}
@@ -1072,7 +1072,7 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 }
 
 func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID, amountPaid int, paymentDate string) error {
-	invoice, found, err := a.repo.GetInvoiceForManagerReview(ctx, tenantID, branchID, invoiceID)
+	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
 	if err != nil {
 		return fmt.Errorf("get invoice: %w", err)
 	}

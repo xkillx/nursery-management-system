@@ -125,7 +125,8 @@ func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter eve
 
 	invoiceNumber := fmt.Sprintf("INV-%04d%02d-%04d", year, month, seq)
 
-	dueAt := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	// R8: due date = 30 days from issue date.
+	dueAt := issueTime.Add(30 * 24 * time.Hour)
 
 	if _, markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
 		ID:                   invoiceID,
@@ -356,8 +357,8 @@ func (uc *BulkIssueInvoices) Execute(ctx context.Context, actor tenant.ActorCont
 
 			invoiceNumber := fmt.Sprintf("INV-%04d%02d-%04d", year, month, seq)
 
-			// Advance-pay: due_at = first day of billing month at 00:00 UTC.
-			dueAt := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+			// R8: due date = 30 days from issue date.
+			dueAt := issueTime.Add(30 * 24 * time.Hour)
 
 			if _, markErr := uc.repo.MarkInvoiceIssued(ctx, tx, domain.IssueInvoiceUpdateParams{
 				ID:                   inv.ID,

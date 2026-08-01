@@ -397,6 +397,24 @@ var fundingSet = wire.NewSet(
 
 // ── Billing module ─────────────────────────────────────────────────────
 
+func provideBillingStorage(cfg config.Config) platformstorage.Service {
+	if cfg.S3.AccessKey != "" {
+		s3svc, err := platformstorage.NewS3Service(platformstorage.S3Config{
+			Endpoint:   cfg.S3.Endpoint,
+			AccessKey:  cfg.S3.AccessKey,
+			SecretKey:  cfg.S3.SecretKey,
+			BucketName: cfg.S3.BucketName,
+			Region:     cfg.S3.Region,
+			UseSSL:     cfg.S3.UseSSL,
+		})
+		if err != nil {
+			return nil
+		}
+		return s3svc
+	}
+	return nil
+}
+
 func provideFundingLookupAdapter(
 	fundingRepo *fundingpostgres.FundingRecordRepositoryImpl,
 	ownerRepo *ownerpostgres.OwnerRepository,
@@ -445,6 +463,9 @@ var billingSet = wire.NewSet(
 	billingapp.NewExportInvoices,
 	billingapp.NewInvoiceSummary,
 	billingapp.NewOverdueSummary,
+	billingapp.NewInvoicePDFGenerator,
+	billingapp.NewIssueInvoiceWithCheckout,
+	provideBillingStorage,
 	provideInvoicePDFRenderer,
 	wire.Bind(new(billinghandler.InvoicePDFRenderer), new(*billingpdf.Renderer)),
 	wire.Struct(new(billinghandler.DraftUseCases), "*"),
