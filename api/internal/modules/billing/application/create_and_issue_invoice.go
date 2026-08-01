@@ -85,12 +85,15 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 		invoiceID := uid.NewUUID()
 
 		subtotalMinor := 0
-		for _, line := range input.Lines {
-			subtotalMinor += line.LineAmountMinor
-		}
-
 		fundedDeductionMinor := 0
-		totalDueMinor := subtotalMinor
+		for _, line := range input.Lines {
+			if line.LineKind == domain.LineKindFundedDeduction {
+				fundedDeductionMinor += line.LineAmountMinor
+			} else {
+				subtotalMinor += line.LineAmountMinor
+			}
+		}
+		totalDueMinor := subtotalMinor - fundedDeductionMinor
 
 		periodStart := time.Date(billingMonth.Year(), billingMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
 		periodEnd := periodStart.AddDate(0, 1, -1)
