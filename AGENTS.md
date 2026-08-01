@@ -29,6 +29,7 @@ tail -f tmp/web.log
 **Static analysis (Angular):** After any Angular file change, run `npx ng lint` in `web/` and fix all lint errors. After `npm test`, run `ng build` (production) to confirm zero errors and warnings — fail the task if any build diagnostic is emitted.
 
 **Cross-cutting rules (applies to every task):**
+- **Main branch only:** Always work on the `main` branch. Do not create or switch to other branches unless explicitly instructed by the user.
 - **Plan first:** Before writing or modifying any code, create an implementation plan covering the approach, files affected, and any design decisions.
 - **Forbidden imports:** `domain` → postgres/gin/http/sql; `application` → sql/http/framework types; handler → direct DB
 - **Cross-module:** never import another module directly. Define interface in consumer, wire adapter in `bootstrap/adapters.go`.
