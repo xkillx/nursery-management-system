@@ -333,6 +333,18 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 	fundingLookup := &fundingLookupAdapter{fundingRepo: fundingRecordRepo, ownerRepo: ownerRepo, termDateLookup: termDateLookup}
 	bookingEntriesLookup := bookingsapp.NewBookingEntriesLookupAdapter(pool)
 
+	billingNotifier := &billingNotificationAdapter{
+		repo:           billingRepo,
+		parentContacts: &parentContactLookupAdapter{pool: pool},
+		siteProfiles:   &siteProfileLookupAdapter{getUC: siteProfileGetUC},
+		enqueuer:       emailEnqueuer,
+		auditWriter:    auditWriter,
+		webBaseURL:     cfg.WebBaseURL,
+		pdfRenderer:    provideInvoicePDFRenderer(),
+		storage:        provideBillingStorage(cfg),
+		executor:       pool,
+	}
+
 	billingCfg := billinghandler.BillingHandlerConfig{
 		Drafting: billinghandler.DraftUseCases{
 			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
@@ -349,6 +361,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			OverrideAttendanceBlk: billingapp.NewOverrideAttendanceBlockUseCase(billingRepo, auditWriter, txManager),
 			VoidInvoice:           billingapp.NewVoidInvoice(billingRepo, txManager, auditWriter, eventDispatcher),
 			ManageInvoiceLines:    billingapp.NewManageInvoiceLines(billingRepo, txManager, auditWriter),
+			SendEmail:             billingapp.NewSendInvoiceEmail(billingRepo, &parentContactLookupAdapter{pool: pool}, billingNotifier, txManager),
 		},
 		Parent: billinghandler.ParentInvoiceUseCases{
 			List: billingapp.NewListParentInvoices(billingRepo),
@@ -407,17 +420,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	var handleWebhookUC *paymentsapp.HandleStripeWebhook
 	if webhookVerifier != nil {
-		billingNotifier := &billingNotificationAdapter{
-			repo:           billingRepo,
-			parentContacts: &parentContactLookupAdapter{pool: pool},
-			siteProfiles:   &siteProfileLookupAdapter{getUC: siteProfileGetUC},
-			enqueuer:       emailEnqueuer,
-			auditWriter:    auditWriter,
-			webBaseURL:     cfg.WebBaseURL,
-			pdfRenderer:    provideInvoicePDFRenderer(),
-			storage:        provideBillingStorage(cfg),
-			executor:       pool,
-		}
 		handleWebhookUC = paymentsapp.NewHandleStripeWebhook(
 			paymentsRepo,
 			webhookVerifier,

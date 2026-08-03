@@ -294,6 +294,12 @@ type voidInvoiceResponse struct {
 	VoidReason string `json:"void_reason"`
 }
 
+// sendInvoiceResponse is returned by POST /invoices/:invoice_id/send. The
+// email is enqueued asynchronously, so only a queued status is reported.
+type sendInvoiceResponse struct {
+	Status string `json:"status"`
+}
+
 type deleteInvoiceResponse struct {
 	InvoiceID string `json:"invoice_id"`
 	Status    string `json:"status"`

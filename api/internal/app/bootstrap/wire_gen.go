@@ -354,6 +354,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	client := provideStripeClient(cfg)
 	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession)
+	sendEmail := application10.NewSendInvoiceEmail(repository2, bootstrapParentContactLookupAdapter, bootstrapBillingNotificationAdapter, transactionManager)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
 		ListInvoices:             listInvoices,
 		GetInvoice:               getInvoice,
@@ -365,6 +366,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		DeleteInvoice:            deleteInvoice,
 		BulkDeleteInvoices:       bulkDeleteInvoices,
 		ManageInvoiceLines:       manageInvoiceLines,
+		SendEmail:                sendEmail,
 	}
 	listParentInvoices := application10.NewListParentInvoices(repository2)
 	getParentInvoice := application10.NewGetParentInvoice(repository2, bootstrapSiteProfileLookupAdapter)
@@ -774,6 +776,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	client := provideStripeClient(cfg)
 	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession)
+	sendEmail := application10.NewSendInvoiceEmail(repository2, bootstrapParentContactLookupAdapter, bootstrapBillingNotificationAdapter, transactionManager)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
 		ListInvoices:             listInvoices,
 		GetInvoice:               getInvoice,
@@ -785,6 +788,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		DeleteInvoice:            deleteInvoice,
 		BulkDeleteInvoices:       bulkDeleteInvoices,
 		ManageInvoiceLines:       manageInvoiceLines,
+		SendEmail:                sendEmail,
 	}
 	listParentInvoices := application10.NewListParentInvoices(repository2)
 	getParentInvoice := application10.NewGetParentInvoice(repository2, bootstrapSiteProfileLookupAdapter)
@@ -1070,7 +1074,7 @@ func provideFundingLookupAdapter(
 	return &fundingLookupAdapter{fundingRepo: fundingRepo, ownerRepo: ownerRepo}
 }
 
-var billingSet = wire.NewSet(postgres6.NewRepository, wire.Bind(new(domain9.BillingRepository), new(*postgres6.Repository)), wire.Bind(new(domain9.BranchSettingsRepository), new(*postgres6.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application10.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application10.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain9.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain9.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain9.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), provideHourlyBookingLookupAdapter, wire.Bind(new(domain9.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)), provideFundingLookupAdapter, wire.Bind(new(domain9.FundingLookup), new(*fundingLookupAdapter)), application11.NewBookingEntriesLookupAdapter, wire.Bind(new(domain9.BookingEntriesLookup), new(*application11.BookingEntriesLookupAdapter)), application10.NewPreflightDraftInvoices, application10.NewComputeInvoicePrefill, application10.NewCreateDraftInvoice, application10.NewCreateAndIssueInvoiceFromForm, application10.NewGenerateDraftInvoices, application10.NewListInvoices, application10.NewGetInvoice, application10.NewIssueInvoice, application10.NewBulkIssueInvoices, application10.NewOverrideAttendanceBlockUseCase, application10.NewVoidInvoice, application10.NewManageInvoiceLines, application10.NewListParentInvoices, application10.NewGetParentInvoice, application10.NewUpdateSiteRateUseCase, application10.NewUpdateBranchSettingsUseCase, application10.NewExportInvoices, application10.NewInvoiceSummary, application10.NewOverdueSummary, provideInvoicePDFRenderer, wire.Bind(new(httpbilling.InvoicePDFRenderer), new(*pdf.Renderer)), wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.ExportUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
+var billingSet = wire.NewSet(postgres6.NewRepository, wire.Bind(new(domain9.BillingRepository), new(*postgres6.Repository)), wire.Bind(new(domain9.BranchSettingsRepository), new(*postgres6.Repository)), provideSiteProfileLookupAdapter, wire.Bind(new(application10.SiteProfileLookup), new(*siteProfileLookupAdapter)), provideParentContactLookupAdapter, wire.Bind(new(application10.ParentContactLookup), new(*parentContactLookupAdapter)), provideSiteRateUpdateAdapter, wire.Bind(new(domain9.SiteRateRepository), new(*siteRateUpdateAdapter)), provideTermDateLookupAdapter, wire.Bind(new(domain9.TermDateLookup), new(*termDateLookupAdapter)), provideAdHocBookingLookupAdapter, wire.Bind(new(domain9.AdHocBookingLookup), new(*adHocBookingLookupAdapter)), provideHourlyBookingLookupAdapter, wire.Bind(new(domain9.HourlyBookingLookup), new(*hourlyBookingLookupAdapter)), provideFundingLookupAdapter, wire.Bind(new(domain9.FundingLookup), new(*fundingLookupAdapter)), application11.NewBookingEntriesLookupAdapter, wire.Bind(new(domain9.BookingEntriesLookup), new(*application11.BookingEntriesLookupAdapter)), wire.Bind(new(application10.InvoiceResendSender), new(*billingNotificationAdapter)), application10.NewPreflightDraftInvoices, application10.NewComputeInvoicePrefill, application10.NewCreateDraftInvoice, application10.NewCreateAndIssueInvoiceFromForm, application10.NewGenerateDraftInvoices, application10.NewListInvoices, application10.NewGetInvoice, application10.NewIssueInvoice, application10.NewBulkIssueInvoices, application10.NewOverrideAttendanceBlockUseCase, application10.NewVoidInvoice, application10.NewManageInvoiceLines, application10.NewListParentInvoices, application10.NewGetParentInvoice, application10.NewUpdateSiteRateUseCase, application10.NewUpdateBranchSettingsUseCase, application10.NewExportInvoices, application10.NewInvoiceSummary, application10.NewOverdueSummary, application10.NewIssueInvoiceWithCheckout, application10.NewSendInvoiceEmail, provideInvoicePDFRenderer, wire.Bind(new(httpbilling.InvoicePDFRenderer), new(*pdf.Renderer)), wire.Struct(new(httpbilling.DraftUseCases), "*"), wire.Struct(new(httpbilling.LifecycleUseCases), "*"), wire.Struct(new(httpbilling.ParentInvoiceUseCases), "*"), wire.Struct(new(httpbilling.AdminUseCases), "*"), wire.Struct(new(httpbilling.ExportUseCases), "*"), wire.Struct(new(httpbilling.BillingHandlerConfig), "*"), httpbilling.NewHandler)
 
 func provideCreateCheckoutSession(
 	repo *postgres17.Repository,

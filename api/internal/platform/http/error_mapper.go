@@ -55,7 +55,8 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"payment_webhook_invalid_signature",
 		"booking_pattern_backdated", "booking_pattern_effective_to_before_from",
 		"booking_pattern_overlap", "booking_pattern_duplicate_entry",
-		"session_type_archived", "site_rate_missing":
+		"session_type_archived", "site_rate_missing",
+		"parent_no_email":
 		status = http.StatusUnprocessableEntity
 	case "attendance_session_already_open", "attendance_session_not_open",
 		"child_enrollment_incomplete", "attendance_invalid_time_order",
@@ -65,7 +66,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"absence_attendance_exists", "absence_marker_exists",
 		"duplicate_child_month",
 		"invoice_not_draft", "invoice_not_monthly",
-		"invoice_not_payable",
+		"invoice_not_payable", "invoice_resend_throttled",
 		"invite_email_already_registered", "invite_scope_conflict",
 		"invite_not_pending", "invite_already_accepted",
 		"room_name_duplicate", "room_has_children", "room_not_active":

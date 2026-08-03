@@ -46,6 +46,7 @@ type (
 		DeleteInvoice            *application.DeleteInvoice
 		BulkDeleteInvoices       *application.BulkDeleteInvoices
 		ManageInvoiceLines       *application.ManageInvoiceLines
+		SendEmail                *application.SendInvoiceEmail
 	}
 
 	ParentInvoiceUseCases struct {
@@ -91,6 +92,7 @@ type Handler struct {
 	deleteInvoice            *application.DeleteInvoice
 	bulkDeleteInvoices       *application.BulkDeleteInvoices
 	manageInvoiceLines       *application.ManageInvoiceLines
+	sendEmail                *application.SendInvoiceEmail
 	listParentInvoices       *application.ListParentInvoices
 	getParentInvoice         *application.GetParentInvoice
 	updateSiteRate           *application.UpdateSiteRateUseCase
@@ -119,6 +121,7 @@ func NewHandler(cfg BillingHandlerConfig, logger *slog.Logger) *Handler {
 		deleteInvoice:            cfg.Lifecycle.DeleteInvoice,
 		bulkDeleteInvoices:       cfg.Lifecycle.BulkDeleteInvoices,
 		manageInvoiceLines:       cfg.Lifecycle.ManageInvoiceLines,
+		sendEmail:                cfg.Lifecycle.SendEmail,
 		listParentInvoices:       cfg.Parent.List,
 		getParentInvoice:         cfg.Parent.Get,
 		updateSiteRate:           cfg.Admin.UpdateSiteRate,
@@ -140,6 +143,7 @@ func (h *Handler) RegisterRoutes(manager *gin.RouterGroup) {
 	manager.POST("/invoices/drafts/issue", h.createAndIssueInvoiceHandler)
 	manager.POST("/invoices/drafts/bulk-issue", h.bulkIssueInvoicesHandler)
 	manager.POST("/invoices/:invoice_id/issue", h.issueInvoiceHandler)
+	manager.POST("/invoices/:invoice_id/send", h.sendInvoiceHandler)
 	manager.POST("/invoices/:invoice_id/void", h.voidInvoiceHandler)
 	manager.DELETE("/invoices/:invoice_id", h.deleteInvoiceHandler)
 	manager.DELETE("/invoices", h.bulkDeleteInvoicesHandler)
@@ -620,6 +624,39 @@ func (h *Handler) voidInvoiceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toVoidInvoiceResponse(result))
+}
+
+// sendInvoiceHandler enqueues an invoice email to the parent (manager-triggered
+// resend of the issued email). Delivery is asynchronous via the outbox, so the
+// endpoint reports 202 with a queued status.
+//
+//	@Summary		Send invoice to parent
+//	@Description	Enqueue an invoice email with the PDF attachment to the parent.
+//	@Tags			invoices
+//	@Produce		json
+//	@Param			invoice_id	path		string				true	"Invoice ID"	format(uuid)
+//	@Success		202			{object}	sendInvoiceResponse
+//	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		409			{object}	object{code=string,message=string}
+//	@Failure		422			{object}	object{code=string,message=string}
+//	@Failure		500			{object}	object{code=string,message=string}
+//	@Security		BearerAuth
+//	@x-roles		["manager"]
+//	@Router			/invoices/{invoice_id}/send [post]
+func (h *Handler) sendInvoiceHandler(c *gin.Context) {
+	actor, ok := tenant.ActorFromGinContext(c)
+	if !ok {
+		httpserver.WriteError(c, http.StatusUnauthorized, "unauthorized", "Invalid credentials or session.", nil)
+		return
+	}
+
+	result, err := h.sendEmail.Execute(c.Request.Context(), actor, c.Param("invoice_id"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, sendInvoiceResponse{Status: result.Status})
 }
 
 // deleteInvoiceHandler deletes a single invoice permanently.
