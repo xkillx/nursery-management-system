@@ -1,0 +1,28 @@
+{{define "content"}}
+<style>
+    .nurserypro-root { --accent: #dc2626; --accent-text: #dc2626; }
+</style>
+<tr>
+    <td class="nurserypro-heading" style="padding:16px 32px 4px;">
+        <div style="width:48px;height:4px;background-color:#dc2626;margin-bottom:12px;">&nbsp;</div>
+        <h1 style="margin:0;font-size:24px;color:#0f172a;">Invoice Overdue</h1>
+        <p class="nurserypro-text" style="margin:10px 0 0;font-size:15px;color:#475569;line-height:1.5;">Your invoice for <strong>{{.ChildName}}</strong> is now overdue. Please arrange payment as soon as possible to avoid further action.</p>
+    </td>
+</tr>
+<tr>
+    <td style="padding:16px 32px;">
+        <table class="nurserypro-card nurserypro-text" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+            <tr>
+                <td style="padding:14px 18px;font-size:14px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td style="color:#64748b;">Invoice Number</td>
+                            <td align="right" style="font-weight:bold;color:#0f172a;">{{.InvoiceNumber}}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{{end}}

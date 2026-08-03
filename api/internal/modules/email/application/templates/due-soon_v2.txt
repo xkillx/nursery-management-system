@@ -1,0 +1,14 @@
+Payment Due Soon - {{.ChildName}}
+
+Your invoice for {{.ChildName}} is due soon. Please make payment by the due date to keep your account up to date.
+
+Invoice Number: {{.InvoiceNumber}}
+{{if .DueDate}}Due Date: {{.DueDate}}
+{{end}}Amount Due: {{.TotalDue}}
+
+View Invoice & Pay Online: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

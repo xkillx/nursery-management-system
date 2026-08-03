@@ -1,0 +1,13 @@
+Payment Received
+
+Thank you for your payment. We have received your payment for the invoice below.
+
+Invoice Number: {{.InvoiceNumber}}
+{{if .AmountPaid}}Amount Paid: {{.AmountPaid}}
+{{end}}{{if .PaymentDate}}Payment Date: {{.PaymentDate}}
+{{end}}View Invoice & Pay Online: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

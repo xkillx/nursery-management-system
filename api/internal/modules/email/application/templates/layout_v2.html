@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>NurseryPro</title>
+    <style>
+        .nurserypro-root { --accent: #2563eb; --accent-text: #2563eb; }
+        @media (prefers-color-scheme: dark) {
+            .nurserypro-body { background-color: #0f172a !important; }
+            .nurserypro-shell { background-color: #0f172a !important; }
+            .nurserypro-heading, .nurserypro-heading h1 { color: #e2e8f0 !important; }
+            .nurserypro-text, .nurserypro-text td, .nurserypro-text p { color: #e2e8f0 !important; }
+            .nurserypro-muted, .nurserypro-muted td { color: #94a3b8 !important; }
+            .nurserypro-hero { background-color: #1e293b !important; border-color: #334155 !important; }
+            .nurserypro-card { background-color: #1e293b !important; border-color: #334155 !important; }
+        }
+    </style>
+</head>
+<body class="nurserypro-body" style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding:24px 16px;">
+                <table class="nurserypro-shell nurserypro-root" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;">
+                    <tr>
+                        <td style="height:4px;background-color:var(--accent, #2563eb);line-height:4px;font-size:0;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:24px 32px 8px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td valign="middle" style="padding-right:10px;">
+                                        <svg width="38" height="38" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NurseryPro">
+                                            <circle cx="18" cy="18" r="17" fill="#2563eb"/>
+                                            <circle cx="12" cy="14.5" r="2.2" fill="#ffffff"/>
+                                            <circle cx="24" cy="14.5" r="2.2" fill="#ffffff"/>
+                                            <path d="M11 22 q7 6 14 0" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+                                        </svg>
+                                    </td>
+                                    <td valign="middle">
+                                        <span style="font-size:22px;font-weight:bold;color:#0f172a;">Nursery</span><span style="font-size:22px;font-weight:bold;color:#2563eb;">Pro</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {{template "content" .}}
+                    <tr>
+                        <td style="padding:12px 32px 24px;">
+                            <table class="nurserypro-hero" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6fc;border:1px solid #e2e8f0;border-radius:8px;">
+                                <tr>
+                                    <td align="center" style="padding:20px;">
+                                        <div class="nurserypro-muted" style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;">Amount Due</div>
+                                        <div style="font-size:34px;font-weight:bold;color:var(--accent-text, #2563eb);margin-top:6px;">{{.TotalDue}}</div>
+                                        {{if .DueDate}}<div class="nurserypro-muted" style="font-size:13px;color:#64748b;margin-top:4px;">Due by {{.DueDate}}</div>{{end}}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding:0 32px 28px;">
+                            <a href="{{.PortalLink}}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 32px;border-radius:6px;">View Invoice &amp; Pay Online</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#0f172a;padding:24px 32px;text-align:center;">
+                            <div style="font-size:14px;font-weight:bold;color:#ffffff;">NurseryPro</div>
+                            <div class="nurserypro-muted" style="font-size:12px;color:#94a3b8;margin-top:6px;">{{.NurseryName}}</div>
+                            <div class="nurserypro-muted" style="font-size:12px;color:#94a3b8;margin-top:6px;">&copy; 2026 NurseryPro. All rights reserved.</div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

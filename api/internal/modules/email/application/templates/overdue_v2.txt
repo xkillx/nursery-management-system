@@ -1,0 +1,13 @@
+Invoice Overdue - {{.ChildName}}
+
+Your invoice for {{.ChildName}} is now overdue. Please arrange payment as soon as possible to avoid further action.
+
+Invoice Number: {{.InvoiceNumber}}
+Amount Due: {{.TotalDue}}
+{{if .DueDate}}Due Date: {{.DueDate}}
+{{end}}View Invoice & Pay Online: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

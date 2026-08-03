@@ -1,0 +1,14 @@
+Payment Due Today - {{.ChildName}}
+
+Your invoice for {{.ChildName}} is due today. Please make payment today to avoid late fees.
+
+Invoice Number: {{.InvoiceNumber}}
+{{if .DueDate}}Due Date: {{.DueDate}}
+{{end}}Amount Due: {{.TotalDue}}
+
+View Invoice & Pay Online: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}

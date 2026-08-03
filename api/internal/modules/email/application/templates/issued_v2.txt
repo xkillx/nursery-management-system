@@ -1,0 +1,15 @@
+New Invoice Issued - {{.ChildName}}
+
+A new invoice has been issued for {{.ChildName}} at {{.NurseryName}}.
+
+Invoice Number: {{.InvoiceNumber}}
+{{if .BillingMonth}}Billing Month: {{.BillingMonth}}
+{{end}}{{if .DueDate}}Due Date: {{.DueDate}}
+{{end}}Amount Due: {{.TotalDue}}
+
+View Invoice & Pay Online: {{.PortalLink}}
+
+If you have any questions about this invoice, please contact the nursery.
+
+Best regards,
+{{.NurseryName}}
