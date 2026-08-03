@@ -82,8 +82,10 @@ func (uc *SendPendingEmails) processMessage(ctx context.Context, msg domain.Outb
 		return err
 	}
 
-	_ = htmlBody
-	_ = textBody
+	// Carry the rendered bodies through to delivery in memory (KTD-1). They are
+	// not persisted, so a retry after a DB round-trip renders them afresh.
+	msg.RenderedHTML = htmlBody
+	msg.RenderedText = textBody
 
 	result, err := uc.provider.Send(ctx, msg)
 	if err != nil {

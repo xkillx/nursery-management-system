@@ -20,11 +20,18 @@ func NewProvider(sender platformemail.Sender, storage storage.Service) *Provider
 }
 
 func (p *Provider) Send(ctx context.Context, msg domain.OutboxMessage) (domain.SendResult, error) {
+	// Prefer the rendered template bodies. When no rendered text exists (e.g. a
+	// non-template message), fall back to the payload JSON as the plain-text body.
+	textBody := msg.RenderedText
+	if textBody == "" {
+		textBody = string(msg.PayloadJSON)
+	}
+
 	platformMsg := platformemail.Message{
 		To:      msg.Recipient,
 		Subject: msg.Subject,
-		Text:    string(msg.PayloadJSON),
-		HTML:    "",
+		Text:    textBody,
+		HTML:    msg.RenderedHTML,
 	}
 
 	// Fetch attachment data from S3 if present

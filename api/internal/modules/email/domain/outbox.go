@@ -31,18 +31,23 @@ func (s Status) Valid() bool {
 }
 
 type OutboxMessage struct {
-	ID                uuid.UUID
-	TenantID          uuid.UUID
-	BranchID          uuid.UUID
-	IdempotencyKey    string
-	EventType         string
-	Recipient         string
-	RecipientName     *string
-	Subject           string
-	TemplateName      string
-	TemplateVersion   int
-	PayloadJSON       []byte
-	Attachments       []AttachmentRef
+	ID              uuid.UUID
+	TenantID        uuid.UUID
+	BranchID        uuid.UUID
+	IdempotencyKey  string
+	EventType       string
+	Recipient       string
+	RecipientName   *string
+	Subject         string
+	TemplateName    string
+	TemplateVersion int
+	PayloadJSON     []byte
+	Attachments     []AttachmentRef
+	// RenderedHTML and RenderedText carry the rendered template output through
+	// the send step only. They are never persisted: a DB round-trip leaves them
+	// empty, so they are populated in memory right before delivery (KTD-1).
+	RenderedHTML      string
+	RenderedText      string
 	EntityID          string
 	Status            Status
 	Attempts          int
