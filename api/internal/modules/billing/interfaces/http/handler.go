@@ -1111,7 +1111,7 @@ func (h *Handler) pdfHandler(c *gin.Context) {
 		return
 	}
 
-	filename := fmt.Sprintf("INV-%s.pdf", invoiceNumberOrID(result.Invoice.InvoiceNumber, result.Invoice.ID.String()))
+	filename := domain.InvoicePdfFilename(result.Invoice.InvoiceNumber, result.Invoice.ID)
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
@@ -1146,18 +1146,11 @@ func (h *Handler) parentPdfHandler(c *gin.Context) {
 		return
 	}
 
-	filename := fmt.Sprintf("INV-%s.pdf", invoiceNumberOrID(result.Invoice.InvoiceNumber, result.Invoice.ID.String()))
+	filename := domain.InvoicePdfFilename(result.Invoice.InvoiceNumber, result.Invoice.ID)
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
 	c.Data(http.StatusOK, "application/pdf", pdfBytes)
-}
-
-func invoiceNumberOrID(number *string, id string) string {
-	if number != nil && *number != "" {
-		return *number
-	}
-	return id
 }
 
 func queryParamPtr(c *gin.Context, key string) *string {

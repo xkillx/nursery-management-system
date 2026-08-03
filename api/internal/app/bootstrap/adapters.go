@@ -1238,7 +1238,7 @@ func (a *billingNotificationAdapter) buildInvoiceAttachment(ctx context.Context,
 	}
 
 	return &emaildomain.AttachmentRef{
-		Filename:    "invoice.pdf",
+		Filename:    billingdomain.InvoicePdfFilename(invoice.InvoiceNumber, invoiceID),
 		ContentType: "application/pdf",
 		S3Key:       s3Key,
 	}

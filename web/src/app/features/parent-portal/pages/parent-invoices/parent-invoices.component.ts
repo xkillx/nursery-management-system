@@ -120,7 +120,7 @@ export class ParentInvoicesComponent implements OnInit {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = invoice.invoiceNumber ? `INV-${invoice.invoiceNumber}.pdf` : `INV-${invoice.invoiceId}.pdf`;
+        a.download = invoice.invoiceNumber ? `${invoice.invoiceNumber}.pdf` : `INV-${invoice.invoiceId}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
         this.downloadingInvoiceIds.delete(invoice.invoiceId);

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -505,4 +506,16 @@ func (inv *Invoice) recalculateTotal() {
 		total += line.LineAmount.Minor()
 	}
 	inv.TotalMinor = total
+}
+
+// InvoicePdfFilename returns the user-facing PDF filename for an invoice. The
+// invoice number already carries the INV- prefix, so it is used verbatim
+// (<number>.pdf); when the invoice has not been issued yet the invoice ID is
+// used with an INV- prefix (INV-<id>.pdf). Shared by the email attachment and
+// the portal download endpoints so a given invoice always uses the same name.
+func InvoicePdfFilename(invoiceNumber *string, invoiceID uuid.UUID) string {
+	if invoiceNumber != nil && *invoiceNumber != "" {
+		return fmt.Sprintf("%s.pdf", *invoiceNumber)
+	}
+	return fmt.Sprintf("INV-%s.pdf", invoiceID.String())
 }

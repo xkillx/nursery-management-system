@@ -534,7 +534,7 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = this.detail!.invoiceNumber ? `INV-${this.detail!.invoiceNumber}.pdf` : `INV-${this.detail!.invoiceId}.pdf`;
+        a.download = this.detail!.invoiceNumber ? `${this.detail!.invoiceNumber}.pdf` : `INV-${this.detail!.invoiceId}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
         this.isDownloadingPdf = false;

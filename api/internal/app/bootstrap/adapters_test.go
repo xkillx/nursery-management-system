@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -124,8 +125,8 @@ func TestBuildInvoiceAttachment_HappyPath(t *testing.T) {
 	if ref == nil {
 		t.Fatal("expected attachment ref")
 	}
-	if ref.Filename != "invoice.pdf" {
-		t.Errorf("Filename = %q, want invoice.pdf", ref.Filename)
+	if ref.Filename != "INV-2026-08-0001.pdf" {
+		t.Errorf("Filename = %q, want INV-2026-08-0001.pdf", ref.Filename)
 	}
 	if ref.ContentType != "application/pdf" {
 		t.Errorf("ContentType = %q, want application/pdf", ref.ContentType)
@@ -142,6 +143,28 @@ func TestBuildInvoiceAttachment_HappyPath(t *testing.T) {
 	}
 	if !strings.HasPrefix(string(data), "%PDF") {
 		t.Errorf("expected PDF header, got %q", string(data[:min(len(data), 8)]))
+	}
+}
+
+func TestBuildInvoiceAttachment_FallbackFilenameWithoutNumber(t *testing.T) {
+	renderer := newTestRenderer(t)
+	fakeStorage := storage.NewFakeService()
+	invoice := testInvoice()
+	invoice.InvoiceNumber = nil
+
+	adapter := &billingNotificationAdapter{
+		repo:        &stubAttachmentRepo{invoice: invoice, found: true},
+		pdfRenderer: renderer,
+		storage:     fakeStorage,
+	}
+
+	ref := adapter.buildInvoiceAttachment(context.Background(), &fakeTx{}, uuid.New(), uuid.New(), invoice.ID, invoice, testSiteProfile(), testParentContact())
+	if ref == nil {
+		t.Fatal("expected attachment ref")
+	}
+	want := fmt.Sprintf("INV-%s.pdf", invoice.ID.String())
+	if ref.Filename != want {
+		t.Errorf("Filename = %q, want %q", ref.Filename, want)
 	}
 }
 
