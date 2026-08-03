@@ -2,11 +2,9 @@ package bootstrap
 
 import (
 	"context"
-	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"log/slog"
 	"strings"
 	"time"
@@ -727,19 +725,6 @@ var _ bookingsapp.RoomCapacityLookup = (*roomCapacityLookupAdapter)(nil)
 
 // ── Billing Notification adapter ──────────────────────────────────────────
 
-//go:embed templates/*.html templates/*.txt
-var notificationTemplatesFS embed.FS
-
-type notificationTemplateData struct {
-	NurseryName   string
-	ChildName     string
-	InvoiceNumber string
-	BillingMonth  string
-	TotalDue      string
-	DueDate       string
-	PortalLink    string
-}
-
 type billingNotificationAdapter struct {
 	repo           billingdomain.BillingRepository
 	parentContacts billingapp.ParentContactLookup
@@ -1149,30 +1134,6 @@ func attachmentRefs(ref *emaildomain.AttachmentRef) []emaildomain.AttachmentRef 
 		return nil
 	}
 	return []emaildomain.AttachmentRef{*ref}
-}
-
-func renderTemplates(name string, data notificationTemplateData) (htmlBody, textBody string, err error) {
-	htmlTmpl, err := template.ParseFS(notificationTemplatesFS, "templates/"+name+".html")
-	if err != nil {
-		return "", "", fmt.Errorf("parse html template: %w", err)
-	}
-
-	var htmlBuf strings.Builder
-	if err := htmlTmpl.Execute(&htmlBuf, data); err != nil {
-		return "", "", fmt.Errorf("execute html template: %w", err)
-	}
-
-	textTmpl, err := template.ParseFS(notificationTemplatesFS, "templates/"+name+".txt")
-	if err != nil {
-		return "", "", fmt.Errorf("parse text template: %w", err)
-	}
-
-	var textBuf strings.Builder
-	if err := textTmpl.Execute(&textBuf, data); err != nil {
-		return "", "", fmt.Errorf("execute text template: %w", err)
-	}
-
-	return htmlBuf.String(), textBuf.String(), nil
 }
 
 func formatMoney(m billingdomain.Money) string {
