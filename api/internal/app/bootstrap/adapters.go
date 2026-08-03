@@ -23,6 +23,7 @@ import (
 	attendancedomain "nursery-management-system/api/internal/modules/attendance/domain"
 	billingapp "nursery-management-system/api/internal/modules/billing/application"
 	billingdomain "nursery-management-system/api/internal/modules/billing/domain"
+	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	billingpostgres "nursery-management-system/api/internal/modules/billing/infrastructure/postgres"
 	bookingsapp "nursery-management-system/api/internal/modules/bookings/application"
 	bookingsdomain "nursery-management-system/api/internal/modules/bookings/domain"
@@ -61,6 +62,7 @@ import (
 	"nursery-management-system/api/internal/platform/uid"
 
 	emaildomain "nursery-management-system/api/internal/modules/email/domain"
+	platformstorage "nursery-management-system/api/internal/platform/storage"
 )
 
 type membershipCheckerAdapter struct {
@@ -745,6 +747,8 @@ type billingNotificationAdapter struct {
 	enqueuer       emaildomain.EmailEnqueuer
 	auditWriter    *audit.Writer
 	webBaseURL     string
+	pdfRenderer    *billingpdf.Renderer
+	storage        platformstorage.Service
 }
 
 func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
@@ -772,38 +776,14 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 		return fmt.Errorf("site profile not found")
 	}
 
-	childName := invoice.ChildFirstName
-	if invoice.ChildLastName != nil {
-		childName += " " + *invoice.ChildLastName
-	}
-
 	invoiceNumber := ""
 	if invoice.InvoiceNumber != nil {
 		invoiceNumber = *invoice.InvoiceNumber
 	}
 
-	billingMonth := invoice.BillingMonth.Format("January 2006")
-	totalDue := formatMoney(invoice.TotalDue)
-	dueDate := ""
-	if invoice.DueAt != nil {
-		dueDate = invoice.DueAt.Format("2 January 2006")
-	}
-
-	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
-
-	data := notificationTemplateData{
-		NurseryName:   site.NurseryName,
-		ChildName:     childName,
-		InvoiceNumber: invoiceNumber,
-		BillingMonth:  billingMonth,
-		TotalDue:      totalDue,
-		DueDate:       dueDate,
-		PortalLink:    portalLink,
-	}
-
 	subject := fmt.Sprintf("New Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(data)
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -813,9 +793,10 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 		Recipient:       parent.Email,
 		Subject:         subject,
 		TemplateName:    "issued",
-		TemplateVersion: 1,
+		TemplateVersion: 2,
 		PayloadJSON:     payloadJSON,
 		EntityID:        invoiceID.String(),
+		AttachmentRefs:  attachmentRefs(a.buildInvoiceAttachment(ctx, tx, tenantID, branchID, invoiceID, invoice, site, parent)),
 	})
 	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedFailed, err)
@@ -856,30 +837,14 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 		return fmt.Errorf("site profile not found")
 	}
 
-	childName := invoice.ChildFirstName
-	if invoice.ChildLastName != nil {
-		childName += " " + *invoice.ChildLastName
-	}
-
 	invoiceNumber := ""
 	if invoice.InvoiceNumber != nil {
 		invoiceNumber = *invoice.InvoiceNumber
 	}
 
-	totalDue := formatMoney(invoice.TotalDue)
-	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
-
-	data := notificationTemplateData{
-		NurseryName:   site.NurseryName,
-		ChildName:     childName,
-		InvoiceNumber: invoiceNumber,
-		TotalDue:      totalDue,
-		PortalLink:    portalLink,
-	}
-
 	subject := fmt.Sprintf("Invoice Overdue %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(data)
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -889,9 +854,10 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 		Recipient:       parent.Email,
 		Subject:         subject,
 		TemplateName:    "overdue",
-		TemplateVersion: 1,
+		TemplateVersion: 2,
 		PayloadJSON:     payloadJSON,
 		EntityID:        invoiceID.String(),
+		AttachmentRefs:  attachmentRefs(a.buildInvoiceAttachment(ctx, tx, tenantID, branchID, invoiceID, invoice, site, parent)),
 	})
 	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceOverdueFailed, err)
@@ -932,36 +898,14 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 		return fmt.Errorf("site profile not found")
 	}
 
-	childName := invoice.ChildFirstName
-	if invoice.ChildLastName != nil {
-		childName += " " + *invoice.ChildLastName
-	}
-
 	invoiceNumber := ""
 	if invoice.InvoiceNumber != nil {
 		invoiceNumber = *invoice.InvoiceNumber
 	}
 
-	totalDue := formatMoney(invoice.TotalDue)
-	dueDate := ""
-	if invoice.DueAt != nil {
-		dueDate = invoice.DueAt.Format("2 January 2006")
-	}
-
-	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
-
-	data := notificationTemplateData{
-		NurseryName:   site.NurseryName,
-		ChildName:     childName,
-		InvoiceNumber: invoiceNumber,
-		TotalDue:      totalDue,
-		DueDate:       dueDate,
-		PortalLink:    portalLink,
-	}
-
 	subject := fmt.Sprintf("Payment Reminder: Invoice %s Due Soon - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(data)
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -971,9 +915,10 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 		Recipient:       parent.Email,
 		Subject:         subject,
 		TemplateName:    "due-soon",
-		TemplateVersion: 1,
+		TemplateVersion: 2,
 		PayloadJSON:     payloadJSON,
 		EntityID:        invoiceID.String(),
+		AttachmentRefs:  attachmentRefs(a.buildInvoiceAttachment(ctx, tx, tenantID, branchID, invoiceID, invoice, site, parent)),
 	})
 	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueSoonFailed, err)
@@ -1014,36 +959,14 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 		return fmt.Errorf("site profile not found")
 	}
 
-	childName := invoice.ChildFirstName
-	if invoice.ChildLastName != nil {
-		childName += " " + *invoice.ChildLastName
-	}
-
 	invoiceNumber := ""
 	if invoice.InvoiceNumber != nil {
 		invoiceNumber = *invoice.InvoiceNumber
 	}
 
-	totalDue := formatMoney(invoice.TotalDue)
-	dueDate := ""
-	if invoice.DueAt != nil {
-		dueDate = invoice.DueAt.Format("2 January 2006")
-	}
-
-	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
-
-	data := notificationTemplateData{
-		NurseryName:   site.NurseryName,
-		ChildName:     childName,
-		InvoiceNumber: invoiceNumber,
-		TotalDue:      totalDue,
-		DueDate:       dueDate,
-		PortalLink:    portalLink,
-	}
-
 	subject := fmt.Sprintf("Payment Due Today: Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(data)
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -1053,9 +976,10 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 		Recipient:       parent.Email,
 		Subject:         subject,
 		TemplateName:    "due-reminder",
-		TemplateVersion: 1,
+		TemplateVersion: 2,
 		PayloadJSON:     payloadJSON,
 		EntityID:        invoiceID.String(),
+		AttachmentRefs:  attachmentRefs(a.buildInvoiceAttachment(ctx, tx, tenantID, branchID, invoiceID, invoice, site, parent)),
 	})
 	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceDueReminderFailed, err)
@@ -1096,31 +1020,19 @@ func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pg
 		return fmt.Errorf("site profile not found")
 	}
 
-	childName := invoice.ChildFirstName
-	if invoice.ChildLastName != nil {
-		childName += " " + *invoice.ChildLastName
-	}
-
 	invoiceNumber := ""
 	if invoice.InvoiceNumber != nil {
 		invoiceNumber = *invoice.InvoiceNumber
 	}
 
-	totalDue := formatMoney(invoice.TotalDue)
-	portalLink := fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID)
-
-	data := notificationTemplateData{
-		NurseryName:   site.NurseryName,
-		ChildName:     childName,
-		InvoiceNumber: invoiceNumber,
-		TotalDue:      totalDue,
-		DueDate:       paymentDate,
-		PortalLink:    portalLink,
-	}
-
 	subject := fmt.Sprintf("Payment Received - Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(data)
+	payload := a.invoicePayload(site, invoice, invoiceID)
+	delete(payload, "DueDate")
+	payload["AmountPaid"] = formatMoney(billingdomain.MustGBP(amountPaid))
+	payload["PaymentDate"] = paymentDate
+
+	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -1130,9 +1042,10 @@ func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pg
 		Recipient:       parent.Email,
 		Subject:         subject,
 		TemplateName:    "receipt",
-		TemplateVersion: 1,
+		TemplateVersion: 2,
 		PayloadJSON:     payloadJSON,
 		EntityID:        invoiceID.String(),
+		AttachmentRefs:  attachmentRefs(a.buildInvoiceAttachment(ctx, tx, tenantID, branchID, invoiceID, invoice, site, parent)),
 	})
 	if err != nil {
 		a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationReceiptFailed, err)
@@ -1146,6 +1059,96 @@ func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pg
 
 	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationReceiptSent, nil)
 	return nil
+}
+
+// invoicePayload builds the v2 template payload shared by the invoice
+// notification emails. Template fields use the v1 field names so the v2
+// templates and text alternatives render the same data.
+func (a *billingNotificationAdapter) invoicePayload(site *siteprofiledomain.SiteProfile, invoice billingdomain.InvoiceReviewRow, invoiceID uuid.UUID) map[string]interface{} {
+	childName := invoice.ChildFirstName
+	if invoice.ChildLastName != nil {
+		childName += " " + *invoice.ChildLastName
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	payload := map[string]interface{}{
+		"NurseryName":   site.NurseryName,
+		"ChildName":     childName,
+		"InvoiceNumber": invoiceNumber,
+		"TotalDue":      formatMoney(invoice.TotalDue),
+		"PortalLink":    fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID),
+	}
+	if !invoice.BillingMonth.IsZero() {
+		payload["BillingMonth"] = invoice.BillingMonth.Format("January 2006")
+	}
+	if invoice.DueAt != nil {
+		payload["DueDate"] = invoice.DueAt.Format("2 January 2006")
+	}
+	return payload
+}
+
+// buildInvoiceAttachment renders the branded invoice PDF and uploads it to S3
+// under invoices/{id}/invoice.pdf, returning the outbox attachment ref.
+// Best-effort (R9): on any failure it logs a warning and returns nil so the
+// email is still enqueued without the attachment.
+func (a *billingNotificationAdapter) buildInvoiceAttachment(ctx context.Context, tx pgx.Tx, tenantID, branchID, invoiceID uuid.UUID, invoice billingdomain.InvoiceReviewRow, site *siteprofiledomain.SiteProfile, parent *billingdomain.ParentContact) *emaildomain.AttachmentRef {
+	if a.pdfRenderer == nil || a.storage == nil {
+		return nil
+	}
+
+	lines, err := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+	if err != nil {
+		slog.WarnContext(ctx, "attachment_lines_fetch_failed",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
+	}
+
+	sp := &billingdomain.InvoiceSiteProfile{
+		NurseryName:     site.NurseryName,
+		Phone:           site.Phone,
+		Email:           site.Email,
+		Website:         site.Website,
+		AddressStreet:   site.AddressStreet,
+		AddressCity:     site.AddressCity,
+		AddressPostcode: site.AddressPostcode,
+	}
+
+	pdfBytes, err := a.pdfRenderer.RenderManagerInvoice(ctx, sp, invoice, lines, parent, invoice.Subtotal, invoice.FundedDeduction, invoice.TotalDue)
+	if err != nil {
+		slog.WarnContext(ctx, "attachment_pdf_render_failed",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
+	}
+
+	s3Key := fmt.Sprintf("invoices/%s/invoice.pdf", invoiceID.String())
+	if err := a.storage.Upload(ctx, s3Key, pdfBytes, "application/pdf"); err != nil {
+		slog.WarnContext(ctx, "attachment_s3_upload_failed",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return nil
+	}
+
+	return &emaildomain.AttachmentRef{
+		Filename:    "invoice.pdf",
+		ContentType: "application/pdf",
+		S3Key:       s3Key,
+	}
+}
+
+func attachmentRefs(ref *emaildomain.AttachmentRef) []emaildomain.AttachmentRef {
+	if ref == nil {
+		return nil
+	}
+	return []emaildomain.AttachmentRef{*ref}
 }
 
 func renderTemplates(name string, data notificationTemplateData) (htmlBody, textBody string, err error) {

@@ -77,6 +77,10 @@ func (s *deleteInvoiceRepoStub) CountInvoicesForManagerReview(_ context.Context,
 func (s *deleteInvoiceRepoStub) ListInvoiceLinesForManagerReview(_ context.Context, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	panic("unused")
 }
+
+func (s *deleteInvoiceRepoStub) ListInvoiceLinesForManagerReviewTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
+	panic("unused")
+}
 func (s *deleteInvoiceRepoStub) ExportInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {
 	panic("unused")
 }
@@ -421,6 +425,10 @@ func (s *mixedDeleteRepoStub) CountInvoicesForManagerReview(_ context.Context, _
 	panic("unused")
 }
 func (s *mixedDeleteRepoStub) ListInvoiceLinesForManagerReview(_ context.Context, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
+	panic("unused")
+}
+
+func (s *mixedDeleteRepoStub) ListInvoiceLinesForManagerReviewTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	panic("unused")
 }
 func (s *mixedDeleteRepoStub) ExportInvoicesForManagerReview(_ context.Context, _, _ uuid.UUID, _ domain.InvoiceExportFilters) ([]domain.InvoiceReviewRow, error) {

@@ -593,7 +593,22 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 	if err != nil {
 		return nil, err
 	}
+	return mapInvoiceReviewLines(rows), nil
+}
 
+func (r *Repository) ListInvoiceLinesForManagerReviewTx(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
+	rows, err := r.queriesTx(tx).InvoiceLinesForManagerReview(ctx, sqlc.InvoiceLinesForManagerReviewParams{
+		TenantID:  uuidToPgtype(tenantID),
+		BranchID:  uuidToPgtype(branchID),
+		InvoiceID: uuidToPgtype(invoiceID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapInvoiceReviewLines(rows), nil
+}
+
+func mapInvoiceReviewLines(rows []sqlc.InvoiceLinesForManagerReviewRow) []domain.InvoiceReviewLineRow {
 	result := make([]domain.InvoiceReviewLineRow, 0, len(rows))
 	for _, row := range rows {
 		line := domain.InvoiceReviewLineRow{
@@ -619,7 +634,7 @@ func (r *Repository) ListInvoiceLinesForManagerReview(ctx context.Context, tenan
 		}
 		result = append(result, line)
 	}
-	return result, nil
+	return result
 }
 
 func mapInvoiceReviewRow(row sqlc.InvoiceListForManagerReviewRow) domain.InvoiceReviewRow {

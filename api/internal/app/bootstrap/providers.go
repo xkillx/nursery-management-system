@@ -18,6 +18,7 @@ import (
 	httpserver "nursery-management-system/api/internal/platform/http"
 	"nursery-management-system/api/internal/platform/metrics"
 	"nursery-management-system/api/internal/platform/ratelimit"
+	platformstorage "nursery-management-system/api/internal/platform/storage"
 	"nursery-management-system/api/internal/platform/transaction"
 
 	absencepostgres "nursery-management-system/api/internal/modules/absence/infrastructure/postgres"
@@ -247,6 +248,8 @@ func provideBillingNotificationAdapter(
 	enqueuer emaildomain.EmailEnqueuer,
 	auditWriter *audit.Writer,
 	webBaseURL string,
+	pdfRenderer *billingpdf.Renderer,
+	storage platformstorage.Service,
 ) *billingNotificationAdapter {
 	return &billingNotificationAdapter{
 		repo:           repo,
@@ -255,6 +258,8 @@ func provideBillingNotificationAdapter(
 		enqueuer:       enqueuer,
 		auditWriter:    auditWriter,
 		webBaseURL:     webBaseURL,
+		pdfRenderer:    pdfRenderer,
+		storage:        storage,
 	}
 }
 

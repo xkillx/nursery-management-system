@@ -807,8 +807,8 @@ func provideEmailOutboxRepo(pool *pgxpool.Pool) *emailpostgres.OutboxRepository 
 	return emailpostgres.NewOutboxRepository(pool)
 }
 
-func provideEmailProvider(sender email.Sender) *emailsmtp.Provider {
-	return emailsmtp.NewProvider(sender, nil)
+func provideEmailProvider(sender email.Sender, storage platformstorage.Service) *emailsmtp.Provider {
+	return emailsmtp.NewProvider(sender, storage)
 }
 
 func provideEmailRenderer() *emailapp.Renderer {

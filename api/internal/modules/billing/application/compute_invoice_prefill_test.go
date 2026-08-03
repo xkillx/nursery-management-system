@@ -89,6 +89,10 @@ func (s *stubPrefillRepo) ListInvoiceLinesForManagerReview(_ context.Context, _,
 	panic("unused")
 }
 
+func (s *stubPrefillRepo) ListInvoiceLinesForManagerReviewTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
+	panic("unused")
+}
+
 func (s *stubPrefillRepo) GetInvoiceForIssueForUpdate(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (domain.InvoiceIssueCandidateRow, bool, error) {
 	panic("unused")
 }

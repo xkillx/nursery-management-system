@@ -163,7 +163,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	siteProfileRepository := postgres7.NewRepository(pool)
 	getSiteProfileUseCase := application4.NewGetSiteProfileUseCase(siteProfileRepository)
 	bootstrapSiteProfileLookupAdapter := provideSiteProfileLookupAdapter(getSiteProfileUseCase)
-	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, enqueueEmail, writer, string2)
+	renderer := provideInvoicePDFRenderer()
+	billingStorage := provideBillingStorage(cfg)
+	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, enqueueEmail, writer, string2, renderer, billingStorage)
 	eventDispatcher := provideEventDispatcher(transactionManager, bootstrapBillingNotificationAdapter)
 	markInactive := application3.NewMarkInactive(childRepository, eventDispatcher, writer)
 	v := provideClock()
@@ -348,7 +350,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
 	invoicePDFGenerator := application10.NewInvoicePDFGenerator()
-	billingStorage := provideBillingStorage(cfg)
 	repository6 := postgres17.NewRepository(pool)
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
@@ -387,7 +388,6 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 		Summary:        invoiceSummary,
 		OverdueSummary: overdueSummary,
 	}
-	renderer := provideInvoicePDFRenderer()
 	billingHandlerConfig := httpbilling.BillingHandlerConfig{
 		Drafting:  draftUseCases,
 		Lifecycle: lifecycleUseCases,
@@ -499,7 +499,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	queryDateRange := application7.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
 	httpHandler := http.NewHandler(queryCalendarDay, queryDateRange, logger)
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
-	emailProvider := emailsmtp.NewProvider(sender, nil)
+	emailProvider := emailsmtp.NewProvider(sender, billingStorage)
 	emailRenderer := emailapp.NewRenderer()
 	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
 	listEmails := emailapp.NewListEmails(outboxRepository)
@@ -584,7 +584,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	siteProfileRepository := postgres7.NewRepository(pool)
 	getSiteProfileUseCase := application4.NewGetSiteProfileUseCase(siteProfileRepository)
 	bootstrapSiteProfileLookupAdapter := provideSiteProfileLookupAdapter(getSiteProfileUseCase)
-	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, enqueueEmail, writer, string2)
+	renderer := provideInvoicePDFRenderer()
+	billingStorage := provideBillingStorage(cfg)
+	bootstrapBillingNotificationAdapter := provideBillingNotificationAdapter(repository2, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter, enqueueEmail, writer, string2, renderer, billingStorage)
 	eventDispatcher := provideEventDispatcher(transactionManager, bootstrapBillingNotificationAdapter)
 	markInactive := application3.NewMarkInactive(childRepository, eventDispatcher, writer)
 	v := provideClock()
@@ -769,7 +771,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
 	invoicePDFGenerator := application10.NewInvoicePDFGenerator()
-	billingStorage := provideBillingStorage(cfg)
 	repository6 := postgres17.NewRepository(pool)
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
@@ -808,7 +809,6 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 		Summary:        invoiceSummary,
 		OverdueSummary: overdueSummary,
 	}
-	renderer := provideInvoicePDFRenderer()
 	billingHandlerConfig := httpbilling.BillingHandlerConfig{
 		Drafting:  draftUseCases,
 		Lifecycle: lifecycleUseCases,
@@ -920,7 +920,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	queryDateRange := application7.NewQueryDateRange(bootstrapNurseryCalendarClosureAdapter, bootstrapNurseryCalendarHolidayAdapter)
 	httpHandler := http.NewHandler(queryCalendarDay, queryDateRange, logger)
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
-	emailProvider := emailsmtp.NewProvider(sender, nil)
+	emailProvider := emailsmtp.NewProvider(sender, billingStorage)
 	emailRenderer := emailapp.NewRenderer()
 	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
 	listEmails := emailapp.NewListEmails(outboxRepository)

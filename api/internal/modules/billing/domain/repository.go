@@ -65,6 +65,10 @@ type BillingRepository interface {
 	// are visible to the caller.
 	GetInvoiceForManagerReviewTx(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (InvoiceReviewRow, bool, error)
 	ListInvoiceLinesForManagerReview(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
+	// ListInvoiceLinesForManagerReviewTx reads the invoice lines within an
+	// existing transaction so a PDF attachment can be built in the same
+	// transaction that enqueues the notification email (KTD-3).
+	ListInvoiceLinesForManagerReviewTx(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) ([]InvoiceReviewLineRow, error)
 
 	// Invoice Export — read-only, no pagination.
 	ExportInvoicesForManagerReview(ctx context.Context, tenantID, branchID uuid.UUID, filters InvoiceExportFilters) ([]InvoiceReviewRow, error)
