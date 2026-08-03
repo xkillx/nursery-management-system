@@ -28,18 +28,6 @@ func (h *InvoiceIssuedHandler) Handle(ctx context.Context, tx pgx.Tx, event bill
 	return nil
 }
 
-// HandleWithCheckout sends the invoice issued email with checkout URL and PDF attachment.
-func (h *InvoiceIssuedHandler) HandleWithCheckout(ctx context.Context, tx pgx.Tx, event billingdomain.InvoiceIssued) error {
-	if event.CheckoutURL == "" && event.AttachmentS3Key == "" {
-		return h.Handle(ctx, tx, event)
-	}
-	// The handler delegates to the sender which already handles attachments via the outbox
-	if err := h.sender.SendInvoiceIssuedEmail(ctx, tx, event.InvoiceID, event.TenantID, event.BranchID); err != nil {
-		return fmt.Errorf("send invoice issued email: %w", err)
-	}
-	return nil
-}
-
 // InvoiceOverdueHandler handles InvoiceMarkedOverdue domain events by sending
 // notification emails to parents for each overdue invoice.
 type InvoiceOverdueHandler struct {

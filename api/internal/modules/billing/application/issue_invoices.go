@@ -26,12 +26,11 @@ type IssueInvoice struct {
 	dispatcher *events.EventDispatcher
 }
 
-// IssueContext carries pre-computed data from the orchestrator (checkout URL, S3 key)
-// to be included in the InvoiceIssued event. When nil, the event has empty checkout fields
-// and the scheduler safety net handles checkout creation.
+// IssueContext carries pre-computed data from the orchestrator (checkout URL)
+// to be included in the InvoiceIssued event. When nil, the event has empty
+// checkout fields and the scheduler safety net handles checkout creation.
 type IssueContext struct {
-	CheckoutURL     string
-	AttachmentS3Key string
+	CheckoutURL string
 }
 
 func NewIssueInvoice(
@@ -179,14 +178,13 @@ func (uc *IssueInvoice) executeIssue(ctx context.Context, tx pgx.Tx, emitter eve
 	}
 
 	emitter.Emit(domain.InvoiceIssued{
-		InvoiceID:       invoiceID,
-		TenantID:        actor.TenantID,
-		BranchID:        actor.BranchID,
-		UserID:          actor.UserID,
-		MembershipID:    actor.MembershipID,
-		CheckoutURL:     issueCtx.CheckoutURL,
-		AttachmentS3Key: issueCtx.AttachmentS3Key,
-		Occurred:        issueTime,
+		InvoiceID:    invoiceID,
+		TenantID:     actor.TenantID,
+		BranchID:     actor.BranchID,
+		UserID:       actor.UserID,
+		MembershipID: actor.MembershipID,
+		CheckoutURL:  issueCtx.CheckoutURL,
+		Occurred:     issueTime,
 	})
 
 	return domain.IssueInvoiceResult{

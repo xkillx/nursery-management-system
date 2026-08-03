@@ -7,14 +7,13 @@ import (
 )
 
 type InvoiceIssued struct {
-	InvoiceID       uuid.UUID
-	TenantID        uuid.UUID
-	BranchID        uuid.UUID
-	UserID          uuid.UUID
-	MembershipID    uuid.UUID
-	CheckoutURL     string
-	AttachmentS3Key string
-	Occurred        time.Time
+	InvoiceID    uuid.UUID
+	TenantID     uuid.UUID
+	BranchID     uuid.UUID
+	UserID       uuid.UUID
+	MembershipID uuid.UUID
+	CheckoutURL  string
+	Occurred     time.Time
 }
 
 func (e InvoiceIssued) OccurredAt() time.Time { return e.Occurred }
@@ -65,14 +64,13 @@ type InvoiceDueSoon struct {
 func (e InvoiceDueSoon) OccurredAt() time.Time { return e.Occurred }
 
 type InvoiceDueReminder struct {
-	InvoiceID       uuid.UUID
-	TenantID        uuid.UUID
-	BranchID        uuid.UUID
-	DueDate         time.Time
-	DaysBefore      int
-	CheckoutURL     string
-	AttachmentS3Key string
-	Occurred        time.Time
+	InvoiceID   uuid.UUID
+	TenantID    uuid.UUID
+	BranchID    uuid.UUID
+	DueDate     time.Time
+	DaysBefore  int
+	CheckoutURL string
+	Occurred    time.Time
 }
 
 func (e InvoiceDueReminder) OccurredAt() time.Time { return e.Occurred }

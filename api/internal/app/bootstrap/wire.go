@@ -463,7 +463,6 @@ var billingSet = wire.NewSet(
 	billingapp.NewExportInvoices,
 	billingapp.NewInvoiceSummary,
 	billingapp.NewOverdueSummary,
-	billingapp.NewInvoicePDFGenerator,
 	billingapp.NewIssueInvoiceWithCheckout,
 	provideBillingStorage,
 	provideInvoicePDFRenderer,

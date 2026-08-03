@@ -349,12 +349,11 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	deleteInvoice := application10.NewDeleteInvoice(repository2, writer, eventDispatcher)
 	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
-	invoicePDFGenerator := application10.NewInvoicePDFGenerator()
 	repository6 := postgres17.NewRepository(pool)
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
 	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
-	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession, invoicePDFGenerator, billingStorage, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter)
+	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
 		ListInvoices:             listInvoices,
 		GetInvoice:               getInvoice,
@@ -770,12 +769,11 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	deleteInvoice := application10.NewDeleteInvoice(repository2, writer, eventDispatcher)
 	bulkDeleteInvoices := application10.NewBulkDeleteInvoices(repository2, writer, eventDispatcher)
 	manageInvoiceLines := application10.NewManageInvoiceLines(repository2, transactionManager, writer)
-	invoicePDFGenerator := application10.NewInvoicePDFGenerator()
 	repository6 := postgres17.NewRepository(pool)
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
 	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
-	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession, invoicePDFGenerator, billingStorage, bootstrapParentContactLookupAdapter, bootstrapSiteProfileLookupAdapter)
+	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
 		ListInvoices:             listInvoices,
 		GetInvoice:               getInvoice,

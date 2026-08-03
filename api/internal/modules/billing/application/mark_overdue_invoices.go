@@ -6,25 +6,19 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
 	paymentsapp "nursery-management-system/api/internal/modules/payments/application"
 	"nursery-management-system/api/internal/platform/events"
-	"nursery-management-system/api/internal/platform/storage"
 )
 
 type MarkOverdueInvoices struct {
-	repo          domain.BillingRepository
-	dispatcher    *events.EventDispatcher
-	now           func() time.Time
-	london        *time.Location
-	checkoutUC    *paymentsapp.CreateCheckoutSession
-	pdfGen        *InvoicePDFGenerator
-	storage       storage.Service
-	parentContact ParentContactLookup
-	siteProfile   SiteProfileLookup
+	repo       domain.BillingRepository
+	dispatcher *events.EventDispatcher
+	now        func() time.Time
+	london     *time.Location
+	checkoutUC *paymentsapp.CreateCheckoutSession
 }
 
 func NewMarkOverdueInvoices(
@@ -32,25 +26,17 @@ func NewMarkOverdueInvoices(
 	dispatcher *events.EventDispatcher,
 	now func() time.Time,
 	checkoutUC *paymentsapp.CreateCheckoutSession,
-	pdfGen *InvoicePDFGenerator,
-	storage storage.Service,
-	parentContact ParentContactLookup,
-	siteProfile SiteProfileLookup,
 ) *MarkOverdueInvoices {
 	london, err := time.LoadLocation("Europe/London")
 	if err != nil {
 		panic(fmt.Sprintf("failed to load Europe/London timezone: %v", err))
 	}
 	return &MarkOverdueInvoices{
-		repo:          repo,
-		dispatcher:    dispatcher,
-		now:           now,
-		london:        london,
-		checkoutUC:    checkoutUC,
-		pdfGen:        pdfGen,
-		storage:       storage,
-		parentContact: parentContact,
-		siteProfile:   siteProfile,
+		repo:       repo,
+		dispatcher: dispatcher,
+		now:        now,
+		london:     london,
+		checkoutUC: checkoutUC,
 	}
 }
 
@@ -89,7 +75,7 @@ func (uc *MarkOverdueInvoices) Execute(ctx context.Context) (domain.OverdueTrans
 		result.Transitioned = transitioned
 
 		if len(transitioned) > 0 {
-			// Per-invoice pre-work: create fresh checkout and PDF for each overdue invoice
+			// Per-invoice pre-work: create a fresh checkout for each overdue invoice
 			for i := range transitioned {
 				inv := &transitioned[i]
 				uc.enrichOverdueInvoice(ctx, inv)
@@ -132,55 +118,4 @@ func (uc *MarkOverdueInvoices) enrichOverdueInvoice(ctx context.Context, inv *do
 		return
 	}
 	inv.CheckoutURL = checkoutResult.CheckoutURL
-
-	// Generate PDF and upload to S3
-	if uc.pdfGen != nil && uc.storage != nil {
-		siteProfile, spErr := uc.siteProfile.GetForInvoice(ctx, inv.TenantID, inv.BranchID)
-		if spErr != nil || siteProfile == nil {
-			slog.WarnContext(ctx, "overdue_site_profile_lookup_failed",
-				"invoice_id", inv.ID,
-				"error", spErr,
-			)
-			return
-		}
-
-		parent, parentErr := uc.parentContact.GetForInvoice(ctx, inv.TenantID, inv.BranchID, uuid.Nil)
-		if parentErr != nil {
-			slog.WarnContext(ctx, "overdue_parent_contact_lookup_failed",
-				"invoice_id", inv.ID,
-				"error", parentErr,
-			)
-		}
-
-		parentName := ""
-		if parent != nil {
-			parentName = parent.FullName
-		}
-
-		pdfData := InvoicePDFData{
-			Invoice:     domain.Invoice{ID: inv.ID},
-			SiteProfile: *siteProfile,
-			ParentName:  parentName,
-			CheckoutURL: checkoutResult.CheckoutURL,
-		}
-
-		pdfBytes, pdfErr := uc.pdfGen.Generate(ctx, pdfData)
-		if pdfErr != nil {
-			slog.WarnContext(ctx, "overdue_pdf_generation_failed",
-				"invoice_id", inv.ID,
-				"error", pdfErr,
-			)
-			return
-		}
-
-		s3Key := fmt.Sprintf("invoices/%s/overdue.pdf", inv.ID.String())
-		if uploadErr := uc.storage.Upload(ctx, s3Key, pdfBytes, "application/pdf"); uploadErr != nil {
-			slog.WarnContext(ctx, "overdue_s3_upload_failed",
-				"invoice_id", inv.ID,
-				"error", uploadErr,
-			)
-			return
-		}
-		inv.AttachmentS3Key = s3Key
-	}
 }
