@@ -299,7 +299,6 @@ function createSpy() {
     'listPaymentEvents',
     'issueInvoice',
     'sendInvoiceToParent',
-    'createPaymentLink',
   ]);
 }
 
@@ -414,7 +413,6 @@ describe('ManagerInvoiceDetailComponent', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Send to Parent');
-    expect(text).toContain('Copy Payment Link');
     expect(text).not.toContain('Checkout');
     expect(text).not.toContain('Retry payment');
   });
@@ -611,13 +609,13 @@ describe('ManagerInvoiceDetailComponent', () => {
     expect(issueButton!.disabled).toBe(true);
   });
 
-  it('renders both Send to Parent and Copy Payment Link for issued invoice', () => {
+  it('renders Send to Parent but no Copy Payment Link for issued invoice', () => {
     createFixture();
     const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
     const sendButton = buttons.find((btn) => btn.textContent?.trim().includes('Send to Parent'));
     const copyButton = buttons.find((btn) => btn.textContent?.trim().includes('Copy Payment Link'));
     expect(sendButton).toBeTruthy();
-    expect(copyButton).toBeTruthy();
+    expect(copyButton).toBeFalsy();
   });
 
   it('opens send confirmation dialog with specified copy', () => {
@@ -699,42 +697,27 @@ describe('ManagerInvoiceDetailComponent', () => {
     createFixture(noEmailDetail, unpaidPaymentStatus, []);
     const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
     const sendButton = buttons.find((btn) => btn.textContent?.trim().includes('Send to Parent'));
-    const copyButton = buttons.find((btn) => btn.textContent?.trim().includes('Copy Payment Link'));
     expect(sendButton).toBeTruthy();
     expect(sendButton!.disabled).toBe(true);
     expect(sendButton!.getAttribute('title')).toBe('No email on file for this parent');
-    expect(copyButton).toBeTruthy();
-    expect(copyButton!.disabled).toBe(false);
   });
 
-  it('hides both buttons for draft invoice', () => {
+  it('hides buttons for draft invoice', () => {
     createFixture(draftDetail, null, []);
     const text = fixture.nativeElement.textContent;
     expect(text).not.toContain('Send to Parent');
-    expect(text).not.toContain('Copy Payment Link');
   });
 
-  it('hides both buttons for void invoice', () => {
+  it('hides buttons for void invoice', () => {
     createFixture({ ...issuedDetail, status: 'void', lockedAt: null }, unpaidPaymentStatus, []);
     const text = fixture.nativeElement.textContent;
     expect(text).not.toContain('Send to Parent');
-    expect(text).not.toContain('Copy Payment Link');
   });
 
-  it('Copy Payment Link still calls createPaymentLink and stores the URL', () => {
+  it('hides Copy Payment Link for payable invoice', () => {
     createFixture();
-    apiService.createPaymentLink.and.returnValue(of({ paymentLinkId: 'pl-1', url: 'https://pay.example.com/pl', existing: false }));
-    if (!navigator.clipboard) {
-      Object.defineProperty(navigator, 'clipboard', { value: {}, configurable: true });
-    }
-    spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
-    const component = fixture.componentInstance;
-    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
-    const copyButton = buttons.find((btn) => btn.textContent?.trim().includes('Copy Payment Link'));
-    copyButton!.click();
-    fixture.detectChanges();
-    expect(apiService.createPaymentLink).toHaveBeenCalledWith('inv-1');
-    expect(component.paymentLinkUrl).toBe('https://pay.example.com/pl');
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Copy Payment Link');
   });
 });
 

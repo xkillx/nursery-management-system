@@ -21,7 +21,6 @@ import {
   UpdateInvoiceLineInput,
   InvoiceLineResult,
   DeleteLineResult,
-  PaymentLinkResult,
   OverdueSummary,
   BulkIssueResult,
   DeleteInvoiceResult,
@@ -219,12 +218,6 @@ interface PaginatedPaymentEventsApi {
   offset: number;
 }
 
-interface PaymentLinkResultApi {
-  payment_link_id: string;
-  url: string;
-  existing: boolean;
-}
-
 interface OverdueSummaryItemApi {
   id: string;
   invoice_number: string;
@@ -380,18 +373,6 @@ export class ManagerInvoicesApiService {
         map((res) => ({
           invoiceId: res.invoice_id,
           status: res.status,
-        })),
-      );
-  }
-
-  createPaymentLink(invoiceId: string): Observable<PaymentLinkResult> {
-    return this.http
-      .post<PaymentLinkResultApi>(apiUrl(`/invoices/${invoiceId}/payment-link`), {})
-      .pipe(
-        map((res) => ({
-          paymentLinkId: res.payment_link_id,
-          url: res.url,
-          existing: res.existing,
         })),
       );
   }

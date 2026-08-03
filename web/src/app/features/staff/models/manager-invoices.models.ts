@@ -237,12 +237,6 @@ export interface DeleteLineResult {
   totalDueMinor: number;
 }
 
-export interface PaymentLinkResult {
-  paymentLinkId: string;
-  url: string;
-  existing: boolean;
-}
-
 export interface OverdueSummaryItem {
   id: string;
   invoiceNumber: string;

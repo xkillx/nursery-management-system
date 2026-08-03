@@ -82,16 +82,6 @@
               <span id="send-to-parent-hint" class="sr-only">No email on file for this parent.</span>
             }
           }
-
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition hover:bg-gray-50 hover:text-gray-900 focus:outline-hidden dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.05] disabled:opacity-50"
-            (click)="generatePaymentLink()"
-            [disabled]="isPaymentLinkLoading"
-          >
-            <ng-icon name="heroBanknotes" size="16" class="text-gray-400" aria-hidden="true" />
-            {{ isPaymentLinkLoading ? 'Generating...' : 'Copy Payment Link' }}
-          </button>
         }
 
         @if (isDeletable) {

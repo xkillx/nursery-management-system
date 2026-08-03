@@ -195,8 +195,6 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
 
   isPaymentReviewCollapsed = false;
 
-  paymentLinkUrl: string | null = null;
-  isPaymentLinkLoading = false;
   isDownloadingPdf = false;
   isIssuing = false;
   isConfirmIssueOpen = false;
@@ -456,28 +454,6 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
     this.isPaymentReviewCollapsed = !this.isPaymentReviewCollapsed;
   }
 
-  generatePaymentLink(): void {
-    if (!this.detail || this.isPaymentLinkLoading) return;
-    this.isPaymentLinkLoading = true;
-
-    this.apiService.createPaymentLink(this.detail.invoiceId).subscribe({
-      next: (result) => {
-        this.paymentLinkUrl = result.url;
-        this.isPaymentLinkLoading = false;
-        if (result.existing) {
-          this.toast.success('Payment link copied.');
-        } else {
-          this.toast.success('Payment link generated.');
-        }
-        this.copyPaymentLink();
-      },
-      error: () => {
-        this.isPaymentLinkLoading = false;
-        this.toast.error('Failed to generate payment link. Please try again.');
-      },
-    });
-  }
-
   openIssueConfirmation(): void {
     if (!this.detail || this.isIssuing) return;
     this.isConfirmIssueOpen = true;
@@ -509,13 +485,6 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
 
   issueInvoice(): void {
     this.confirmIssue();
-  }
-
-  copyPaymentLink(): void {
-    if (!this.paymentLinkUrl) return;
-    navigator.clipboard.writeText(this.paymentLinkUrl).then(() => {
-      this.toast.success('Link copied to clipboard.');
-    });
   }
 
   openSendConfirmation(): void {
