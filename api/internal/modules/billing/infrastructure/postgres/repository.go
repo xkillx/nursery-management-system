@@ -1117,6 +1117,23 @@ func (r *Repository) InsertInvoiceReminderLog(ctx context.Context, tx domain.Tx,
 	})
 }
 
+func (r *Repository) CountRecentInvoiceResendsTx(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID, since time.Time) (int, error) {
+	var count int
+	err := tx.(pgx.Tx).QueryRow(ctx, `
+		SELECT count(*)
+		FROM email_outbox
+		WHERE tenant_id = $1
+		  AND branch_id = $2
+		  AND event_type = 'invoice_resend'
+		  AND entity_id = $3
+		  AND created_at >= $4
+	`, tenantID, branchID, invoiceID.String(), since).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count recent invoice resends: %w", err)
+	}
+	return count, nil
+}
+
 func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.InvoiceIssueCandidateRow {
 	return domain.InvoiceIssueCandidateRow{
 		ID:              pgtypeUUIDToUUID(row.ID),

@@ -114,6 +114,11 @@ type BillingRepository interface {
 	ListInvoicesDueSoon(ctx context.Context, tx Tx) ([]InvoiceReminderRow, error)
 	ListInvoicesDueToday(ctx context.Context, tx Tx) ([]InvoiceReminderRow, error)
 	InsertInvoiceReminderLog(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, reminderType string) error
+
+	// Manager-triggered resend throttle — transactional. Counts invoice_resend
+	// outbox rows for the invoice created within the window, so repeat manual
+	// sends are rejected rather than enqueueing duplicates.
+	CountRecentInvoiceResendsTx(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, since time.Time) (int, error)
 }
 
 // InvoiceRow maps a row from the invoices table.

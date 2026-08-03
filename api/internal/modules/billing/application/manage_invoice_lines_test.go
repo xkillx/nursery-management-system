@@ -34,6 +34,10 @@ func (s *manageLinesRepoStub) GetInvoiceForManagerReview(_ context.Context, _, _
 func (s *manageLinesRepoStub) GetInvoiceForManagerReviewTx(_ context.Context, _ any, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
 	return domain.InvoiceReviewRow{}, false, nil
 }
+
+func (s *manageLinesRepoStub) CountRecentInvoiceResendsTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time) (int, error) {
+	panic("unused")
+}
 func (s *manageLinesRepoStub) ListInvoiceLinesForManagerReview(_ context.Context, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	return s.lines, nil
 }
