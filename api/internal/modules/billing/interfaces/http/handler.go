@@ -637,6 +637,7 @@ func (h *Handler) voidInvoiceHandler(c *gin.Context) {
 //	@Param			invoice_id	path		string				true	"Invoice ID"	format(uuid)
 //	@Success		202			{object}	sendInvoiceResponse
 //	@Failure		401			{object}	object{code=string,message=string}
+//	@Failure		404			{object}	object{code=string,message=string}
 //	@Failure		409			{object}	object{code=string,message=string}
 //	@Failure		422			{object}	object{code=string,message=string}
 //	@Failure		500			{object}	object{code=string,message=string}

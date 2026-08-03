@@ -38,6 +38,10 @@ func (s *deleteInvoiceRepoStub) CountRecentInvoiceResendsTx(_ context.Context, _
 	panic("unused")
 }
 
+func (s *deleteInvoiceRepoStub) LockInvoiceForResendTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (bool, error) {
+	panic("unused")
+}
+
 // Unused methods required by BillingRepository interface
 func (s *deleteInvoiceRepoStub) ListActiveBookingsForGeneration(_ context.Context, _ domain.Tx, _, _ uuid.UUID, _ time.Time) ([]domain.BillableChildRow, error) {
 	panic("unused")
@@ -389,6 +393,10 @@ func (s *mixedDeleteRepoStub) GetInvoiceForManagerReviewTx(_ context.Context, _ 
 }
 
 func (s *mixedDeleteRepoStub) CountRecentInvoiceResendsTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time) (int, error) {
+	panic("unused")
+}
+
+func (s *mixedDeleteRepoStub) LockInvoiceForResendTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (bool, error) {
 	panic("unused")
 }
 

@@ -899,12 +899,17 @@ func (a *billingNotificationAdapter) writeResendFailedAudit(ctx context.Context,
 		}
 	}
 	details["error"] = sendErr.Error()
-	_ = a.auditWriter.WriteSystem(ctx, a.executor, tenantID, branchID, "", audit.WriteParams{
+	if err := a.auditWriter.WriteSystem(ctx, a.executor, tenantID, branchID, "", audit.WriteParams{
 		ActionType: notificationsapp.AuditNotificationInvoiceResendFailed,
 		EntityType: "invoice",
 		EntityID:   invoiceID,
 		Details:    details,
-	})
+	}); err != nil {
+		slog.ErrorContext(ctx, "notification_resend_failed_audit_write_failed",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+	}
 }
 
 func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {

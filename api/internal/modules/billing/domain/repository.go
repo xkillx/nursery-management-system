@@ -119,6 +119,11 @@ type BillingRepository interface {
 	// outbox rows for the invoice created within the window, so repeat manual
 	// sends are rejected rather than enqueueing duplicates.
 	CountRecentInvoiceResendsTx(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID, since time.Time) (int, error)
+	// LockInvoiceForResendTx takes a FOR UPDATE row lock on the invoice so the
+	// cooldown check-and-enqueue is serialized per invoice (R11): concurrent
+	// resends block until the first commits, then observe its outbox row.
+	// Returns false when the invoice does not exist.
+	LockInvoiceForResendTx(ctx context.Context, tx Tx, tenantID, branchID, invoiceID uuid.UUID) (bool, error)
 }
 
 // InvoiceRow maps a row from the invoices table.

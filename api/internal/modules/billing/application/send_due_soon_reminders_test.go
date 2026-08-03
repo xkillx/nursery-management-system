@@ -110,6 +110,10 @@ func (s *stubReminderRepo) GetInvoiceForManagerReviewTx(_ context.Context, _ any
 func (s *stubReminderRepo) CountRecentInvoiceResendsTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time) (int, error) {
 	panic("stub")
 }
+
+func (s *stubReminderRepo) LockInvoiceForResendTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (bool, error) {
+	panic("stub")
+}
 func (s *stubReminderRepo) ListInvoiceLinesForManagerReview(_ context.Context, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	panic("stub")
 }

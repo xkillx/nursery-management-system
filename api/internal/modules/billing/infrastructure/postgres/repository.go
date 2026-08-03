@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -1132,6 +1133,22 @@ func (r *Repository) CountRecentInvoiceResendsTx(ctx context.Context, tx domain.
 		return 0, fmt.Errorf("count recent invoice resends: %w", err)
 	}
 	return count, nil
+}
+
+func (r *Repository) LockInvoiceForResendTx(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID uuid.UUID) (bool, error) {
+	var id uuid.UUID
+	err := tx.(pgx.Tx).QueryRow(ctx, `
+		SELECT id FROM invoices
+		WHERE tenant_id = $1 AND branch_id = $2 AND id = $3
+		FOR UPDATE
+	`, tenantID, branchID, invoiceID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("lock invoice for resend: %w", err)
+	}
+	return true, nil
 }
 
 func mapIssueCandidateRow(row sqlc.GetInvoiceForIssueForUpdateRow) domain.InvoiceIssueCandidateRow {

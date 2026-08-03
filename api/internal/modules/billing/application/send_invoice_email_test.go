@@ -47,6 +47,9 @@ type sendEmailRepoStub struct {
 	getErr           error
 	recentResends    int
 	recentResendsErr error
+	lockCalls        int
+	lockResult       bool
+	lockErr          error
 }
 
 func (s *sendEmailRepoStub) GetInvoiceForManagerReviewTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
@@ -55,6 +58,11 @@ func (s *sendEmailRepoStub) GetInvoiceForManagerReviewTx(_ context.Context, _ do
 
 func (s *sendEmailRepoStub) CountRecentInvoiceResendsTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ time.Time) (int, error) {
 	return s.recentResends, s.recentResendsErr
+}
+
+func (s *sendEmailRepoStub) LockInvoiceForResendTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (bool, error) {
+	s.lockCalls++
+	return s.lockResult, s.lockErr
 }
 
 type sendEmailParentStub struct {
@@ -89,7 +97,7 @@ func newSendEmailUC(repo *sendEmailRepoStub, parent *sendEmailParentStub, sender
 }
 
 func TestSendInvoiceEmail_HappyPathQueues(t *testing.T) {
-	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true}
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, lockResult: true}
 	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 	sender := &sendEmailSenderStub{}
 	uc := newSendEmailUC(repo, parent, sender)
@@ -108,7 +116,7 @@ func TestSendInvoiceEmail_HappyPathQueues(t *testing.T) {
 
 func TestSendInvoiceEmail_RejectsNonResendableStatus(t *testing.T) {
 	for _, status := range []string{domain.InvoiceStatusDraft, domain.InvoiceStatusVoid} {
-		repo := &sendEmailRepoStub{invoice: sendTestInvoice(status), found: true}
+		repo := &sendEmailRepoStub{invoice: sendTestInvoice(status), found: true, lockResult: true}
 		parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 		sender := &sendEmailSenderStub{}
 		uc := newSendEmailUC(repo, parent, sender)
@@ -128,7 +136,7 @@ func TestSendInvoiceEmail_RejectsNonResendableStatus(t *testing.T) {
 }
 
 func TestSendInvoiceEmail_InvoiceNotFound(t *testing.T) {
-	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: false}
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: false, lockResult: true}
 	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 	sender := &sendEmailSenderStub{}
 	uc := newSendEmailUC(repo, parent, sender)
@@ -151,7 +159,7 @@ func TestSendInvoiceEmail_ParentNoEmail(t *testing.T) {
 		{FullName: "Jane Doe"},
 		nil,
 	} {
-		repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true}
+		repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, lockResult: true}
 		parent := &sendEmailParentStub{pc: pc}
 		sender := &sendEmailSenderStub{}
 		uc := newSendEmailUC(repo, parent, sender)
@@ -171,7 +179,7 @@ func TestSendInvoiceEmail_ParentNoEmail(t *testing.T) {
 }
 
 func TestSendInvoiceEmail_ThrottledWithinCooldown(t *testing.T) {
-	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, recentResends: 1}
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, recentResends: 1, lockResult: true}
 	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 	sender := &sendEmailSenderStub{}
 	uc := newSendEmailUC(repo, parent, sender)
@@ -190,7 +198,7 @@ func TestSendInvoiceEmail_ThrottledWithinCooldown(t *testing.T) {
 }
 
 func TestSendInvoiceEmail_AllowsAfterCooldown(t *testing.T) {
-	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, recentResends: 0}
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, recentResends: 0, lockResult: true}
 	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 	sender := &sendEmailSenderStub{}
 	uc := newSendEmailUC(repo, parent, sender)
@@ -208,7 +216,7 @@ func TestSendInvoiceEmail_AllowsAfterCooldown(t *testing.T) {
 }
 
 func TestSendInvoiceEmail_SenderFailurePropagates(t *testing.T) {
-	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true}
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, lockResult: true}
 	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 	senderErr := errors.New("enqueue failed")
 	sender := &sendEmailSenderStub{err: senderErr}
@@ -227,7 +235,7 @@ func TestSendInvoiceEmail_SenderFailurePropagates(t *testing.T) {
 }
 
 func TestSendInvoiceEmail_InvalidID(t *testing.T) {
-	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true}
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, lockResult: true}
 	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
 	sender := &sendEmailSenderStub{}
 	uc := newSendEmailUC(repo, parent, sender)
@@ -239,6 +247,40 @@ func TestSendInvoiceEmail_InvalidID(t *testing.T) {
 	}
 	if de.Code != "validation_error" {
 		t.Fatalf("code = %q, want validation_error", de.Code)
+	}
+	if sender.calls != 0 {
+		t.Fatalf("sender calls = %d, want 0", sender.calls)
+	}
+}
+
+func TestSendInvoiceEmail_LockSerializesBeforeCooldownCheck(t *testing.T) {
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, lockResult: true}
+	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
+	sender := &sendEmailSenderStub{}
+	uc := newSendEmailUC(repo, parent, sender)
+
+	_, err := uc.Execute(context.Background(), sendTestActor(), repo.invoice.ID.String())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if repo.lockCalls != 1 {
+		t.Fatalf("lock calls = %d, want 1", repo.lockCalls)
+	}
+}
+
+func TestSendInvoiceEmail_InvoiceNotFoundWhenLockMisses(t *testing.T) {
+	repo := &sendEmailRepoStub{invoice: sendTestInvoice(domain.InvoiceStatusIssued), found: true, lockResult: false}
+	parent := &sendEmailParentStub{pc: &domain.ParentContact{FullName: "Jane Doe", Email: "jane@example.com"}}
+	sender := &sendEmailSenderStub{}
+	uc := newSendEmailUC(repo, parent, sender)
+
+	_, err := uc.Execute(context.Background(), sendTestActor(), repo.invoice.ID.String())
+	var de *domainerrors.DomainError
+	if !errors.As(err, &de) {
+		t.Fatalf("expected DomainError, got %v", err)
+	}
+	if de.Code != "invoice_not_found" {
+		t.Fatalf("code = %q, want invoice_not_found", de.Code)
 	}
 	if sender.calls != 0 {
 		t.Fatalf("sender calls = %d, want 0", sender.calls)

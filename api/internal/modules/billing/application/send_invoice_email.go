@@ -62,6 +62,14 @@ func (uc *SendInvoiceEmail) Execute(ctx context.Context, actor tenant.ActorConte
 	var result SendInvoiceResult
 
 	txErr := uc.txMgr.ExecTx(ctx, func(tx pgx.Tx) error {
+		locked, err := uc.repo.LockInvoiceForResendTx(ctx, tx, actor.TenantID, actor.BranchID, invoiceID)
+		if err != nil {
+			return domainerrors.Internal(fmt.Errorf("lock invoice for resend: %w", err))
+		}
+		if !locked {
+			return domainerrors.NotFound("invoice", "Invoice not found.")
+		}
+
 		invoice, found, err := uc.repo.GetInvoiceForManagerReviewTx(ctx, tx, actor.TenantID, actor.BranchID, invoiceID)
 		if err != nil {
 			return domainerrors.Internal(fmt.Errorf("get invoice for resend: %w", err))

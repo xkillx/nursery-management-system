@@ -89,6 +89,10 @@ func (s *stubPrefillRepo) CountRecentInvoiceResendsTx(_ context.Context, _ domai
 	panic("unused")
 }
 
+func (s *stubPrefillRepo) LockInvoiceForResendTx(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (bool, error) {
+	panic("unused")
+}
+
 func (s *stubPrefillRepo) ListInvoiceLinesForManagerReview(_ context.Context, _, _, _ uuid.UUID) ([]domain.InvoiceReviewLineRow, error) {
 	panic("unused")
 }
