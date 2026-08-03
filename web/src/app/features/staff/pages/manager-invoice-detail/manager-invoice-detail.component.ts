@@ -202,6 +202,8 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   isConfirmIssueOpen = false;
   isConfirmDeleteOpen = false;
   isDeleting = false;
+  isSendingInvoice = false;
+  isConfirmSendOpen = false;
 
   readonly formatGbp = formatGbp;
   readonly formatMinutes = formatMinutes;
@@ -250,7 +252,16 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
 
   get isPayable(): boolean {
     if (!this.detail) return false;
-    return this.detail.status !== 'draft';
+    return this.detail.status !== 'draft' && this.detail.status !== 'void';
+  }
+
+  get canSendToParent(): boolean {
+    if (!this.detail) return false;
+    return (
+      this.detail.status === 'issued' ||
+      this.detail.status === 'overdue' ||
+      this.detail.status === 'payment_failed'
+    );
   }
 
   get paymentBalanceDueMinor(): number {
@@ -504,6 +515,34 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
     if (!this.paymentLinkUrl) return;
     navigator.clipboard.writeText(this.paymentLinkUrl).then(() => {
       this.toast.success('Link copied to clipboard.');
+    });
+  }
+
+  openSendConfirmation(): void {
+    if (!this.detail || !this.canSendToParent || this.isSendingInvoice) return;
+    this.isConfirmSendOpen = true;
+  }
+
+  cancelSend(): void {
+    this.isConfirmSendOpen = false;
+  }
+
+  confirmSend(): void {
+    if (!this.detail || this.isSendingInvoice) return;
+
+    this.isConfirmSendOpen = false;
+    this.isSendingInvoice = true;
+
+    this.apiService.sendInvoiceToParent(this.detail.invoiceId).subscribe({
+      next: () => {
+        this.toast.success('Invoice email queued for delivery to parent.');
+        this.isSendingInvoice = false;
+      },
+      error: (err) => {
+        const mapped = this.errorMapper.mapAndHandle(err);
+        this.toast.error(formatPresentedApiError(presentApiError(mapped, 'invoice.send')));
+        this.isSendingInvoice = false;
+      },
     });
   }
 

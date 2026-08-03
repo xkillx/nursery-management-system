@@ -2,6 +2,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ApiErrorMapper } from '../../../../core/errors/api-error.mapper';
@@ -297,6 +298,8 @@ function createSpy() {
     'getPaymentStatus',
     'listPaymentEvents',
     'issueInvoice',
+    'sendInvoiceToParent',
+    'createPaymentLink',
   ]);
 }
 
@@ -411,6 +414,7 @@ describe('ManagerInvoiceDetailComponent', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Send to Parent');
+    expect(text).toContain('Copy Payment Link');
     expect(text).not.toContain('Checkout');
     expect(text).not.toContain('Retry payment');
   });
@@ -605,6 +609,132 @@ describe('ManagerInvoiceDetailComponent', () => {
     const issueButton = buttons.find((btn) => btn.textContent?.trim().includes('Issuing...'));
     expect(issueButton).toBeTruthy();
     expect(issueButton!.disabled).toBe(true);
+  });
+
+  it('renders both Send to Parent and Copy Payment Link for issued invoice', () => {
+    createFixture();
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const sendButton = buttons.find((btn) => btn.textContent?.trim().includes('Send to Parent'));
+    const copyButton = buttons.find((btn) => btn.textContent?.trim().includes('Copy Payment Link'));
+    expect(sendButton).toBeTruthy();
+    expect(copyButton).toBeTruthy();
+  });
+
+  it('opens send confirmation dialog with specified copy', () => {
+    createFixture();
+    const component = fixture.componentInstance;
+    component.openSendConfirmation();
+    fixture.detectChanges();
+    expect(component.isConfirmSendOpen).toBe(true);
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Send invoice to parent');
+    expect(text).toContain('Burhan Khalid');
+    expect(text).toContain('burhan@example.com');
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const confirmButton = buttons.find((btn) => btn.textContent?.trim() === 'Send');
+    expect(confirmButton).toBeTruthy();
+  });
+
+  it('confirmSend calls sendInvoiceToParent and shows queued toast on success', () => {
+    createFixture();
+    apiService.sendInvoiceToParent.and.returnValue(of({ status: 'queued' }));
+    const toastSpy = spyOn(TestBed.inject(ToastService), 'success');
+    const component = fixture.componentInstance;
+    component.openSendConfirmation();
+    component.confirmSend();
+
+    expect(apiService.sendInvoiceToParent).toHaveBeenCalledWith('inv-1');
+    expect(component.isConfirmSendOpen).toBe(false);
+    expect(toastSpy).toHaveBeenCalledWith('Invoice email queued for delivery to parent.');
+    expect(component.isSendingInvoice).toBe(false);
+  });
+
+  it('guards double clicks and shows sending state while request is in flight', () => {
+    createFixture();
+    let resolveSend!: (v: { status: string }) => void;
+    apiService.sendInvoiceToParent.and.returnValue(
+      new Observable<{ status: string }>((sub) => {
+        resolveSend = (v) => {
+          sub.next(v);
+          sub.complete();
+        };
+      }),
+    );
+    const component = fixture.componentInstance;
+    component.openSendConfirmation();
+    component.confirmSend();
+    fixture.detectChanges();
+
+    expect(component.isSendingInvoice).toBe(true);
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const sendButton = buttons.find((btn) => btn.textContent?.trim().includes('Sending...'));
+    expect(sendButton).toBeTruthy();
+    expect(sendButton!.disabled).toBe(true);
+
+    component.openSendConfirmation();
+    expect(component.isConfirmSendOpen).toBe(false);
+
+    resolveSend({ status: 'queued' });
+  });
+
+  it('shows error toast and resets sending state when sendInvoiceToParent rejects', () => {
+    createFixture();
+    apiService.sendInvoiceToParent.and.returnValue(throwError(() => new HttpErrorResponse({
+      error: { code: 'internal_error', message: 'Enqueue failed', request_id: 'req-send-1' },
+      status: 500,
+    })));
+    const toastSpy = spyOn(TestBed.inject(ToastService), 'error');
+    const component = fixture.componentInstance;
+    component.openSendConfirmation();
+    component.confirmSend();
+
+    expect(toastSpy).toHaveBeenCalled();
+    expect(component.isSendingInvoice).toBe(false);
+    expect(component.isConfirmSendOpen).toBe(false);
+  });
+
+  it('disables Send to Parent with title hint when parent has no email', () => {
+    const noEmailDetail = { ...issuedDetail, parentContact: { ...issuedDetail.parentContact!, email: '' } };
+    createFixture(noEmailDetail, unpaidPaymentStatus, []);
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const sendButton = buttons.find((btn) => btn.textContent?.trim().includes('Send to Parent'));
+    const copyButton = buttons.find((btn) => btn.textContent?.trim().includes('Copy Payment Link'));
+    expect(sendButton).toBeTruthy();
+    expect(sendButton!.disabled).toBe(true);
+    expect(sendButton!.getAttribute('title')).toBe('No email on file for this parent');
+    expect(copyButton).toBeTruthy();
+    expect(copyButton!.disabled).toBe(false);
+  });
+
+  it('hides both buttons for draft invoice', () => {
+    createFixture(draftDetail, null, []);
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Send to Parent');
+    expect(text).not.toContain('Copy Payment Link');
+  });
+
+  it('hides both buttons for void invoice', () => {
+    createFixture({ ...issuedDetail, status: 'void', lockedAt: null }, unpaidPaymentStatus, []);
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Send to Parent');
+    expect(text).not.toContain('Copy Payment Link');
+  });
+
+  it('Copy Payment Link still calls createPaymentLink and stores the URL', () => {
+    createFixture();
+    apiService.createPaymentLink.and.returnValue(of({ paymentLinkId: 'pl-1', url: 'https://pay.example.com/pl', existing: false }));
+    if (!navigator.clipboard) {
+      Object.defineProperty(navigator, 'clipboard', { value: {}, configurable: true });
+    }
+    spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
+    const component = fixture.componentInstance;
+    const buttons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const copyButton = buttons.find((btn) => btn.textContent?.trim().includes('Copy Payment Link'));
+    copyButton!.click();
+    fixture.detectChanges();
+    expect(apiService.createPaymentLink).toHaveBeenCalledWith('inv-1');
+    expect(component.paymentLinkUrl).toBe('https://pay.example.com/pl');
   });
 });
 

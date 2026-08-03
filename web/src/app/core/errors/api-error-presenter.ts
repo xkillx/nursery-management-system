@@ -17,6 +17,7 @@ export type ApiErrorContext =
   | 'invoice.prefill'
   | 'invoice.createDraft'
   | 'invoice.issue'
+  | 'invoice.send'
   | 'invoice.delete'
   | 'payment.managerDiagnostics'
   | 'payment.parentList'
@@ -115,6 +116,8 @@ const CODES_WITHOUT_REQUEST_ID: ReadonlySet<string> = new Set([
   'invoice_not_monthly',
   'invoice_not_in_billing_month',
   'invoice_not_payable',
+  'invoice_resend_throttled',
+  'parent_no_email',
   'invoice_already_issued',
   'incomplete_attendance',
   'missing_funding_profile',
@@ -335,6 +338,12 @@ function presentKnownError(
       } else {
         base.message = 'This invoice is not in a payable state.';
       }
+      break;
+    case 'parent_no_email':
+      base.message = 'The parent has no email address on file, so the invoice cannot be emailed.';
+      break;
+    case 'invoice_resend_throttled':
+      base.message = 'This invoice was emailed recently. Please wait a moment before sending again.';
       break;
 
     // Invoice run blockers

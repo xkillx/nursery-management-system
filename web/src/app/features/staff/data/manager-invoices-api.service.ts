@@ -396,6 +396,12 @@ export class ManagerInvoicesApiService {
       );
   }
 
+  sendInvoiceToParent(invoiceId: string): Observable<{ status: string }> {
+    return this.http
+      .post<{ status: string }>(apiUrl(`/invoices/${invoiceId}/send`), {})
+      .pipe(map((res) => ({ status: res.status })));
+  }
+
   getOverdueSummary(): Observable<OverdueSummary> {
     return this.http
       .get<OverdueSummaryApi>(apiUrl('/invoices/overdue-summary'))
