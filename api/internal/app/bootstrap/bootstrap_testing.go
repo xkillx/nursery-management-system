@@ -387,7 +387,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 
 	paymentsRepo := paymentspostgres.NewRepository(pool)
 	var checkoutProvider paymentsdomain.CheckoutProvider
-	var paymentLinkProvider paymentsdomain.PaymentLinkProvider
 	stripeConfigured := cfg.StripeSecretKey != ""
 
 	if cfg.StripeTestMode && cfg.StripeSecretKey == "" && opts.CheckoutProvider == nil {
@@ -402,11 +401,6 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		stripeConfigured = true
 	} else if stripeConfigured {
 		checkoutProvider = stripeclient.NewClient(cfg.StripeSecretKey)
-	}
-	if stripeConfigured {
-		if plp, ok := checkoutProvider.(paymentsdomain.PaymentLinkProvider); ok {
-			paymentLinkProvider = plp
-		}
 	}
 	paymentsTxMgr := &txManagerAdapter{mgr: txManager}
 	paymentsUC := paymentsapp.NewCreateCheckoutSession(paymentsRepo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured).WithObservability(logger, recorder)
@@ -428,19 +422,11 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 		).WithPaymentNotifier(&paymentCompletedNotifierAdapter{billing: billingNotifier}).WithObservability(logger, recorder)
 	}
 
-	createPaymentLinkUC := paymentsapp.NewCreatePaymentLink(
-		paymentsRepo.ManagerRepo(),
-		paymentLinkProvider,
-		paymentsRepo.PaymentLinkRepo(),
-		stripeConfigured,
-	).WithObservability(logger, recorder)
-
 	paymentsHandler := paymentshandler.NewHandler(
 		paymentsUC,
 		handleWebhookUC,
 		paymentsapp.NewGetManagerPaymentStatus(paymentsRepo.ManagerRepo()),
 		paymentsapp.NewListManagerPaymentEvents(paymentsRepo.ManagerRepo()),
-		createPaymentLinkUC,
 		recorder,
 		logger,
 	)

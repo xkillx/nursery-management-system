@@ -404,8 +404,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	managerPaymentRepository := provideManagerPaymentRepo(repository6)
 	getManagerPaymentStatus := application12.NewGetManagerPaymentStatus(managerPaymentRepository)
 	listManagerPaymentEvents := application12.NewListManagerPaymentEvents(managerPaymentRepository)
-	createPaymentLink := provideCreatePaymentLink(repository6, client, logger, recorder)
-	httpaymentHandler := providePaymentsHandler(createCheckoutSession, handleStripeWebhook, getManagerPaymentStatus, listManagerPaymentEvents, createPaymentLink, recorder, logger)
+	httpaymentHandler := providePaymentsHandler(createCheckoutSession, handleStripeWebhook, getManagerPaymentStatus, listManagerPaymentEvents, recorder, logger)
 	repository7 := postgres18.NewRepository(pool, writer)
 	tokensManager := provideInviteTokenManager(cfg)
 	applicationTokenGeneratorAdapter := application13.NewTokenGeneratorAdapter(tokensManager)
@@ -826,8 +825,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	managerPaymentRepository := provideManagerPaymentRepo(repository6)
 	getManagerPaymentStatus := application12.NewGetManagerPaymentStatus(managerPaymentRepository)
 	listManagerPaymentEvents := application12.NewListManagerPaymentEvents(managerPaymentRepository)
-	createPaymentLink := provideCreatePaymentLink(repository6, client, logger, recorder)
-	httpaymentHandler := providePaymentsHandler(createCheckoutSession, handleStripeWebhook, getManagerPaymentStatus, listManagerPaymentEvents, createPaymentLink, recorder, logger)
+	httpaymentHandler := providePaymentsHandler(createCheckoutSession, handleStripeWebhook, getManagerPaymentStatus, listManagerPaymentEvents, recorder, logger)
 	repository7 := postgres18.NewRepository(pool, writer)
 	tokensManager := provideInviteTokenManager(cfg)
 	applicationTokenGeneratorAdapter := application13.NewTokenGeneratorAdapter(tokensManager)
@@ -1089,17 +1087,6 @@ func provideCreateCheckoutSession(
 	return uc.WithObservability(logger, recorder)
 }
 
-func provideCreatePaymentLink(
-	repo *postgres17.Repository,
-	paymentLinkProvider domain10.PaymentLinkProvider,
-	logger *slog.Logger,
-	recorder *metrics.Recorder,
-) *application12.CreatePaymentLink {
-	stripeConfigured := paymentLinkProvider != nil
-	uc := application12.NewCreatePaymentLink(repo.ManagerRepo(), paymentLinkProvider, repo.PaymentLinkRepo(), stripeConfigured)
-	return uc.WithObservability(logger, recorder)
-}
-
 func provideHandleStripeWebhook(
 	repo *postgres17.Repository,
 	webhookVerifier domain10.WebhookVerifier,
@@ -1117,9 +1104,8 @@ func provideHandleStripeWebhook(
 
 var paymentsSet = wire.NewSet(postgres17.NewRepository, provideTxManagerAdapter,
 	provideAuditSystemWriterAdapter,
-	provideStripeClient, wire.Bind(new(domain10.CheckoutProvider), new(*stripe.Client)), wire.Bind(new(domain10.PaymentLinkProvider), new(*stripe.Client)), provideWebhookVerifier, wire.Bind(new(domain10.WebhookVerifier), new(*stripe.WebhookVerifier)), provideManagerPaymentRepo,
+	provideStripeClient, wire.Bind(new(domain10.CheckoutProvider), new(*stripe.Client)), provideWebhookVerifier, wire.Bind(new(domain10.WebhookVerifier), new(*stripe.WebhookVerifier)), provideManagerPaymentRepo,
 	provideCreateCheckoutSession,
-	provideCreatePaymentLink,
 	provideHandleStripeWebhook, application12.NewGetManagerPaymentStatus, application12.NewListManagerPaymentEvents, providePaymentsHandler,
 )
 

@@ -499,7 +499,6 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 		// Manager payment diagnostics
 		{"GET", "/api/v1/invoices/:invoice_id/payment-status", classProtectedBusiness, []string{"manager"}},
 		{"GET", "/api/v1/invoices/:invoice_id/payment-events", classProtectedBusiness, []string{"manager"}},
-		{"POST", "/api/v1/invoices/:invoice_id/payment-link", classProtectedBusiness, []string{"manager"}},
 
 		// Child Management sub-resources (manager)
 		{"GET", "/api/v1/children/:child_id/profile", classProtectedBusiness, []string{"manager"}},
@@ -708,7 +707,6 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 		// Payment diagnostics
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
 		{"payment events", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-events", ""},
-		{"payment link", "POST", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-link", ""},
 	}
 
 	for _, tc := range protectedRoutes {
@@ -766,7 +764,6 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 
 		{"payment status", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-status", ""},
 		{"payment events", "GET", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-events", ""},
-		{"payment link", "POST", "/api/v1/invoices/" + h.invoiceA.String() + "/payment-link", ""},
 
 		{"get child profile", "GET", "/api/v1/children/" + h.childA.String() + "/profile", ""},
 		{"patch child profile", "PATCH", "/api/v1/children/" + h.childA.String() + "/profile", `{"disability_status":"unknown"}`},
@@ -892,11 +889,6 @@ func TestAuthorizationMatrixTenantBranchScope(t *testing.T) {
 
 	t.Run("payment events B not found from scope A", func(t *testing.T) {
 		w := h.get(t, "/api/v1/invoices/"+h.invoiceB.String()+"/payment-events", h.managerAToken)
-		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
-	})
-
-	t.Run("payment link B not found from scope A", func(t *testing.T) {
-		w := h.post(t, "/api/v1/invoices/"+h.invoiceB.String()+"/payment-link", h.managerAToken, "")
 		assertStatusAndCode(t, w, http.StatusNotFound, "invoice_not_found")
 	})
 

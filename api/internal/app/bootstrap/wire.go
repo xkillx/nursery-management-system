@@ -493,17 +493,6 @@ func provideCreateCheckoutSession(
 	return uc.WithObservability(logger, recorder)
 }
 
-func provideCreatePaymentLink(
-	repo *paymentspostgres.Repository,
-	paymentLinkProvider paymentsdomain.PaymentLinkProvider,
-	logger *slog.Logger,
-	recorder *metrics.Recorder,
-) *paymentsapp.CreatePaymentLink {
-	stripeConfigured := paymentLinkProvider != nil
-	uc := paymentsapp.NewCreatePaymentLink(repo.ManagerRepo(), paymentLinkProvider, repo.PaymentLinkRepo(), stripeConfigured)
-	return uc.WithObservability(logger, recorder)
-}
-
 func provideHandleStripeWebhook(
 	repo *paymentspostgres.Repository,
 	webhookVerifier paymentsdomain.WebhookVerifier,
@@ -525,12 +514,10 @@ var paymentsSet = wire.NewSet(
 	provideAuditSystemWriterAdapter,
 	provideStripeClient,
 	wire.Bind(new(paymentsdomain.CheckoutProvider), new(*stripeclient.Client)),
-	wire.Bind(new(paymentsdomain.PaymentLinkProvider), new(*stripeclient.Client)),
 	provideWebhookVerifier,
 	wire.Bind(new(paymentsdomain.WebhookVerifier), new(*stripeclient.WebhookVerifier)),
 	provideManagerPaymentRepo,
 	provideCreateCheckoutSession,
-	provideCreatePaymentLink,
 	provideHandleStripeWebhook,
 	paymentsapp.NewGetManagerPaymentStatus,
 	paymentsapp.NewListManagerPaymentEvents,
