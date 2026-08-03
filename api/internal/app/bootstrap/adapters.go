@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -734,7 +735,18 @@ type billingNotificationAdapter struct {
 	webBaseURL     string
 	pdfRenderer    *billingpdf.Renderer
 	storage        platformstorage.Service
+	// executor writes standalone audit rows (failed-resend compliance trace)
+	// on a connection independent of the wrapping transaction.
+	executor pgExecutor
 }
+
+// pgExecutor is satisfied by *pgxpool.Pool and pgx.Tx. It backs the standalone
+// system-audit write that must survive the use-case transaction rollback.
+type pgExecutor interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+var _ pgExecutor = (*pgxpool.Pool)(nil)
 
 func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
 	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
@@ -795,6 +807,104 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 
 	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceIssuedSent, nil)
 	return nil
+}
+
+// SendInvoiceResendEmail is the strict sibling of SendInvoiceIssuedEmail used by
+// the manager-triggered resend path (KTD-3). Unlike the best-effort auto-send it
+// returns errors to the caller: a missing parent email, a missing site profile,
+// or an enqueue failure all surface as errors instead of a false success. It
+// enqueues with a distinct event type (invoice_resend) and a per-attempt
+// idempotency key so repeat resends of the same invoice never collide under the
+// outbox UNIQUE constraint (KTD-2). The _failed compliance audit is written on a
+// standalone connection so it survives the wrapping transaction rollback; the
+// _sent audit is written inside the main transaction.
+func (a *billingNotificationAdapter) SendInvoiceResendEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {
+	invoice, found, err := a.repo.GetInvoiceForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+	if err != nil {
+		return fmt.Errorf("get invoice: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("invoice %s not found", invoiceID)
+	}
+
+	parent, err := a.parentContacts.GetForInvoice(ctx, tenantID, branchID, invoice.ChildID)
+	if err != nil {
+		return fmt.Errorf("get parent contact: %w", err)
+	}
+	if parent == nil || parent.Email == "" {
+		return fmt.Errorf("parent has no email on file")
+	}
+
+	site, err := a.siteProfiles.GetForInvoice(ctx, tenantID, branchID)
+	if err != nil {
+		return fmt.Errorf("get site profile: %w", err)
+	}
+	if site == nil {
+		return fmt.Errorf("site profile not found")
+	}
+
+	invoiceNumber := ""
+	if invoice.InvoiceNumber != nil {
+		invoiceNumber = *invoice.InvoiceNumber
+	}
+
+	subject := fmt.Sprintf("New Invoice %s - %s", invoiceNumber, site.NurseryName)
+
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
+	}
+
+	nonce := uuid.NewString()
+	_, err = a.enqueuer.EnqueueWithTx(ctx, tx, tenantID, branchID, emaildomain.EnqueueParams{
+		EventType:       "invoice_resend",
+		Recipient:       parent.Email,
+		Subject:         subject,
+		TemplateName:    "issued",
+		TemplateVersion: 2,
+		PayloadJSON:     payloadJSON,
+		EntityID:        invoiceID.String(),
+		AttachmentRefs:  attachmentRefs(a.buildInvoiceAttachment(ctx, tx, tenantID, branchID, invoiceID, invoice, site, parent)),
+		IdempotencyKey:  fmt.Sprintf("invoice_resend_%s_%s", invoiceID.String(), nonce),
+	})
+	if err != nil {
+		a.writeResendFailedAudit(ctx, tenantID, branchID, invoiceID, parent.Email, err)
+		slog.ErrorContext(ctx, "notification_email_enqueue_failed",
+			"notification_type", "invoice_resend",
+			"invoice_id", invoiceID,
+			"error", err,
+		)
+		return fmt.Errorf("enqueue resend email: %w", err)
+	}
+
+	a.writeAudit(ctx, tx, tenantID, branchID, invoiceID, parent.Email, notificationsapp.AuditNotificationInvoiceResendSent, nil)
+	return nil
+}
+
+// writeResendFailedAudit records the _failed compliance trace on a standalone
+// connection (the pool), so it persists even though the wrapping use-case
+// transaction rolls back the enqueue attempt.
+func (a *billingNotificationAdapter) writeResendFailedAudit(ctx context.Context, tenantID, branchID, invoiceID uuid.UUID, emailAddr string, sendErr error) {
+	if a.executor == nil {
+		return
+	}
+	details := map[string]any{
+		"invoice_id":        invoiceID.String(),
+		"notification_type": notificationsapp.AuditNotificationInvoiceResendFailed,
+	}
+	if emailAddr != "" {
+		parts := strings.SplitN(emailAddr, "@", 2)
+		if len(parts) == 2 {
+			details["parent_email_domain"] = parts[1]
+		}
+	}
+	details["error"] = sendErr.Error()
+	_ = a.auditWriter.WriteSystem(ctx, a.executor, tenantID, branchID, "", audit.WriteParams{
+		ActionType: notificationsapp.AuditNotificationInvoiceResendFailed,
+		EntityType: "invoice",
+		EntityID:   invoiceID,
+		Details:    details,
+	})
 }
 
 func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context, tx pgx.Tx, invoiceID, tenantID, branchID uuid.UUID) error {

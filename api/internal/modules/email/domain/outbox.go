@@ -82,6 +82,11 @@ type EnqueueParams struct {
 	PayloadJSON     []byte
 	EntityID        string
 	AttachmentRefs  []AttachmentRef
+	// IdempotencyKey is optional. When empty the enqueuer derives the default
+	// "{event_type}_{entity_id}_1" key; callers that must enqueue distinct
+	// rows for the same event/entity (e.g. manual invoice resends) supply their
+	// own per-attempt key so the UNIQUE constraint never collides.
+	IdempotencyKey string
 }
 
 type EmailEnqueuer interface {

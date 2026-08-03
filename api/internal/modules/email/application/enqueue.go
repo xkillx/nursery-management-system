@@ -19,8 +19,15 @@ func NewEnqueueEmail(repo domain.OutboxRepository) *EnqueueEmail {
 	return &EnqueueEmail{repo: repo}
 }
 
+func enqueueIdempotencyKey(params domain.EnqueueParams) string {
+	if params.IdempotencyKey != "" {
+		return params.IdempotencyKey
+	}
+	return fmt.Sprintf("%s_%s_1", params.EventType, params.EntityID)
+}
+
 func (uc *EnqueueEmail) Enqueue(ctx context.Context, tenantID, branchID uuid.UUID, params domain.EnqueueParams) (uuid.UUID, error) {
-	idempotencyKey := fmt.Sprintf("%s_%s_1", params.EventType, params.EntityID)
+	idempotencyKey := enqueueIdempotencyKey(params)
 
 	var attachmentsJSON []byte
 	if len(params.AttachmentRefs) > 0 {
@@ -71,7 +78,7 @@ func (uc *EnqueueEmail) Enqueue(ctx context.Context, tenantID, branchID uuid.UUI
 }
 
 func (uc *EnqueueEmail) EnqueueWithTx(ctx context.Context, tx domain.Tx, tenantID, branchID uuid.UUID, params domain.EnqueueParams) (uuid.UUID, error) {
-	idempotencyKey := fmt.Sprintf("%s_%s_1", params.EventType, params.EntityID)
+	idempotencyKey := enqueueIdempotencyKey(params)
 
 	msg := domain.OutboxMessage{
 		ID:              uuid.New(),

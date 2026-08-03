@@ -14,6 +14,7 @@ import (
 	"nursery-management-system/api/internal/modules/billing/domain"
 	billingpdf "nursery-management-system/api/internal/modules/billing/infrastructure/pdf"
 	emaildomain "nursery-management-system/api/internal/modules/email/domain"
+	notificationsapp "nursery-management-system/api/internal/modules/notifications/application"
 	siteprofiledomain "nursery-management-system/api/internal/modules/siteprofile/domain"
 	"nursery-management-system/api/internal/platform/audit"
 	"nursery-management-system/api/internal/platform/storage"
@@ -301,5 +302,150 @@ func TestSendInvoiceIssuedEmail_SkipsWhenParentHasNoEmail(t *testing.T) {
 
 	if len(enqueuer.Enqueued) != 0 {
 		t.Errorf("expected no enqueued message when parent has no email, got %d", len(enqueuer.Enqueued))
+	}
+}
+
+// failingEnqueuer returns a fixed error from EnqueueWithTx for the strict-resend tests.
+type failingEnqueuer struct {
+	emaildomain.EmailEnqueuer
+	err   error
+	calls int
+}
+
+func (f *failingEnqueuer) EnqueueWithTx(_ context.Context, _ emaildomain.Tx, _, _ uuid.UUID, _ emaildomain.EnqueueParams) (uuid.UUID, error) {
+	f.calls++
+	return uuid.Nil, f.err
+}
+
+// recordingExecutor captures standalone audit Exec calls (the pool-backed writes).
+type recordingExecutor struct {
+	execs []string
+	args  [][]any
+}
+
+func (r *recordingExecutor) Exec(_ context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	r.execs = append(r.execs, sql)
+	r.args = append(r.args, args)
+	return pgconn.CommandTag{}, nil
+}
+
+func newResendAdapter(t *testing.T, enqueuer emaildomain.EmailEnqueuer, executor pgExecutor) *billingNotificationAdapter {
+	t.Helper()
+	return &billingNotificationAdapter{
+		repo:           &stubAttachmentRepo{invoice: testInvoice(), found: true},
+		parentContacts: &stubAttachmentParentContacts{pc: testParentContact()},
+		siteProfiles:   &stubAttachmentSiteProfiles{sp: testSiteProfile()},
+		enqueuer:       enqueuer,
+		auditWriter:    audit.NewWriter(),
+		webBaseURL:     "https://app.example.com",
+		pdfRenderer:    newTestRenderer(t),
+		storage:        storage.NewFakeService(),
+		executor:       executor,
+	}
+}
+
+func TestSendInvoiceResendEmail_EnqueuesInvoiceResendWithUniqueKey(t *testing.T) {
+	enqueuer := emaildomain.NewFakeEnqueuer()
+	adapter := newResendAdapter(t, enqueuer, &recordingExecutor{})
+	invoiceID := testInvoice().ID
+
+	if err := adapter.SendInvoiceResendEmail(context.Background(), &fakeTx{}, invoiceID, uuid.New(), uuid.New()); err != nil {
+		t.Fatalf("send invoice resend: %v", err)
+	}
+	if err := adapter.SendInvoiceResendEmail(context.Background(), &fakeTx{}, invoiceID, uuid.New(), uuid.New()); err != nil {
+		t.Fatalf("send invoice resend: %v", err)
+	}
+
+	if len(enqueuer.Enqueued) != 2 {
+		t.Fatalf("expected 2 enqueued messages, got %d", len(enqueuer.Enqueued))
+	}
+	for i, got := range enqueuer.Enqueued {
+		if got.EventType != "invoice_resend" {
+			t.Errorf("[%d] EventType = %q, want invoice_resend", i, got.EventType)
+		}
+		if got.Recipient != "jane@example.com" {
+			t.Errorf("[%d] Recipient = %q, want jane@example.com", i, got.Recipient)
+		}
+		if got.TemplateName != "issued" {
+			t.Errorf("[%d] TemplateName = %q, want issued", i, got.TemplateName)
+		}
+		if got.TemplateVersion != 2 {
+			t.Errorf("[%d] TemplateVersion = %d, want 2", i, got.TemplateVersion)
+		}
+		if len(got.AttachmentRefs) != 1 {
+			t.Errorf("[%d] expected 1 attachment ref, got %d", i, len(got.AttachmentRefs))
+		}
+		if got.IdempotencyKey == "" || !strings.HasPrefix(got.IdempotencyKey, "invoice_resend_") {
+			t.Errorf("[%d] IdempotencyKey = %q, want invoice_resend_ prefix", i, got.IdempotencyKey)
+		}
+	}
+	if enqueuer.Enqueued[0].IdempotencyKey == enqueuer.Enqueued[1].IdempotencyKey {
+		t.Errorf("idempotency keys must be unique per attempt, both = %q", enqueuer.Enqueued[0].IdempotencyKey)
+	}
+}
+
+func TestSendInvoiceResendEmail_ErrorsWhenParentHasNoEmail(t *testing.T) {
+	enqueuer := emaildomain.NewFakeEnqueuer()
+	adapter := newResendAdapter(t, enqueuer, &recordingExecutor{})
+	adapter.parentContacts = &stubAttachmentParentContacts{pc: &domain.ParentContact{FullName: "No Email"}}
+
+	err := adapter.SendInvoiceResendEmail(context.Background(), &fakeTx{}, testInvoice().ID, uuid.New(), uuid.New())
+	if err == nil {
+		t.Fatal("expected error when parent has no email")
+	}
+	if len(enqueuer.Enqueued) != 0 {
+		t.Errorf("expected no enqueued message, got %d", len(enqueuer.Enqueued))
+	}
+}
+
+func TestSendInvoiceResendEmail_ErrorsWhenSiteProfileMissing(t *testing.T) {
+	enqueuer := emaildomain.NewFakeEnqueuer()
+	adapter := newResendAdapter(t, enqueuer, &recordingExecutor{})
+	adapter.siteProfiles = &stubAttachmentSiteProfiles{sp: nil}
+
+	err := adapter.SendInvoiceResendEmail(context.Background(), &fakeTx{}, testInvoice().ID, uuid.New(), uuid.New())
+	if err == nil {
+		t.Fatal("expected error when site profile is missing")
+	}
+	if len(enqueuer.Enqueued) != 0 {
+		t.Errorf("expected no enqueued message, got %d", len(enqueuer.Enqueued))
+	}
+}
+
+func TestSendInvoiceResendEmail_EnqueueFailureReturnsErrorAndPersistsFailedAudit(t *testing.T) {
+	failing := &failingEnqueuer{err: errors.New("insert failed")}
+	recorder := &recordingExecutor{}
+	adapter := newResendAdapter(t, failing, recorder)
+
+	err := adapter.SendInvoiceResendEmail(context.Background(), &fakeTx{}, testInvoice().ID, uuid.New(), uuid.New())
+	if err == nil {
+		t.Fatal("expected error from strict resend on enqueue failure")
+	}
+	if failing.calls != 1 {
+		t.Fatalf("enqueuer calls = %d, want 1", failing.calls)
+	}
+
+	if len(recorder.execs) != 1 {
+		t.Fatalf("expected 1 standalone audit write, got %d", len(recorder.execs))
+	}
+	if len(recorder.args) != 1 || len(recorder.args[0]) < 8 {
+		t.Fatalf("expected audit args, got %d args", len(recorder.args))
+	}
+	if recorder.args[0][3] != notificationsapp.AuditNotificationInvoiceResendFailed {
+		t.Errorf("audit action = %v, want %s", recorder.args[0][3], notificationsapp.AuditNotificationInvoiceResendFailed)
+	}
+}
+
+func TestSendInvoiceResendEmail_InvoiceNotFoundReturnsError(t *testing.T) {
+	enqueuer := emaildomain.NewFakeEnqueuer()
+	adapter := newResendAdapter(t, enqueuer, &recordingExecutor{})
+	adapter.repo = &stubAttachmentRepo{invoice: testInvoice(), found: false}
+
+	err := adapter.SendInvoiceResendEmail(context.Background(), &fakeTx{}, testInvoice().ID, uuid.New(), uuid.New())
+	if err == nil {
+		t.Fatal("expected error when invoice not found")
+	}
+	if len(enqueuer.Enqueued) != 0 {
+		t.Errorf("expected no enqueued message, got %d", len(enqueuer.Enqueued))
 	}
 }

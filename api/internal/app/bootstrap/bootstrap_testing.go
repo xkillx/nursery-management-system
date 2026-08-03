@@ -416,6 +416,7 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			webBaseURL:     cfg.WebBaseURL,
 			pdfRenderer:    provideInvoicePDFRenderer(),
 			storage:        provideBillingStorage(cfg),
+			executor:       pool,
 		}
 		handleWebhookUC = paymentsapp.NewHandleStripeWebhook(
 			paymentsRepo,

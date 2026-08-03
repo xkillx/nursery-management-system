@@ -72,6 +72,13 @@ func (w *Writer) WriteWithTx(ctx context.Context, tx pgx.Tx, actor tenant.ActorC
 }
 
 func (w *Writer) WriteSystemWithTx(ctx context.Context, tx pgx.Tx, tenantID, branchID uuid.UUID, requestID string, params WriteParams) error {
+	return w.WriteSystem(ctx, tx, tenantID, branchID, requestID, params)
+}
+
+// WriteSystem writes a system audit row (no actor) against any pgx executor —
+// a transaction or a pool. Used when a compliance trace must survive an
+// outer transaction rollback (KTD-3).
+func (w *Writer) WriteSystem(ctx context.Context, q dbExecQuerier, tenantID, branchID uuid.UUID, requestID string, params WriteParams) error {
 	if params.Details == nil {
 		params.Details = map[string]any{}
 	}
@@ -91,7 +98,7 @@ INSERT INTO audit_logs (
 )
 VALUES ($1, $2, $3, NULL, NULL, $4, $5, $6, NULL, NULL, $7, $8::jsonb)`
 
-	_, err = tx.Exec(ctx, insertQ,
+	_, err = q.Exec(ctx, insertQ,
 		uid.NewUUID(),
 		tenantID,
 		branchID,

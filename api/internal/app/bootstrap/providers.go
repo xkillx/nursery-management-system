@@ -250,6 +250,7 @@ func provideBillingNotificationAdapter(
 	webBaseURL string,
 	pdfRenderer *billingpdf.Renderer,
 	storage platformstorage.Service,
+	pool *pgxpool.Pool,
 ) *billingNotificationAdapter {
 	return &billingNotificationAdapter{
 		repo:           repo,
@@ -260,6 +261,7 @@ func provideBillingNotificationAdapter(
 		webBaseURL:     webBaseURL,
 		pdfRenderer:    pdfRenderer,
 		storage:        storage,
+		executor:       pool,
 	}
 }
 

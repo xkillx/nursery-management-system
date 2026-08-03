@@ -30,4 +30,6 @@ const (
 	AuditNotificationInvoiceDueReminderFailed = "notification_invoice_due_reminder_failed"
 	AuditNotificationReceiptSent              = "notification_receipt_sent"
 	AuditNotificationReceiptFailed            = "notification_receipt_failed"
+	AuditNotificationInvoiceResendSent        = "notification_invoice_resend_sent"
+	AuditNotificationInvoiceResendFailed      = "notification_invoice_resend_failed"
 )
