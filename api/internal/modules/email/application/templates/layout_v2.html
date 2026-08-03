@@ -9,66 +9,91 @@
         .nurserypro-root { --accent: #2563eb; --accent-text: #2563eb; }
         @media (prefers-color-scheme: dark) {
             .nurserypro-body { background-color: #0f172a !important; }
-            .nurserypro-shell { background-color: #0f172a !important; }
-            .nurserypro-heading, .nurserypro-heading h1 { color: #e2e8f0 !important; }
+            .nurserypro-shell { background-color: #0f172a !important; border-color: #334155 !important; }
+            .nurserypro-brand-text { color: #f8fafc !important; }
+            .nurserypro-heading, .nurserypro-heading h1 { color: #f8fafc !important; }
             .nurserypro-text, .nurserypro-text td, .nurserypro-text p { color: #e2e8f0 !important; }
             .nurserypro-muted, .nurserypro-muted td { color: #94a3b8 !important; }
             .nurserypro-hero { background-color: #1e293b !important; border-color: #334155 !important; }
             .nurserypro-card { background-color: #1e293b !important; border-color: #334155 !important; }
+            .nurserypro-footer { background-color: #020617 !important; }
+        }
+        @media screen and (max-width: 600px) {
+            .nurserypro-shell { width: 100% !important; border-radius: 0 !important; }
+            .nurserypro-px { padding-left: 16px !important; padding-right: 16px !important; }
+            .nurserypro-hero-padding { padding: 20px 16px !important; }
+            .nurserypro-cta-btn { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
         }
     </style>
 </head>
-<body class="nurserypro-body" style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<body class="nurserypro-body" style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;">
         <tr>
-            <td align="center" style="padding:24px 16px;">
-                <table class="nurserypro-shell nurserypro-root" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;">
+            <td align="center" style="padding:24px 12px;" class="nurserypro-px">
+                <table class="nurserypro-shell nurserypro-root" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);border:1px solid #e2e8f0;">
                     <tr>
-                        <td style="height:4px;background-color:#2563eb;line-height:4px;font-size:0;">&nbsp;</td>
+                        <td style="height:5px;background-color:#2563eb;line-height:5px;font-size:0;">&nbsp;</td>
                     </tr>
                     <tr>
-                        <td style="padding:24px 32px 8px;">
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                        <td style="padding:28px 32px 16px;" class="nurserypro-px">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
-                                    <td valign="middle" style="padding-right:10px;">
-                                        <svg width="38" height="38" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NurseryPro">
-                                            <circle cx="18" cy="18" r="17" fill="#2563eb"/>
-                                            <circle cx="12" cy="14.5" r="2.2" fill="#ffffff"/>
-                                            <circle cx="24" cy="14.5" r="2.2" fill="#ffffff"/>
-                                            <path d="M11 22 q7 6 14 0" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-                                        </svg>
-                                    </td>
                                     <td valign="middle">
-                                        <span style="font-size:22px;font-weight:bold;color:#0f172a;">Nursery</span><span style="font-size:22px;font-weight:bold;color:#2563eb;">Pro</span>
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td valign="middle" style="padding-right:12px;">
+                                                    <svg width="38" height="38" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NurseryPro">
+                                                        <circle cx="18" cy="18" r="17" fill="#2563eb"/>
+                                                        <circle cx="12" cy="14.5" r="2.2" fill="#ffffff"/>
+                                                        <circle cx="24" cy="14.5" r="2.2" fill="#ffffff"/>
+                                                        <path d="M11 22 q7 6 14 0" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+                                                    </svg>
+                                                </td>
+                                                <td valign="middle">
+                                                    <span class="nurserypro-brand-text" style="font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">Nursery</span><span style="font-size:22px;font-weight:700;color:#2563eb;letter-spacing:-0.3px;">Pro</span>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
+                                    {{if .NurseryName}}
+                                    <td align="right" valign="middle">
+                                        <span class="nurserypro-muted" style="font-size:13px;font-weight:600;color:#64748b;background-color:#f8fafc;padding:6px 12px;border-radius:20px;border:1px solid #e2e8f0;display:inline-block;">{{.NurseryName}}</span>
+                                    </td>
+                                    {{end}}
                                 </tr>
                             </table>
                         </td>
                     </tr>
                     {{template "content" .}}
                     <tr>
-                        <td style="padding:12px 32px 24px;">
-                            <table class="nurserypro-hero" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6fc;border:1px solid #e2e8f0;border-radius:8px;">
+                        <td style="padding:8px 32px 24px;" class="nurserypro-px">
+                            <table class="nurserypro-hero" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
                                 <tr>
-                                    <td align="center" style="padding:20px;">
-                                        <div class="nurserypro-muted" style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;">Amount Due</div>
-                                        <div style="font-size:34px;font-weight:bold;color:#2563eb;margin-top:6px;">{{.TotalDue}}</div>
-                                        {{if .DueDate}}<div class="nurserypro-muted" style="font-size:13px;color:#64748b;margin-top:4px;">Due by {{.DueDate}}</div>{{end}}
+                                    <td align="center" style="padding:24px 20px;" class="nurserypro-hero-padding">
+                                        <div class="nurserypro-muted" style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;">Amount Due</div>
+                                        <div style="font-size:36px;font-weight:800;color:#2563eb;margin-top:6px;letter-spacing:-0.5px;">{{.TotalDue}}</div>
+                                        {{if .DueDate}}<div class="nurserypro-muted" style="font-size:13px;font-weight:500;color:#64748b;margin-top:6px;">Due by {{.DueDate}}</div>{{end}}
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
                     <tr>
-                        <td align="center" style="padding:0 32px 28px;">
-                            <a href="{{.PortalLink}}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 32px;border-radius:6px;">View Invoice &amp; Pay Online</a>
+                        <td align="center" style="padding:0 32px 32px;" class="nurserypro-px">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{.PortalLink}}" class="nurserypro-cta-btn" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-align:center;box-shadow:0 2px 4px rgba(37,99,235,0.2);">View Invoice &amp; Pay Online</a>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                     <tr>
-                        <td style="background-color:#0f172a;padding:24px 32px;text-align:center;">
-                            <div style="font-size:14px;font-weight:bold;color:#ffffff;">NurseryPro</div>
-                            <div class="nurserypro-muted" style="font-size:12px;color:#94a3b8;margin-top:6px;">{{.NurseryName}}</div>
-                            <div class="nurserypro-muted" style="font-size:12px;color:#94a3b8;margin-top:6px;">&copy; 2026 NurseryPro. All rights reserved.</div>
+                        <td class="nurserypro-footer" style="background-color:#0f172a;padding:28px 32px;text-align:center;" class="nurserypro-px">
+                            <div style="font-size:14px;font-weight:700;color:#ffffff;letter-spacing:-0.2px;">NurseryPro</div>
+                            <div class="nurserypro-muted" style="font-size:13px;color:#94a3b8;margin-top:6px;">{{.NurseryName}}</div>
+                            <div class="nurserypro-muted" style="font-size:12px;color:#64748b;margin-top:10px;">&copy; 2026 NurseryPro. All rights reserved.</div>
                         </td>
                     </tr>
                 </table>
