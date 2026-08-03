@@ -1,7 +1,10 @@
 package email
 
 import (
+	"bufio"
 	"context"
+	"net"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -20,24 +23,19 @@ func TestSMTPSender_Send_PlainTextOnly(t *testing.T) {
 		Text:    "Hello, this is a plain text email.",
 	}
 
-	// We can't actually send, but we can verify the message construction
-	// by testing the buildMessage logic indirectly
-	body := buildMessageBody(sender.from, msg)
+	body := sender.buildMessage(msg)
 
 	if !strings.Contains(body, "To: recipient@example.com") {
 		t.Error("expected To header")
 	}
-	if !strings.Contains(body, "From: test@example.com") {
-		t.Error("expected From header")
+	if !strings.Contains(body, "From: NurseryPro <test@example.com>") {
+		t.Errorf("expected From header with display name, got body:\n%s", body)
 	}
 	if !strings.Contains(body, "Subject: Test Subject") {
 		t.Error("expected Subject header")
 	}
 	if !strings.Contains(body, "Hello, this is a plain text email.") {
 		t.Error("expected text body")
-	}
-	if strings.Contains(body, "MIME-Version") {
-		t.Error("unexpected MIME-Version for plain text only")
 	}
 	if strings.Contains(body, "multipart/alternative") {
 		t.Error("unexpected multipart for plain text only")
@@ -59,13 +57,16 @@ func TestSMTPSender_Send_MultipartWithHTML(t *testing.T) {
 		HTML:    "<html><body><h1>HTML version</h1></body></html>",
 	}
 
-	body := buildMessageBody(sender.from, msg)
+	body := sender.buildMessage(msg)
 
 	if !strings.Contains(body, "MIME-Version: 1.0") {
 		t.Error("expected MIME-Version header")
 	}
 	if !strings.Contains(body, "Content-Type: multipart/alternative") {
 		t.Error("expected multipart/alternative content type")
+	}
+	if !strings.Contains(body, "From: NurseryPro <test@example.com>") {
+		t.Errorf("expected From header with display name, got body:\n%s", body)
 	}
 	if !strings.Contains(body, "Content-Type: text/plain") {
 		t.Error("expected text/plain content type")
@@ -99,7 +100,7 @@ func TestSMTPSender_Send_MultipartWithEmptyText(t *testing.T) {
 		HTML:    "<html><body><h1>HTML only</h1></body></html>",
 	}
 
-	body := buildMessageBody(sender.from, msg)
+	body := sender.buildMessage(msg)
 
 	if !strings.Contains(body, "MIME-Version: 1.0") {
 		t.Error("expected MIME-Version header")
@@ -132,10 +133,10 @@ func TestSMTPSender_Send_BackwardCompatibility(t *testing.T) {
 		Text:    "Plain text only, no HTML field set",
 	}
 
-	body := buildMessageBody(sender.from, msg)
+	body := sender.buildMessage(msg)
 
-	if strings.Contains(body, "MIME-Version") {
-		t.Error("unexpected MIME-Version for backward compatible message")
+	if !strings.Contains(body, "From: NurseryPro <test@example.com>") {
+		t.Errorf("expected From header with display name, got body:\n%s", body)
 	}
 	if strings.Contains(body, "multipart/alternative") {
 		t.Error("unexpected multipart for backward compatible message")
@@ -145,41 +146,36 @@ func TestSMTPSender_Send_BackwardCompatibility(t *testing.T) {
 	}
 }
 
-// buildMessageBody extracts the message body construction logic for testing.
-func buildMessageBody(from string, msg Message) string {
-	var body strings.Builder
-	body.WriteString("To: ")
-	body.WriteString(msg.To)
-	body.WriteString("\r\nFrom: ")
-	body.WriteString(from)
-	body.WriteString("\r\nSubject: ")
-	body.WriteString(msg.Subject)
-
-	if msg.HTML != "" {
-		boundary := "test-boundary-123"
-		body.WriteString("\r\nMIME-Version: 1.0")
-		body.WriteString("\r\nContent-Type: multipart/alternative; boundary=\"")
-		body.WriteString(boundary)
-		body.WriteString("\"")
-		body.WriteString("\r\n\r\n--")
-		body.WriteString(boundary)
-		body.WriteString("\r\nContent-Type: text/plain; charset=\"UTF-8\"")
-		body.WriteString("\r\n\r\n")
-		body.WriteString(msg.Text)
-		body.WriteString("\r\n\r\n--")
-		body.WriteString(boundary)
-		body.WriteString("\r\nContent-Type: text/html; charset=\"UTF-8\"")
-		body.WriteString("\r\n\r\n")
-		body.WriteString(msg.HTML)
-		body.WriteString("\r\n\r\n--")
-		body.WriteString(boundary)
-		body.WriteString("--")
-	} else {
-		body.WriteString("\r\n\r\n")
-		body.WriteString(msg.Text)
+func TestSMTPSender_Send_EnvelopeStaysBareWhileFromHeaderHasDisplayName(t *testing.T) {
+	addr, envelopeFrom, data := startFakeSMTPServer(t)
+	host, portStr, err := net.SplitHostPort(addr)
+	if err != nil {
+		t.Fatalf("split host port: %v", err)
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		t.Fatalf("parse port: %v", err)
 	}
 
-	return body.String()
+	sender := NewSMTPSender(host, port, "", "", "no-reply@example.local")
+
+	msg := Message{
+		To:      "recipient@example.com",
+		Subject: "Test Subject",
+		Text:    "Plain text version",
+		HTML:    "<html><body><h1>HTML version</h1></body></html>",
+	}
+
+	if err := sender.Send(context.Background(), msg); err != nil {
+		t.Fatalf("send failed: %v", err)
+	}
+
+	if *envelopeFrom != "no-reply@example.local" {
+		t.Errorf("envelope sender = %q, want bare address %q", *envelopeFrom, "no-reply@example.local")
+	}
+	if !strings.Contains(*data, "From: NurseryPro <no-reply@example.local>") {
+		t.Errorf("message From header missing display name, got:\n%s", *data)
+	}
 }
 
 func TestFakeSender_CapturesMessages(t *testing.T) {
@@ -217,4 +213,69 @@ func TestFakeSender_ReturnsError(t *testing.T) {
 	if len(sender.Messages) != 0 {
 		t.Error("expected no messages on error")
 	}
+}
+
+// startFakeSMTPServer runs a minimal SMTP server on a local port that accepts a
+// single message, recording the MAIL FROM envelope and the DATA payload.
+func startFakeSMTPServer(t *testing.T) (addr string, envelopeFrom *string, data *string) {
+	t.Helper()
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	t.Cleanup(func() { _ = ln.Close() })
+
+	env := new(string)
+	payload := new(string)
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		write := func(s string) { _, _ = conn.Write([]byte(s)) }
+		write("220 localhost ESMTP fake\r\n")
+
+		reader := bufio.NewReader(conn)
+		inData := false
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			trimmed := strings.ToUpper(strings.TrimSpace(line))
+
+			if inData {
+				*payload += line
+				if line == ".\r\n" {
+					write("250 OK: queued\r\n")
+					inData = false
+				}
+				continue
+			}
+
+			switch {
+			case strings.HasPrefix(trimmed, "EHLO"):
+				write("250-localhost\r\n250 SIZE 1000000\r\n")
+			case strings.HasPrefix(trimmed, "MAIL FROM"):
+				*env = strings.Trim(strings.TrimPrefix(strings.TrimSpace(line), "MAIL FROM:"), "<>")
+				write("250 OK\r\n")
+			case strings.HasPrefix(trimmed, "RCPT TO"):
+				write("250 OK\r\n")
+			case trimmed == "DATA":
+				write("354 End data with <CR><LF>.<CR><LF>\r\n")
+				inData = true
+			case trimmed == "QUIT":
+				write("221 Bye\r\n")
+				return
+			default:
+				write("250 OK\r\n")
+			}
+		}
+	}()
+
+	return ln.Addr().String(), env, payload
 }

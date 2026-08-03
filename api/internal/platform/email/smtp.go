@@ -10,6 +10,10 @@ import (
 	"nursery-management-system/api/internal/platform/uid"
 )
 
+// senderDisplayName is shown in the From header while the SMTP envelope sender
+// remains the bare address (KTD-6: net/smtp rejects a display name in MAIL FROM).
+const senderDisplayName = "NurseryPro"
+
 type SMTPSender struct {
 	host string
 	port int
@@ -32,12 +36,19 @@ func NewSMTPSender(host string, port int, user, pass, from string) *SMTPSender {
 
 func (s *SMTPSender) Send(ctx context.Context, msg Message) error {
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
+	body := s.buildMessage(msg)
 
+	// The envelope sender stays the bare address; the display name appears only
+	// in the From header (KTD-6).
+	return smtp.SendMail(addr, s.auth, s.from, []string{msg.To}, []byte(body))
+}
+
+func (s *SMTPSender) buildMessage(msg Message) string {
 	var body strings.Builder
 	body.WriteString("To: ")
 	body.WriteString(msg.To)
 	body.WriteString("\r\nFrom: ")
-	body.WriteString(s.from)
+	body.WriteString(s.fromHeader())
 	body.WriteString("\r\nSubject: ")
 	body.WriteString(msg.Subject)
 	body.WriteString("\r\nMIME-Version: 1.0")
@@ -52,7 +63,11 @@ func (s *SMTPSender) Send(ctx context.Context, msg Message) error {
 		body.WriteString(msg.Text)
 	}
 
-	return smtp.SendMail(addr, s.auth, s.from, []string{msg.To}, []byte(body.String()))
+	return body.String()
+}
+
+func (s *SMTPSender) fromHeader() string {
+	return fmt.Sprintf("%s <%s>", senderDisplayName, s.from)
 }
 
 func (s *SMTPSender) buildMultipartAlternative(body *strings.Builder, msg Message) {
