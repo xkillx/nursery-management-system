@@ -215,7 +215,7 @@ func TestRenderer_V2InvoiceCTAFallsBackToPortalLink(t *testing.T) {
 func TestRenderer_V2ReceiptUnchangedWithoutPayLink(t *testing.T) {
 	renderer := NewRenderer()
 
-	htmlBody, textBody, err := renderer.Render("receipt", 2, sampleReceiptData())
+	htmlBody, _, err := renderer.Render("receipt", 2, sampleReceiptData())
 	if err != nil {
 		t.Fatalf("render receipt v2: %v", err)
 	}
