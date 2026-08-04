@@ -76,6 +76,16 @@ SELECT
 FROM payment_attempts
 WHERE id = $1;
 
+-- name: GetInvoiceForEmailCheckoutForUpdate :one
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status, i.currency_code,
+    i.total_due_minor, i.amount_paid_minor, i.child_id
+FROM invoices i
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.id = $3
+FOR UPDATE OF i;
+
 -- name: GetActiveCheckoutForInvoice :one
 SELECT
     id,
@@ -94,6 +104,30 @@ WHERE tenant_id = $1
   AND branch_id = $2
   AND invoice_id = $3
   AND status = 'checkout_created'
+  AND initiated_by_user_id IS NOT NULL
+  AND (stripe_expires_at IS NULL OR stripe_expires_at > now())
+ORDER BY created_at DESC
+LIMIT 1;
+
+-- name: GetActiveEmailCheckoutForInvoice :one
+SELECT
+    id,
+    tenant_id,
+    branch_id,
+    invoice_id,
+    stripe_checkout_session_id,
+    stripe_checkout_url,
+    stripe_payment_intent_id,
+    stripe_expires_at,
+    status,
+    amount_minor,
+    currency_code
+FROM payment_attempts
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND invoice_id = $3
+  AND status = 'checkout_created'
+  AND initiated_by_user_id IS NULL
   AND (stripe_expires_at IS NULL OR stripe_expires_at > now())
 ORDER BY created_at DESC
 LIMIT 1;

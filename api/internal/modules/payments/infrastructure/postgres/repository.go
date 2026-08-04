@@ -65,14 +65,38 @@ func (r *Repository) GetParentInvoiceForCheckoutForUpdate(ctx context.Context, t
 	}, true, nil
 }
 
+func (r *Repository) GetInvoiceForEmailCheckoutForUpdate(ctx context.Context, tx domain.Tx, tenantID, branchID, invoiceID string) (domain.CheckoutInvoiceCandidate, bool, error) {
+	row, err := r.queriesTx(tx).GetInvoiceForEmailCheckoutForUpdate(ctx, sqlc.GetInvoiceForEmailCheckoutForUpdateParams{
+		TenantID: uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID: uuidToPgtype(mustParseUUID(branchID)),
+		ID:       uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.CheckoutInvoiceCandidate{}, false, nil
+		}
+		return domain.CheckoutInvoiceCandidate{}, false, err
+	}
+	return domain.CheckoutInvoiceCandidate{
+		ID:              pgtypeUUIDToStr(row.ID),
+		InvoiceKind:     row.InvoiceKind,
+		InvoiceNumber:   pgtypeTextToStr(row.InvoiceNumber),
+		Status:          row.Status,
+		CurrencyCode:    row.CurrencyCode,
+		TotalDueMinor:   int(row.TotalDueMinor),
+		AmountPaidMinor: int(row.AmountPaidMinor),
+		ChildID:         pgtypeUUIDToStr(row.ChildID),
+	}, true, nil
+}
+
 func (r *Repository) CreatePaymentAttempt(ctx context.Context, tx domain.Tx, params domain.PaymentAttemptCreateParams) error {
 	return r.queriesTx(tx).CreatePaymentAttempt(ctx, sqlc.CreatePaymentAttemptParams{
 		ID:                      uuidToPgtype(mustParseUUID(params.ID)),
 		TenantID:                uuidToPgtype(mustParseUUID(params.TenantID)),
 		BranchID:                uuidToPgtype(mustParseUUID(params.BranchID)),
 		InvoiceID:               uuidToPgtype(mustParseUUID(params.InvoiceID)),
-		InitiatedByUserID:       uuidToPgtype(mustParseUUID(params.InitiatedByUserID)),
-		InitiatedByMembershipID: uuidToPgtype(mustParseUUID(params.InitiatedByMembershipID)),
+		InitiatedByUserID:       strToPgtypeUUID(params.InitiatedByUserID),
+		InitiatedByMembershipID: strToPgtypeUUID(params.InitiatedByMembershipID),
 		RequestID:               strToPgtypeText(params.RequestID),
 		Status:                  params.Status,
 		AmountMinor:             int32(params.AmountMinor),
@@ -170,14 +194,33 @@ func (r *Repository) GetActiveCheckoutForInvoice(ctx context.Context, tenantID, 
 		}
 		return nil, false, err
 	}
+	return activeCheckoutFromRow(row.ID, row.StripeCheckoutSessionID, row.StripeCheckoutUrl, row.StripePaymentIntentID, row.AmountMinor, row.CurrencyCode), true, nil
+}
+
+func (r *Repository) GetActiveEmailCheckoutForInvoice(ctx context.Context, tenantID, branchID, invoiceID string) (*domain.ActiveCheckoutSession, bool, error) {
+	row, err := sqlc.New(r.pool).GetActiveEmailCheckoutForInvoice(ctx, sqlc.GetActiveEmailCheckoutForInvoiceParams{
+		TenantID:  uuidToPgtype(mustParseUUID(tenantID)),
+		BranchID:  uuidToPgtype(mustParseUUID(branchID)),
+		InvoiceID: uuidToPgtype(mustParseUUID(invoiceID)),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return activeCheckoutFromRow(row.ID, row.StripeCheckoutSessionID, row.StripeCheckoutUrl, row.StripePaymentIntentID, row.AmountMinor, row.CurrencyCode), true, nil
+}
+
+func activeCheckoutFromRow(id pgtype.UUID, sessionID, checkoutURL, paymentIntentID pgtype.Text, amountMinor int32, currencyCode string) *domain.ActiveCheckoutSession {
 	return &domain.ActiveCheckoutSession{
-		AttemptID:         pgtypeUUIDToStr(row.ID),
-		CheckoutSessionID: pgtypeTextToStr(row.StripeCheckoutSessionID),
-		CheckoutURL:       pgtypeTextToStr(row.StripeCheckoutUrl),
-		PaymentIntentID:   pgtypeTextToStr(row.StripePaymentIntentID),
-		AmountMinor:       int(row.AmountMinor),
-		CurrencyCode:      row.CurrencyCode,
-	}, true, nil
+		AttemptID:         pgtypeUUIDToStr(id),
+		CheckoutSessionID: pgtypeTextToStr(sessionID),
+		CheckoutURL:       pgtypeTextToStr(checkoutURL),
+		PaymentIntentID:   pgtypeTextToStr(paymentIntentID),
+		AmountMinor:       int(amountMinor),
+		CurrencyCode:      currencyCode,
+	}
 }
 
 func mustParseUUID(s string) uuid.UUID {
@@ -186,6 +229,13 @@ func mustParseUUID(s string) uuid.UUID {
 		panic(fmt.Sprintf("invalid uuid %q: %v", s, err))
 	}
 	return id
+}
+
+func strToPgtypeUUID(s string) pgtype.UUID {
+	if s == "" {
+		return pgtype.UUID{}
+	}
+	return uuidToPgtype(mustParseUUID(s))
 }
 
 func uuidToPgtype(u uuid.UUID) pgtype.UUID {

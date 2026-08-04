@@ -29,7 +29,15 @@ func (f *fakeRepo) GetActiveCheckoutForInvoice(_ context.Context, _, _, _ string
 	return f.activeCheckout, f.activeFound, nil
 }
 
+func (f *fakeRepo) GetActiveEmailCheckoutForInvoice(_ context.Context, _, _, _ string) (*domain.ActiveCheckoutSession, bool, error) {
+	return f.activeCheckout, f.activeFound, nil
+}
+
 func (f *fakeRepo) GetParentInvoiceForCheckoutForUpdate(_ context.Context, _ domain.Tx, _, _, _, _ string) (domain.CheckoutInvoiceCandidate, bool, error) {
+	return f.candidate, f.candidateFound, nil
+}
+
+func (f *fakeRepo) GetInvoiceForEmailCheckoutForUpdate(_ context.Context, _ domain.Tx, _, _, _ string) (domain.CheckoutInvoiceCandidate, bool, error) {
 	return f.candidate, f.candidateFound, nil
 }
 

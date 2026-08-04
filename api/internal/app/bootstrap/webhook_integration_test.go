@@ -90,7 +90,7 @@ func seedInvoiceWithAttempt(t *testing.T, h *webhookHarness, invoiceStatus strin
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "WH Guardian", true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
-	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, guardianID)
+	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, childID)
 
 	runID := uuid.New()
 	invoiceID = uuid.New()

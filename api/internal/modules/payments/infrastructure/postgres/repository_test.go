@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"nursery-management-system/api/internal/modules/payments/domain"
@@ -60,7 +61,7 @@ func setupTestHarness(t *testing.T) *testHarness {
 		true)
 	dbtest.InsertGuardian(t, pool, h.guardianID, h.tenantID, h.branchID, "Test Guardian", true)
 	dbtest.InsertGuardianLink(t, pool, h.linkID, h.tenantID, h.branchID, h.guardianID, h.childID)
-	dbtest.InsertParentMapping(t, pool, h.mappingID, h.tenantID, h.branchID, h.parentMID, h.guardianID)
+	dbtest.InsertParentMapping(t, pool, h.mappingID, h.tenantID, h.branchID, h.parentMID, h.childID)
 
 	return h
 }
@@ -101,6 +102,9 @@ func seedIssuedInvoiceForMonth(t *testing.T, h *testHarness, suffix string, stat
 	case "payment_failed":
 		extraCols = ", payment_failed_at"
 		extraVals = ", now()"
+	case "void":
+		extraCols = ", voided_at, void_reason"
+		extraVals = ", now(), 'seeded void'"
 	}
 
 	_, err = h.pool.Exec(ctx, fmt.Sprintf(
@@ -261,7 +265,7 @@ func TestRepository_GetParentInvoiceForCheckout_NoParentMapping(t *testing.T) {
 
 	// End the parent mapping
 	_, err := h.pool.Exec(context.Background(),
-		"UPDATE parent_membership_guardians SET ended_at = now(), ended_reason_code = 'access_revoked' WHERE id = $1", h.mappingID)
+		"UPDATE parent_membership_children SET ended_at = now(), ended_reason_code = 'access_revoked' WHERE id = $1", h.mappingID)
 	if err != nil {
 		t.Fatalf("end mapping: %v", err)
 	}
@@ -274,6 +278,350 @@ func TestRepository_GetParentInvoiceForCheckout_NoParentMapping(t *testing.T) {
 	}
 	if found {
 		t.Fatal("invoice should not be visible without active parent mapping")
+	}
+}
+
+func TestRepository_GetInvoiceForEmailCheckout_IssuedVisible(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	tx := dbtest.BeginTx(t, h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "email-issued", "issued", 5000)
+
+	row, found, err := repo.GetInvoiceForEmailCheckoutForUpdate(ctx, tx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get for email checkout: %v", err)
+	}
+	if !found {
+		t.Fatal("expected issued invoice to be found")
+	}
+	if row.Status != "issued" {
+		t.Fatalf("expected issued, got %s", row.Status)
+	}
+	if row.TotalDueMinor != 5000 {
+		t.Fatalf("expected 5000, got %d", row.TotalDueMinor)
+	}
+	if row.CurrencyCode != "GBP" {
+		t.Fatalf("expected GBP, got %s", row.CurrencyCode)
+	}
+	if row.ChildID == "" {
+		t.Fatal("expected child id to be populated")
+	}
+}
+
+func TestRepository_GetInvoiceForEmailCheckout_UnknownInvoiceNotFound(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	tx := dbtest.BeginTx(t, h.pool)
+	ctx := context.Background()
+
+	_, found, err := repo.GetInvoiceForEmailCheckoutForUpdate(ctx, tx, h.tenantID.String(), h.branchID.String(), uid.NewUUID().String())
+	if err != nil {
+		t.Fatalf("get for email checkout: %v", err)
+	}
+	if found {
+		t.Fatal("unknown invoice should not be found")
+	}
+}
+
+func TestRepository_GetInvoiceForEmailCheckout_NonPayableStatusReturned(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	tx := dbtest.BeginTx(t, h.pool)
+	ctx := context.Background()
+
+	// The email checkout query returns any status; payability is decided in the use case.
+	// paid/void use the issued-invoice seed; draft is inserted as a minimal row that
+	// satisfies the draft-shape constraint (no issued fields).
+	paidID := seedIssuedInvoice(t, h, "email-paid", "paid", 5000)
+	draftID := insertMinimalInvoice(t, h, "email-draft", "draft")
+	voidID := seedIssuedInvoiceForMonth(t, h, "email-void", "void", 5000, 2026, 6)
+
+	for _, tc := range []struct {
+		status    string
+		invoiceID uuid.UUID
+	}{
+		{status: "paid", invoiceID: paidID},
+		{status: "draft", invoiceID: draftID},
+		{status: "void", invoiceID: voidID},
+	} {
+		row, found, err := repo.GetInvoiceForEmailCheckoutForUpdate(ctx, tx, h.tenantID.String(), h.branchID.String(), tc.invoiceID.String())
+		if err != nil {
+			t.Fatalf("get for email checkout (%s): %v", tc.status, err)
+		}
+		if !found {
+			t.Fatalf("expected %s invoice to be returned", tc.status)
+		}
+		if row.Status != tc.status {
+			t.Fatalf("expected status %s, got %s", tc.status, row.Status)
+		}
+	}
+}
+
+// insertMinimalInvoice inserts a monthly invoice with no issued fields, satisfying
+// the draft-shape check constraint, for statuses that are not issued-shaped.
+func insertMinimalInvoice(t *testing.T, h *testHarness, suffix, status string) uuid.UUID {
+	t.Helper()
+	ctx := context.Background()
+
+	invoiceID := uid.NewUUID()
+	runID := uid.NewUUID()
+	billingMonth := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
+
+	_, err := h.pool.Exec(ctx,
+		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
+		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, $7)`,
+		runID, h.tenantID, h.branchID, billingMonth, h.managerUID, h.managerMID, "req-"+suffix)
+	if err != nil {
+		t.Fatalf("insert invoice run: %v", err)
+	}
+
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code,
+		  generated_run_id, subtotal_minor, funded_deduction_minor, total_due_minor,
+		  period_start_date, period_end_date)
+		 VALUES ($1, $2, $3, $4, $5, 'monthly', $6, 'GBP', $7, 5000, 0, 5000, $8, $9)`,
+		invoiceID, h.tenantID, h.branchID, h.childID, billingMonth, status,
+		runID, billingMonth, billingMonth)
+	if err != nil {
+		t.Fatalf("insert invoice (%s): %v", status, err)
+	}
+	return invoiceID
+}
+
+func TestRepository_GetInvoiceForEmailCheckout_WrongTenantNotFound(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	tx := dbtest.BeginTx(t, h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "email-wrong", "issued", 5000)
+	otherTenant := uid.NewUUID()
+	dbtest.InsertTenant(t, h.pool, otherTenant, "Other Tenant")
+
+	_, found, err := repo.GetInvoiceForEmailCheckoutForUpdate(ctx, tx, otherTenant.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get for email checkout: %v", err)
+	}
+	if found {
+		t.Fatal("invoice under a different tenant should not be found")
+	}
+}
+
+func TestRepository_GetInvoiceForEmailCheckout_WrongBranchNotFound(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	tx := dbtest.BeginTx(t, h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "email-wbranch", "issued", 5000)
+	otherBranch := uid.NewUUID()
+	dbtest.InsertBranch(t, h.pool, h.tenantID, otherBranch, "Other Branch")
+
+	_, found, err := repo.GetInvoiceForEmailCheckoutForUpdate(ctx, tx, h.tenantID.String(), otherBranch.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get for email checkout: %v", err)
+	}
+	if found {
+		t.Fatal("invoice under a different branch should not be found")
+	}
+}
+
+func TestRepository_CreatePaymentAttempt_NullInitiators(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "null-init", "issued", 5000)
+
+	tx := dbtest.BeginTx(t, h.pool)
+	attemptID := uid.NewUUID().String()
+	err := repo.CreatePaymentAttempt(ctx, tx, domain.PaymentAttemptCreateParams{
+		ID:                      attemptID,
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		InvoiceID:               invoiceID.String(),
+		InitiatedByUserID:       "",
+		InitiatedByMembershipID: "",
+		RequestID:               "email_send:" + uid.NewUUID().String(),
+		Status:                  domain.AttemptStatusCheckoutCreationStarted,
+		AmountMinor:             5000,
+		CurrencyCode:            domain.CurrencyGBP,
+	})
+	if err != nil {
+		t.Fatalf("create attempt with NULL initiators: %v", err)
+	}
+	dbtest.CommitTx(t, tx)
+
+	var userID, membershipID pgtype.UUID
+	err = h.pool.QueryRow(context.Background(),
+		"SELECT initiated_by_user_id, initiated_by_membership_id FROM payment_attempts WHERE id = $1", attemptID).
+		Scan(&userID, &membershipID)
+	if err != nil {
+		t.Fatalf("query attempt: %v", err)
+	}
+	if userID.Valid || membershipID.Valid {
+		t.Fatalf("expected NULL initiators, got user=%v membership=%v", userID.Valid, membershipID.Valid)
+	}
+}
+
+func TestRepository_GetActiveCheckoutForInvoice_ScopedToPortal(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "active-portal", "issued", 5000)
+
+	// Portal-created active session (non-NULL initiators).
+	portalAttempt := seedPaymentAttemptForInvoice(t, h, repo, invoiceID, "active-portal", h.parentUID, h.parentMID)
+	err := repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		AttemptID:               portalAttempt.String(),
+		StripeCheckoutSessionID: "cs_portal_active",
+		StripeCheckoutURL:       "https://checkout.stripe.com/portal",
+	})
+	if err != nil {
+		t.Fatalf("mark portal attempt created: %v", err)
+	}
+
+	// Email-created active session (NULL initiators) for the same invoice.
+	tx := dbtest.BeginTx(t, h.pool)
+	emailAttempt := uid.NewUUID()
+	err = repo.CreatePaymentAttempt(ctx, tx, domain.PaymentAttemptCreateParams{
+		ID:                      emailAttempt.String(),
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		InvoiceID:               invoiceID.String(),
+		InitiatedByUserID:       "",
+		InitiatedByMembershipID: "",
+		RequestID:               "email_send:active-portal",
+		Status:                  domain.AttemptStatusCheckoutCreationStarted,
+		AmountMinor:             5000,
+		CurrencyCode:            domain.CurrencyGBP,
+	})
+	if err != nil {
+		t.Fatalf("create email attempt: %v", err)
+	}
+	dbtest.CommitTx(t, tx)
+	err = repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		AttemptID:               emailAttempt.String(),
+		StripeCheckoutSessionID: "cs_email_active",
+		StripeCheckoutURL:       "https://checkout.stripe.com/email",
+	})
+	if err != nil {
+		t.Fatalf("mark email attempt created: %v", err)
+	}
+
+	portal, found, err := repo.GetActiveCheckoutForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get active portal checkout: %v", err)
+	}
+	if !found {
+		t.Fatal("expected portal-active checkout to be found")
+	}
+	if portal.CheckoutSessionID != "cs_portal_active" {
+		t.Fatalf("expected portal session, got %s", portal.CheckoutSessionID)
+	}
+	if portal.AttemptID != portalAttempt.String() {
+		t.Fatalf("expected portal attempt %s, got %s", portalAttempt.String(), portal.AttemptID)
+	}
+}
+
+func TestRepository_GetActiveEmailCheckoutForInvoice_ScopedToEmail(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "active-email", "issued", 5000)
+
+	// Portal-created active session (non-NULL initiators).
+	portalAttempt := seedPaymentAttemptForInvoice(t, h, repo, invoiceID, "active-email", h.parentUID, h.parentMID)
+	err := repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		AttemptID:               portalAttempt.String(),
+		StripeCheckoutSessionID: "cs_portal_active2",
+		StripeCheckoutURL:       "https://checkout.stripe.com/portal2",
+	})
+	if err != nil {
+		t.Fatalf("mark portal attempt created: %v", err)
+	}
+
+	// Email-created active session (NULL initiators) for the same invoice.
+	tx := dbtest.BeginTx(t, h.pool)
+	emailAttempt := uid.NewUUID()
+	err = repo.CreatePaymentAttempt(ctx, tx, domain.PaymentAttemptCreateParams{
+		ID:                      emailAttempt.String(),
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		InvoiceID:               invoiceID.String(),
+		InitiatedByUserID:       "",
+		InitiatedByMembershipID: "",
+		RequestID:               "email_send:active-email",
+		Status:                  domain.AttemptStatusCheckoutCreationStarted,
+		AmountMinor:             5000,
+		CurrencyCode:            domain.CurrencyGBP,
+	})
+	if err != nil {
+		t.Fatalf("create email attempt: %v", err)
+	}
+	dbtest.CommitTx(t, tx)
+	err = repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		AttemptID:               emailAttempt.String(),
+		StripeCheckoutSessionID: "cs_email_active2",
+		StripeCheckoutURL:       "https://checkout.stripe.com/email2",
+	})
+	if err != nil {
+		t.Fatalf("mark email attempt created: %v", err)
+	}
+
+	email, found, err := repo.GetActiveEmailCheckoutForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get active email checkout: %v", err)
+	}
+	if !found {
+		t.Fatal("expected email-active checkout to be found")
+	}
+	if email.CheckoutSessionID != "cs_email_active2" {
+		t.Fatalf("expected email session, got %s", email.CheckoutSessionID)
+	}
+	if email.AttemptID != emailAttempt.String() {
+		t.Fatalf("expected email attempt %s, got %s", emailAttempt.String(), email.AttemptID)
+	}
+}
+
+func TestRepository_GetActiveEmailCheckoutForInvoice_PortalOnlyNotFound(t *testing.T) {
+	h := setupTestHarness(t)
+	repo := NewRepository(h.pool)
+	ctx := context.Background()
+
+	invoiceID := seedIssuedInvoice(t, h, "no-email-active", "issued", 5000)
+
+	// Only a portal-created session exists.
+	portalAttempt := seedPaymentAttemptForInvoice(t, h, repo, invoiceID, "no-email-active", h.parentUID, h.parentMID)
+	err := repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		AttemptID:               portalAttempt.String(),
+		StripeCheckoutSessionID: "cs_portal_only",
+		StripeCheckoutURL:       "https://checkout.stripe.com/portal-only",
+	})
+	if err != nil {
+		t.Fatalf("mark portal attempt created: %v", err)
+	}
+
+	_, found, err := repo.GetActiveEmailCheckoutForInvoice(ctx, h.tenantID.String(), h.branchID.String(), invoiceID.String())
+	if err != nil {
+		t.Fatalf("get active email checkout: %v", err)
+	}
+	if found {
+		t.Fatal("portal-created session must not be returned by the email scoped lookup")
 	}
 }
 
@@ -344,6 +692,33 @@ func seedPaymentAttempt(t *testing.T, h *testHarness, repo *Repository, suffix s
 	dbtest.CommitTx(t, tx)
 
 	return attemptID, invoiceID
+}
+
+// seedPaymentAttemptForInvoice creates a portal-initiated checkout_creation_started
+// attempt against a specific (already seeded) invoice.
+func seedPaymentAttemptForInvoice(t *testing.T, h *testHarness, repo *Repository, invoiceID uuid.UUID, suffix string, userID, membershipID uuid.UUID) uuid.UUID {
+	t.Helper()
+	ctx := context.Background()
+
+	attemptID := uid.NewUUID()
+	tx := dbtest.BeginTx(t, h.pool)
+	err := repo.CreatePaymentAttempt(ctx, tx, domain.PaymentAttemptCreateParams{
+		ID:                      attemptID.String(),
+		TenantID:                h.tenantID.String(),
+		BranchID:                h.branchID.String(),
+		InvoiceID:               invoiceID.String(),
+		InitiatedByUserID:       userID.String(),
+		InitiatedByMembershipID: membershipID.String(),
+		RequestID:               "req-" + suffix,
+		Status:                  domain.AttemptStatusCheckoutCreationStarted,
+		AmountMinor:             5000,
+		CurrencyCode:            domain.CurrencyGBP,
+	})
+	if err != nil {
+		t.Fatalf("create attempt: %v", err)
+	}
+	dbtest.CommitTx(t, tx)
+	return attemptID
 }
 
 func TestRepository_MarkPaymentAttemptCheckoutCreated(t *testing.T) {

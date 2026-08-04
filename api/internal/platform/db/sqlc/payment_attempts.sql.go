@@ -66,6 +66,7 @@ WHERE tenant_id = $1
   AND branch_id = $2
   AND invoice_id = $3
   AND status = 'checkout_created'
+  AND initiated_by_user_id IS NOT NULL
   AND (stripe_expires_at IS NULL OR stripe_expires_at > now())
 ORDER BY created_at DESC
 LIMIT 1
@@ -94,6 +95,69 @@ type GetActiveCheckoutForInvoiceRow struct {
 func (q *Queries) GetActiveCheckoutForInvoice(ctx context.Context, arg GetActiveCheckoutForInvoiceParams) (GetActiveCheckoutForInvoiceRow, error) {
 	row := q.db.QueryRow(ctx, getActiveCheckoutForInvoice, arg.TenantID, arg.BranchID, arg.InvoiceID)
 	var i GetActiveCheckoutForInvoiceRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.InvoiceID,
+		&i.StripeCheckoutSessionID,
+		&i.StripeCheckoutUrl,
+		&i.StripePaymentIntentID,
+		&i.StripeExpiresAt,
+		&i.Status,
+		&i.AmountMinor,
+		&i.CurrencyCode,
+	)
+	return i, err
+}
+
+const getActiveEmailCheckoutForInvoice = `-- name: GetActiveEmailCheckoutForInvoice :one
+SELECT
+    id,
+    tenant_id,
+    branch_id,
+    invoice_id,
+    stripe_checkout_session_id,
+    stripe_checkout_url,
+    stripe_payment_intent_id,
+    stripe_expires_at,
+    status,
+    amount_minor,
+    currency_code
+FROM payment_attempts
+WHERE tenant_id = $1
+  AND branch_id = $2
+  AND invoice_id = $3
+  AND status = 'checkout_created'
+  AND initiated_by_user_id IS NULL
+  AND (stripe_expires_at IS NULL OR stripe_expires_at > now())
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetActiveEmailCheckoutForInvoiceParams struct {
+	TenantID  pgtype.UUID
+	BranchID  pgtype.UUID
+	InvoiceID pgtype.UUID
+}
+
+type GetActiveEmailCheckoutForInvoiceRow struct {
+	ID                      pgtype.UUID
+	TenantID                pgtype.UUID
+	BranchID                pgtype.UUID
+	InvoiceID               pgtype.UUID
+	StripeCheckoutSessionID pgtype.Text
+	StripeCheckoutUrl       pgtype.Text
+	StripePaymentIntentID   pgtype.Text
+	StripeExpiresAt         pgtype.Timestamptz
+	Status                  string
+	AmountMinor             int32
+	CurrencyCode            string
+}
+
+func (q *Queries) GetActiveEmailCheckoutForInvoice(ctx context.Context, arg GetActiveEmailCheckoutForInvoiceParams) (GetActiveEmailCheckoutForInvoiceRow, error) {
+	row := q.db.QueryRow(ctx, getActiveEmailCheckoutForInvoice, arg.TenantID, arg.BranchID, arg.InvoiceID)
+	var i GetActiveEmailCheckoutForInvoiceRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
@@ -147,6 +211,50 @@ func (q *Queries) GetAttemptForTest(ctx context.Context, id pgtype.UUID) (GetAtt
 		&i.CurrencyCode,
 		&i.StripeCheckoutSessionID,
 		&i.Status,
+	)
+	return i, err
+}
+
+const getInvoiceForEmailCheckoutForUpdate = `-- name: GetInvoiceForEmailCheckoutForUpdate :one
+SELECT
+    i.id, i.invoice_kind, i.invoice_number, i.status, i.currency_code,
+    i.total_due_minor, i.amount_paid_minor, i.child_id
+FROM invoices i
+WHERE i.tenant_id = $1
+  AND i.branch_id = $2
+  AND i.id = $3
+FOR UPDATE OF i
+`
+
+type GetInvoiceForEmailCheckoutForUpdateParams struct {
+	TenantID pgtype.UUID
+	BranchID pgtype.UUID
+	ID       pgtype.UUID
+}
+
+type GetInvoiceForEmailCheckoutForUpdateRow struct {
+	ID              pgtype.UUID
+	InvoiceKind     string
+	InvoiceNumber   pgtype.Text
+	Status          string
+	CurrencyCode    string
+	TotalDueMinor   int32
+	AmountPaidMinor int32
+	ChildID         pgtype.UUID
+}
+
+func (q *Queries) GetInvoiceForEmailCheckoutForUpdate(ctx context.Context, arg GetInvoiceForEmailCheckoutForUpdateParams) (GetInvoiceForEmailCheckoutForUpdateRow, error) {
+	row := q.db.QueryRow(ctx, getInvoiceForEmailCheckoutForUpdate, arg.TenantID, arg.BranchID, arg.ID)
+	var i GetInvoiceForEmailCheckoutForUpdateRow
+	err := row.Scan(
+		&i.ID,
+		&i.InvoiceKind,
+		&i.InvoiceNumber,
+		&i.Status,
+		&i.CurrencyCode,
+		&i.TotalDueMinor,
+		&i.AmountPaidMinor,
+		&i.ChildID,
 	)
 	return i, err
 }
