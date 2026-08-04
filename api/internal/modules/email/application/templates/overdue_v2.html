@@ -1,23 +1,20 @@
 {{define "content"}}
-<style>
-    .nurserypro-root { --accent: #dc2626; --accent-text: #dc2626; }
-</style>
 <tr>
     <td class="nurserypro-heading nurserypro-px" style="padding:16px 32px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;">
             <tr>
-                <td style="background-color:#fef2f2;color:#dc2626;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:4px 10px;border-radius:12px;border:1px solid #fecaca;">
+                <td bgcolor="#fef2f2" style="background-color:#fef2f2;color:#dc2626;font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;border:1px solid #fecaca;">
                     Overdue
                 </td>
             </tr>
         </table>
-        <h1 style="margin:0;font-size:24px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">Invoice Overdue</h1>
-        <p class="nurserypro-text" style="margin:10px 0 0;font-size:15px;color:#475569;line-height:1.5;">Your invoice for <strong>{{.ChildName}}</strong> is now overdue. Please arrange payment as soon as possible to avoid further action.</p>
+        <h1 style="margin:0;padding:0;font-size:24px;font-weight:800;color:#0f172a;">Invoice Overdue</h1>
+        <p class="nurserypro-text" style="margin:10px 0 0;padding:0;font-size:15px;color:#475569;line-height:1.5;">Your invoice for <strong>{{.ChildName}}</strong> is now overdue. Please arrange payment as soon as possible to avoid further action.</p>
     </td>
 </tr>
 <tr>
     <td style="padding:16px 32px;" class="nurserypro-px">
-        <table class="nurserypro-card nurserypro-text" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+        <table class="nurserypro-card nurserypro-text" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8fafc" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
             <tr>
                 <td style="padding:14px 20px;font-size:14px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
