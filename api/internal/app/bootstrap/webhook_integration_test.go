@@ -145,6 +145,60 @@ func seedInvoiceWithAttempt(t *testing.T, h *webhookHarness, invoiceStatus strin
 	return invoiceID, attemptID
 }
 
+func seedInvoiceWithEmailAttempt(t *testing.T, h *webhookHarness, invoiceStatus string, amountMinor int) (invoiceID, attemptID uuid.UUID) {
+	t.Helper()
+	ctx := context.Background()
+
+	childID := uuid.MustParse("d5000000-0000-0000-0000-000000000002")
+	guardianID := uuid.MustParse("d6000000-0000-0000-0000-000000000002")
+	linkID := uuid.MustParse("d7000000-0000-0000-0000-000000000002")
+	mappingID := uuid.MustParse("d8000000-0000-0000-0000-000000000002")
+
+	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "WH Email Child",
+		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
+	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "WH Email Guardian", true)
+	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
+	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, childID)
+
+	runID := uuid.New()
+	invoiceID = uuid.New()
+	billingMonth := dbtest.DateAt(2026, 7, 1)
+	periodEnd := dbtest.DateAt(2026, 7, 31)
+
+	_, err := h.pool.Exec(ctx,
+		`INSERT INTO invoice_runs (id, tenant_id, branch_id, billing_month, run_type, status, started_at, completed_at, requested_by_user_id, requested_by_membership_id, request_id)
+		 VALUES ($1, $2, $3, $4, 'draft_generation', 'completed', now(), now(), $5, $6, 'req-wh-email')`,
+		runID, h.tenantID, h.branchID, billingMonth, h.managerUID, h.managerMID)
+	if err != nil {
+		t.Fatalf("insert run: %v", err)
+	}
+
+	_, err = h.pool.Exec(ctx, fmt.Sprintf(
+		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code,
+		  generated_run_id, issued_run_id, subtotal_minor, funded_deduction_minor, total_due_minor,
+		  period_start_date, period_end_date, invoice_number, issued_sequence,
+		  issued_at, issued_by_user_id, issued_by_membership_id, locked_at, due_at)
+		 VALUES ($1, $2, $3, $4, $5, 'monthly', $6, 'GBP', $7, $7, %d, 0, %d, $8, $9, 'INV-WH-EMAIL-001', 1, now(), $10, $11, now(), now() + interval '7 days')`,
+		amountMinor, amountMinor),
+		invoiceID, h.tenantID, h.branchID, childID, billingMonth, invoiceStatus,
+		runID, billingMonth, periodEnd, h.managerUID, h.managerMID)
+	if err != nil {
+		t.Fatalf("insert email invoice (%s): %v", invoiceStatus, err)
+	}
+
+	// Email-created attempt: NULL initiators + email_send: request-id marker (R6).
+	attemptID = uuid.New()
+	_, err = h.pool.Exec(ctx,
+		`INSERT INTO payment_attempts (id, tenant_id, branch_id, invoice_id, initiated_by_user_id, initiated_by_membership_id, request_id, status, amount_minor, currency_code, stripe_checkout_session_id, stripe_checkout_url)
+		 VALUES ($1, $2, $3, $4, NULL, NULL, 'email_send:' || $5, 'checkout_created', $6, 'GBP', $7, $8)`,
+		attemptID, h.tenantID, h.branchID, invoiceID, attemptID.String(), amountMinor, "cs_email_wh", "https://checkout.stripe.com/email-wh")
+	if err != nil {
+		t.Fatalf("insert email attempt: %v", err)
+	}
+
+	return invoiceID, attemptID
+}
+
 func buildCheckoutCompletedPayload(t *testing.T, eventID, sessionID string, paymentStatus stripe.CheckoutSessionPaymentStatus, amountTotal int64, currency string, metadata map[string]string) ([]byte, string) {
 	t.Helper()
 
@@ -738,5 +792,136 @@ func TestWebhook_AlreadyPaid_IgnoresLaterSuccess(t *testing.T) {
 	// invoice stays paid, no second reconciliation
 	if n := countReconciliationRecords(t, h.pool, invoiceID); n != 1 {
 		t.Fatalf("expected 1 reconciliation (ignored), got %d", n)
+	}
+}
+
+func TestWebhook_EmailCreatedAttempt_MarksPaid(t *testing.T) {
+	h := setupWebhookHarness(t)
+	invoiceID, attemptID := seedInvoiceWithEmailAttempt(t, h, "issued", 5000)
+
+	meta := map[string]string{
+		"tenant_id":          h.tenantID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
+		"payment_attempt_id": attemptID.String(),
+	}
+	evtID := "evt_email_paid_" + uuid.New().String()[:8]
+	payload, sig := buildCheckoutCompletedPayload(t, evtID, "cs_email_wh", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta)
+
+	w := doWebhookRawRequest(t, h.router, payload, sig)
+	requireStatus(t, w, http.StatusOK)
+	requireWebhookStatus(t, w, "processed")
+
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "paid" {
+		t.Fatalf("expected invoice paid, got %s", s)
+	}
+	if s := fetchAttemptStatus(t, h.pool, attemptID); s != "paid" {
+		t.Fatalf("expected attempt paid, got %s", s)
+	}
+	if n := countReconciliationRecords(t, h.pool, invoiceID); n != 1 {
+		t.Fatalf("expected 1 reconciliation record, got %d", n)
+	}
+}
+
+func TestWebhook_EmailCreatedAttempt_RepeatDeliveryIdempotent(t *testing.T) {
+	h := setupWebhookHarness(t)
+	invoiceID, attemptID := seedInvoiceWithEmailAttempt(t, h, "issued", 5000)
+
+	meta := map[string]string{
+		"tenant_id":          h.tenantID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
+		"payment_attempt_id": attemptID.String(),
+	}
+	evtID := "evt_email_dup_" + uuid.New().String()[:8]
+	payload, sig := buildCheckoutCompletedPayload(t, evtID, "cs_email_wh", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta)
+
+	w1 := doWebhookRawRequest(t, h.router, payload, sig)
+	requireStatus(t, w1, http.StatusOK)
+	requireWebhookStatus(t, w1, "processed")
+
+	w2 := doWebhookRawRequest(t, h.router, payload, sig)
+	requireStatus(t, w2, http.StatusOK)
+	requireWebhookStatus(t, w2, "duplicate")
+
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "paid" {
+		t.Fatalf("expected invoice paid unchanged, got %s", s)
+	}
+	if n := countReconciliationRecords(t, h.pool, invoiceID); n != 1 {
+		t.Fatalf("expected 1 reconciliation record, got %d", n)
+	}
+}
+
+func TestWebhook_EmailCreatedAttempt_DuplicateSessionOnPaidInvoiceNotDoubleCredited(t *testing.T) {
+	h := setupWebhookHarness(t)
+	invoiceID, attemptID := seedInvoiceWithEmailAttempt(t, h, "issued", 5000)
+
+	meta := map[string]string{
+		"tenant_id":          h.tenantID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
+		"payment_attempt_id": attemptID.String(),
+	}
+	evtID := "evt_email_dup2_" + uuid.New().String()[:8]
+	payload, sig := buildCheckoutCompletedPayload(t, evtID, "cs_email_wh", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta)
+
+	w := doWebhookRawRequest(t, h.router, payload, sig)
+	requireStatus(t, w, http.StatusOK)
+	requireWebhookStatus(t, w, "processed")
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "paid" {
+		t.Fatalf("expected invoice paid, got %s", s)
+	}
+
+	// A second completed session on a DIFFERENT email attempt for the same,
+	// now-paid invoice is surfaced (rejected) and does not double-credit.
+	otherAttempt := uuid.New()
+	_, err := h.pool.Exec(context.Background(),
+		`INSERT INTO payment_attempts (id, tenant_id, branch_id, invoice_id, initiated_by_user_id, initiated_by_membership_id, request_id, status, amount_minor, currency_code, stripe_checkout_session_id, stripe_checkout_url)
+		 VALUES ($1, $2, $3, $4, NULL, NULL, 'email_send:' || $6, 'checkout_created', 5000, 'GBP', $5, 'https://checkout.stripe.com/email-wh-2')`,
+		otherAttempt, h.tenantID, h.branchID, invoiceID, "cs_email_wh_second", otherAttempt.String())
+	if err != nil {
+		t.Fatalf("insert second email attempt: %v", err)
+	}
+
+	meta2 := map[string]string{
+		"tenant_id":          h.tenantID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
+		"payment_attempt_id": otherAttempt.String(),
+	}
+	evtID2 := "evt_email_second_" + uuid.New().String()[:8]
+	payload2, sig2 := buildCheckoutCompletedPayload(t, evtID2, "cs_email_wh_second", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta2)
+
+	w2 := doWebhookRawRequest(t, h.router, payload2, sig2)
+	requireStatus(t, w2, http.StatusOK)
+
+	// Invoice remains paid with no double transition.
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "paid" {
+		t.Fatalf("expected invoice paid unchanged, got %s", s)
+	}
+	if n := countReconciliationRecords(t, h.pool, invoiceID); n != 2 {
+		t.Fatalf("expected 2 reconciliation records (second surfaced, not credited twice), got %d", n)
+	}
+}
+
+func TestWebhook_UnknownEmailSessionLeavesInvoiceUnchanged(t *testing.T) {
+	h := setupWebhookHarness(t)
+	invoiceID, _ := seedInvoiceWithEmailAttempt(t, h, "issued", 5000)
+
+	meta := map[string]string{
+		"tenant_id":          h.tenantID.String(),
+		"branch_id":          h.branchID.String(),
+		"invoice_id":         invoiceID.String(),
+		"payment_attempt_id": uuid.New().String(),
+	}
+	evtID := "evt_email_unknown_" + uuid.New().String()[:8]
+	payload, sig := buildCheckoutCompletedPayload(t, evtID, "cs_unknown_session", stripe.CheckoutSessionPaymentStatusPaid, 5000, "gbp", meta)
+
+	w := doWebhookRawRequest(t, h.router, payload, sig)
+	requireStatus(t, w, http.StatusOK)
+	requireWebhookStatus(t, w, "rejected")
+
+	if s := fetchInvoiceStatus(t, h.pool, invoiceID); s != "issued" {
+		t.Fatalf("expected invoice unchanged, got %s", s)
 	}
 }
