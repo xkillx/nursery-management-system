@@ -15,26 +15,29 @@ type TemplateRenderer interface {
 }
 
 type SendPendingEmails struct {
-	repo      domain.OutboxRepository
-	provider  domain.EmailProvider
-	renderer  TemplateRenderer
-	rateLimit float64
-	batchSize int
+	repo            domain.OutboxRepository
+	provider        domain.EmailProvider
+	renderer        TemplateRenderer
+	payLinkProvider InvoicePayLinkProvider
+	rateLimit       float64
+	batchSize       int
 }
 
 func NewSendPendingEmails(
 	repo domain.OutboxRepository,
 	provider domain.EmailProvider,
 	renderer TemplateRenderer,
+	payLinkProvider InvoicePayLinkProvider,
 	rateLimit float64,
 	batchSize int,
 ) *SendPendingEmails {
 	return &SendPendingEmails{
-		repo:      repo,
-		provider:  provider,
-		renderer:  renderer,
-		rateLimit: rateLimit,
-		batchSize: batchSize,
+		repo:            repo,
+		provider:        provider,
+		renderer:        renderer,
+		payLinkProvider: payLinkProvider,
+		rateLimit:       rateLimit,
+		batchSize:       batchSize,
 	}
 }
 
@@ -76,6 +79,8 @@ func (uc *SendPendingEmails) processMessage(ctx context.Context, msg domain.Outb
 		}
 	}
 
+	uc.injectPayLink(ctx, msg, payload)
+
 	htmlBody, textBody, err := uc.renderer.Render(msg.TemplateName, msg.TemplateVersion, payload)
 	if err != nil {
 		uc.markFailed(ctx, msg, fmt.Sprintf("render template: %v", err))
@@ -108,6 +113,38 @@ func (uc *SendPendingEmails) processMessage(ctx context.Context, msg domain.Outb
 	)
 
 	return nil
+}
+
+// injectPayLink resolves a Stripe Checkout URL for invoice emails and adds it to
+// the render payload as PayLink. Best-effort (R8): provider errors and ok=false
+// are logged and ignored so the email still sends with the PortalLink fallback
+// (R3). Receipt and non-invoice templates never call the provider (R2).
+func (uc *SendPendingEmails) injectPayLink(ctx context.Context, msg domain.OutboxMessage, payload map[string]interface{}) {
+	if uc.payLinkProvider == nil || !invoicePayLinkTemplates[msg.TemplateName] {
+		return
+	}
+
+	requestID := "email_send:" + msg.ID.String()
+	url, ok, err := uc.payLinkProvider.CreateEmailCheckoutSession(ctx, msg.TenantID, msg.BranchID, msg.EntityID, requestID)
+	if err != nil {
+		slog.WarnContext(ctx, "email_pay_link_provider_error",
+			"email_id", msg.ID,
+			"template", msg.TemplateName,
+			"invoice_id", msg.EntityID,
+			"error", err,
+		)
+		return
+	}
+	if !ok || url == "" {
+		slog.DebugContext(ctx, "email_pay_link_unavailable",
+			"email_id", msg.ID,
+			"template", msg.TemplateName,
+			"invoice_id", msg.EntityID,
+		)
+		return
+	}
+
+	payload["PayLink"] = url
 }
 
 func (uc *SendPendingEmails) markFailed(ctx context.Context, msg domain.OutboxMessage, errMsg string) {

@@ -30,6 +30,7 @@ import (
 	childapp "nursery-management-system/api/internal/modules/children/application"
 	childdomain "nursery-management-system/api/internal/modules/children/domain"
 	postgreschild "nursery-management-system/api/internal/modules/children/infrastructure/postgres"
+	emailapp "nursery-management-system/api/internal/modules/email/application"
 	fundingapp "nursery-management-system/api/internal/modules/funding/application"
 	fundingdomain "nursery-management-system/api/internal/modules/funding/domain"
 	fundingpostgres "nursery-management-system/api/internal/modules/funding/infrastructure/postgres"
@@ -47,6 +48,7 @@ import (
 	parentchildpostgres "nursery-management-system/api/internal/modules/parentchildmappings/infrastructure/postgres"
 	parentsapp "nursery-management-system/api/internal/modules/parents/application"
 	parentsdomain "nursery-management-system/api/internal/modules/parents/domain"
+	paymentsapp "nursery-management-system/api/internal/modules/payments/application"
 	paymentsdomain "nursery-management-system/api/internal/modules/payments/domain"
 	roomspostgres "nursery-management-system/api/internal/modules/rooms/infrastructure/postgres"
 	sessiontemplateapp "nursery-management-system/api/internal/modules/sessiontemplates/application"
@@ -1797,3 +1799,23 @@ type paymentCompletedNotifierAdapter struct {
 func (a *paymentCompletedNotifierAdapter) OnPaymentCompleted(ctx context.Context, tx paymentsdomain.Tx, invoiceID, tenantID, branchID uuid.UUID, amountPaid int, paymentDate string) {
 	_ = a.billing.SendReceiptEmail(ctx, tx.(pgx.Tx), invoiceID, tenantID, branchID, amountPaid, paymentDate)
 }
+
+// emailPayLinkProviderAdapter adapts the payments CreateEmailCheckoutSession use
+// case to the email module's consumer-side InvoicePayLinkProvider interface
+// (KTD2). The email worker never imports the payments module.
+type emailPayLinkProviderAdapter struct {
+	uc *paymentsapp.CreateEmailCheckoutSession
+}
+
+func (a *emailPayLinkProviderAdapter) CreateEmailCheckoutSession(ctx context.Context, tenantID, branchID uuid.UUID, invoiceID, requestID string) (url string, ok bool, err error) {
+	if a.uc == nil {
+		return "", false, nil
+	}
+	result, err := a.uc.Execute(ctx, tenantID.String(), branchID.String(), invoiceID, requestID)
+	if err != nil {
+		return "", false, err
+	}
+	return result.CheckoutURL, result.OK, nil
+}
+
+var _ emailapp.InvoicePayLinkProvider = (*emailPayLinkProviderAdapter)(nil)

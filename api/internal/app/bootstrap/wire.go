@@ -493,6 +493,19 @@ func provideCreateCheckoutSession(
 	return uc.WithObservability(logger, recorder)
 }
 
+func provideCreateEmailCheckoutSession(
+	repo *paymentspostgres.Repository,
+	paymentsTxMgr *txManagerAdapter,
+	checkoutProvider paymentsdomain.CheckoutProvider,
+	cfg config.Config,
+	logger *slog.Logger,
+	recorder *metrics.Recorder,
+) *paymentsapp.CreateEmailCheckoutSession {
+	stripeConfigured := checkoutProvider != nil
+	uc := paymentsapp.NewCreateEmailCheckoutSession(repo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured)
+	return uc.WithObservability(logger, recorder)
+}
+
 func provideHandleStripeWebhook(
 	repo *paymentspostgres.Repository,
 	webhookVerifier paymentsdomain.WebhookVerifier,
@@ -518,6 +531,7 @@ var paymentsSet = wire.NewSet(
 	wire.Bind(new(paymentsdomain.WebhookVerifier), new(*stripeclient.WebhookVerifier)),
 	provideManagerPaymentRepo,
 	provideCreateCheckoutSession,
+	provideCreateEmailCheckoutSession,
 	provideHandleStripeWebhook,
 	paymentsapp.NewGetManagerPaymentStatus,
 	paymentsapp.NewListManagerPaymentEvents,
@@ -803,6 +817,10 @@ func provideEmailRenderer() *emailapp.Renderer {
 	return emailapp.NewRenderer()
 }
 
+func provideEmailPayLinkProvider(uc *paymentsapp.CreateEmailCheckoutSession) *emailPayLinkProviderAdapter {
+	return &emailPayLinkProviderAdapter{uc: uc}
+}
+
 func provideEmailScheduler(
 	logger *slog.Logger,
 	sendPending *emailapp.SendPendingEmails,
@@ -827,6 +845,8 @@ var emailSet = wire.NewSet(
 	provideEmailOutboxRepo,
 	provideEmailProvider,
 	provideEmailRenderer,
+	provideEmailPayLinkProvider,
+	wire.Bind(new(emailapp.InvoicePayLinkProvider), new(*emailPayLinkProviderAdapter)),
 	emailapp.NewEnqueueEmail,
 	wire.Bind(new(emaildomain.EmailEnqueuer), new(*emailapp.EnqueueEmail)),
 	emailapp.NewSendPendingEmails,

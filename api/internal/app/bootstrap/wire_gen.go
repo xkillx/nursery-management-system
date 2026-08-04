@@ -353,6 +353,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
 	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
+	createEmailCheckoutSession := provideCreateEmailCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession)
 	sendEmail := application10.NewSendInvoiceEmail(repository2, bootstrapParentContactLookupAdapter, bootstrapBillingNotificationAdapter, transactionManager)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
@@ -501,7 +502,7 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
 	emailProvider := emailsmtp.NewProvider(sender, billingStorage)
 	emailRenderer := emailapp.NewRenderer()
-	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
+	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, provideEmailPayLinkProvider(createEmailCheckoutSession), cfg.Email.RatePerSecond, cfg.Email.BatchSize)
 	listEmails := emailapp.NewListEmails(outboxRepository)
 	getEmail := emailapp.NewGetEmail(outboxRepository)
 	retryEmail := emailapp.NewRetryEmail(outboxRepository)
@@ -774,6 +775,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bootstrapTxManagerAdapter := provideTxManagerAdapter(transactionManager)
 	client := provideStripeClient(cfg)
 	createCheckoutSession := provideCreateCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
+	createEmailCheckoutSession := provideCreateEmailCheckoutSession(repository6, bootstrapTxManagerAdapter, client, cfg, logger, recorder)
 	issueInvoiceWithCheckout := application10.NewIssueInvoiceWithCheckout(issueInvoice, createCheckoutSession)
 	sendEmail := application10.NewSendInvoiceEmail(repository2, bootstrapParentContactLookupAdapter, bootstrapBillingNotificationAdapter, transactionManager)
 	lifecycleUseCases := httpbilling.LifecycleUseCases{
@@ -922,7 +924,7 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	handler2 := provideSiteProfileHandlerSet(siteProfileRepository, writer, transactionManager, logger)
 	emailProvider := emailsmtp.NewProvider(sender, billingStorage)
 	emailRenderer := emailapp.NewRenderer()
-	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, cfg.Email.RatePerSecond, cfg.Email.BatchSize)
+	sendPendingEmails := emailapp.NewSendPendingEmails(outboxRepository, emailProvider, emailRenderer, provideEmailPayLinkProvider(createEmailCheckoutSession), cfg.Email.RatePerSecond, cfg.Email.BatchSize)
 	listEmails := emailapp.NewListEmails(outboxRepository)
 	getEmail := emailapp.NewGetEmail(outboxRepository)
 	retryEmail := emailapp.NewRetryEmail(outboxRepository)
@@ -1085,6 +1087,23 @@ func provideCreateCheckoutSession(
 	stripeConfigured := checkoutProvider != nil
 	uc := application12.NewCreateCheckoutSession(repo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured)
 	return uc.WithObservability(logger, recorder)
+}
+
+func provideCreateEmailCheckoutSession(
+	repo *postgres17.Repository,
+	paymentsTxMgr *txManagerAdapter,
+	checkoutProvider domain10.CheckoutProvider,
+	cfg config.Config,
+	logger *slog.Logger,
+	recorder *metrics.Recorder,
+) *application12.CreateEmailCheckoutSession {
+	stripeConfigured := checkoutProvider != nil
+	uc := application12.NewCreateEmailCheckoutSession(repo, paymentsTxMgr, checkoutProvider, cfg.WebBaseURL, stripeConfigured)
+	return uc.WithObservability(logger, recorder)
+}
+
+func provideEmailPayLinkProvider(uc *application12.CreateEmailCheckoutSession) *emailPayLinkProviderAdapter {
+	return &emailPayLinkProviderAdapter{uc: uc}
 }
 
 func provideHandleStripeWebhook(
