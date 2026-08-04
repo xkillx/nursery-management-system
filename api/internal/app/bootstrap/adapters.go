@@ -1182,7 +1182,7 @@ func (a *billingNotificationAdapter) invoicePayload(site *siteprofiledomain.Site
 		"ChildName":     childName,
 		"InvoiceNumber": invoiceNumber,
 		"TotalDue":      formatMoney(invoice.TotalDue),
-		"PortalLink":    fmt.Sprintf("%s/parent/billing/%s", a.webBaseURL, invoiceID),
+		"PortalLink":    fmt.Sprintf("%s/parent/invoices/%s", a.webBaseURL, invoiceID),
 	}
 	if !invoice.BillingMonth.IsZero() {
 		payload["BillingMonth"] = invoice.BillingMonth.Format("January 2006")

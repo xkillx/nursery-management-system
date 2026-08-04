@@ -87,11 +87,24 @@
                     <tr>
                         <td align="center" valign="middle" style="padding:0 32px 32px;" class="nurserypro-px">
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                                {{if .PayLink}}
+                                <tr>
+                                    <td align="center" valign="middle" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;padding:14px 32px;" class="nurserypro-cta-btn">
+                                        <a href="{{.PayLink}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Pay Now</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" valign="middle" style="padding-top:12px;">
+                                        <a href="{{.PortalLink}}" class="nurserypro-muted" style="color:#64748b;text-decoration:underline;font-size:13px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">View invoice details</a>
+                                    </td>
+                                </tr>
+                                {{else}}
                                 <tr>
                                     <td align="center" valign="middle" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;padding:14px 32px;" class="nurserypro-cta-btn">
                                         <a href="{{.PortalLink}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">View Invoice &amp; Pay Online</a>
                                     </td>
                                 </tr>
+                                {{end}}
                             </table>
                         </td>
                     </tr>

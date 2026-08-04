@@ -13,8 +13,14 @@ func sampleInvoiceData() map[string]interface{} {
 		"BillingMonth":  "August 2026",
 		"TotalDue":      "£420.00",
 		"DueDate":       "2 September 2026",
-		"PortalLink":    "https://app.example.com/parent/billing/abc",
+		"PortalLink":    "https://app.example.com/parent/invoices/abc",
 	}
+}
+
+func sampleInvoiceDataWithPayLink() map[string]interface{} {
+	data := sampleInvoiceData()
+	data["PayLink"] = "https://checkout.stripe.com/pay-inv-001"
+	return data
 }
 
 func sampleReceiptData() map[string]interface{} {
@@ -25,7 +31,7 @@ func sampleReceiptData() map[string]interface{} {
 		"TotalDue":      "£420.00",
 		"AmountPaid":    "£420.00",
 		"PaymentDate":   "1 August 2026",
-		"PortalLink":    "https://app.example.com/parent/billing/abc",
+		"PortalLink":    "https://app.example.com/parent/invoices/abc",
 	}
 }
 
@@ -80,7 +86,7 @@ func TestRenderer_V2HTMLTemplatesRenderOnLayoutShell(t *testing.T) {
 			if !strings.Contains(textBody, "INV-2026-08-0001") {
 				t.Errorf("text missing invoice number:\n%s", textBody)
 			}
-			if !strings.Contains(textBody, "https://app.example.com/parent/billing/abc") {
+			if !strings.Contains(textBody, "https://app.example.com/parent/invoices/abc") {
 				t.Errorf("text missing portal link:\n%s", textBody)
 			}
 		})
@@ -97,7 +103,7 @@ func TestRenderer_V2HTMLEscapesUserData(t *testing.T) {
 		"BillingMonth":  "August 2026",
 		"TotalDue":      "£10.00",
 		"DueDate":       "2 September 2026",
-		"PortalLink":    "https://app.example.com/parent/billing/abc",
+		"PortalLink":    "https://app.example.com/parent/invoices/abc",
 	}
 
 	htmlBody, textBody, err := renderer.Render("issued", 2, data)
@@ -148,5 +154,95 @@ func TestRenderer_V1TemplateStillRenders(t *testing.T) {
 	}
 	if !strings.Contains(textBody, "INV-2026-08-0001") {
 		t.Errorf("v1 text missing invoice number:\n%s", textBody)
+	}
+}
+
+func TestRenderer_V2InvoiceCTAHonorsPayLink(t *testing.T) {
+	renderer := NewRenderer()
+
+	for _, name := range []string{"issued", "overdue", "due-soon", "due-reminder"} {
+		t.Run(name, func(t *testing.T) {
+			htmlBody, textBody, err := renderer.Render(name, 2, sampleInvoiceDataWithPayLink())
+			if err != nil {
+				t.Fatalf("render %s v2 with PayLink: %v", name, err)
+			}
+
+			// Primary CTA points at the Stripe pay link, labelled "Pay Now".
+			if !strings.Contains(htmlBody, `href="https://checkout.stripe.com/pay-inv-001"`) {
+				t.Errorf("html missing pay-link href:\n%s", htmlBody)
+			}
+			if !strings.Contains(htmlBody, ">Pay Now</a>") {
+				t.Errorf("html missing Pay Now button:\n%s", htmlBody)
+			}
+			// Secondary "view invoice details" link uses the portal link.
+			if !strings.Contains(htmlBody, `href="https://app.example.com/parent/invoices/abc"`) {
+				t.Errorf("html missing portal view-details href:\n%s", htmlBody)
+			}
+			if !strings.Contains(htmlBody, "View invoice details") {
+				t.Errorf("html missing secondary view-details link:\n%s", htmlBody)
+			}
+			// The fallback single-CTA label must not appear.
+			if strings.Contains(htmlBody, "View Invoice &amp; Pay Online") {
+				t.Errorf("html still renders the fallback CTA when PayLink present:\n%s", htmlBody)
+			}
+
+			// Text variant lists both links.
+			if !strings.Contains(textBody, "Pay Now: https://checkout.stripe.com/pay-inv-001") {
+				t.Errorf("text missing pay link:\n%s", textBody)
+			}
+			if !strings.Contains(textBody, "View Invoice Details: https://app.example.com/parent/invoices/abc") {
+				t.Errorf("text missing view-details link:\n%s", textBody)
+			}
+		})
+	}
+}
+
+func TestRenderer_V2InvoiceCTAFallsBackToPortalLink(t *testing.T) {
+	renderer := NewRenderer()
+
+	for _, name := range []string{"issued", "overdue", "due-soon", "due-reminder"} {
+		t.Run(name, func(t *testing.T) {
+			htmlBody, textBody, err := renderer.Render(name, 2, sampleInvoiceData())
+			if err != nil {
+				t.Fatalf("render %s v2 without PayLink: %v", name, err)
+			}
+
+			if !strings.Contains(htmlBody, `href="https://app.example.com/parent/invoices/abc"`) {
+				t.Errorf("html missing portal-link href:\n%s", htmlBody)
+			}
+			if !strings.Contains(htmlBody, "View Invoice &amp; Pay Online") {
+				t.Errorf("html missing fallback CTA label:\n%s", htmlBody)
+			}
+			if strings.Contains(htmlBody, "https://checkout.stripe.com/pay-inv-001") {
+				t.Errorf("html must not contain a pay link when absent:\n%s", htmlBody)
+			}
+
+			// Text variant uses the single portal link without a pay link line.
+			if !strings.Contains(textBody, "View Invoice & Pay Online: https://app.example.com/parent/invoices/abc") {
+				t.Errorf("text missing fallback portal link:\n%s", textBody)
+			}
+			if strings.Contains(textBody, "Pay Now:") {
+				t.Errorf("text must not contain a pay link when absent:\n%s", textBody)
+			}
+		})
+	}
+}
+
+func TestRenderer_V2ReceiptUnchangedWithoutPayLink(t *testing.T) {
+	renderer := NewRenderer()
+
+	htmlBody, textBody, err := renderer.Render("receipt", 2, sampleReceiptData())
+	if err != nil {
+		t.Fatalf("render receipt v2: %v", err)
+	}
+
+	if !strings.Contains(htmlBody, `href="https://app.example.com/parent/invoices/abc"`) {
+		t.Errorf("html missing single app link:\n%s", htmlBody)
+	}
+	if !strings.Contains(htmlBody, "View Invoice &amp; Pay Online") {
+		t.Errorf("html missing receipt CTA:\n%s", htmlBody)
+	}
+	if strings.Contains(htmlBody, "Pay Now") || strings.Contains(textBody, "Pay Now:") {
+		t.Errorf("receipt must not contain a pay link:\n%s\n%s", htmlBody, textBody)
 	}
 }
