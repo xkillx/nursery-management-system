@@ -1,0 +1,70 @@
+<app-auth-page-layout>
+  <div class="flex flex-col justify-center w-full max-w-md mx-auto px-6 py-12 sm:px-0">
+    <div
+      class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-white/[0.03]"
+    >
+      @if (outcome === 'success') {
+        <div class="flex flex-col items-center text-center">
+          <div
+            class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+          >
+            <ng-icon name="heroCheckCircle" size="2rem" />
+          </div>
+          <h1 class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Payment received</h1>
+          <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            Thank you for your payment. We are confirming it with your nursery — this may take a few
+            moments to show on your account.
+          </p>
+          <a
+            routerLink="/signin"
+            [queryParams]="returnParams"
+            class="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-700 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+          >
+            Sign in to view your invoice
+            <ng-icon name="heroArrowRight" size="1.25rem" />
+          </a>
+        </div>
+      } @else if (outcome === 'cancelled') {
+        <div class="flex flex-col items-center text-center">
+          <div
+            class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+          >
+            <ng-icon name="heroXCircle" size="2rem" />
+          </div>
+          <h1 class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Payment not completed</h1>
+          <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            No payment was taken. You can try again whenever you are ready.
+          </p>
+          <a
+            routerLink="/signin"
+            [queryParams]="returnParams"
+            class="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-700 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+          >
+            Sign in to view your invoice
+            <ng-icon name="heroArrowRight" size="1.25rem" />
+          </a>
+        </div>
+      } @else {
+        <div class="flex flex-col items-center text-center">
+          <div
+            class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400"
+          >
+            <ng-icon name="heroExclamationTriangle" size="2rem" />
+          </div>
+          <h1 class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Payment status unavailable</h1>
+          <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            We could not determine the outcome of this payment. Please sign in to check your invoice.
+          </p>
+          <a
+            routerLink="/signin"
+            [queryParams]="returnParams"
+            class="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-700 focus:outline-hidden focus:ring-3 focus:ring-brand-500/30"
+          >
+            Sign in to view your invoice
+            <ng-icon name="heroArrowRight" size="1.25rem" />
+          </a>
+        </div>
+      }
+    </div>
+  </div>
+</app-auth-page-layout>

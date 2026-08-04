@@ -400,12 +400,25 @@ describe('app.routes breadcrumb wiring', () => {
     expect(layout!.data?.['breadcrumb']).toBeUndefined();
   });
 
-  it('does not declare a breadcrumb on auth or 404 routes', () => {
-    const authPaths = ['signin', 'signup', 'forgot-password', 'reset-password', 'invite-accept', '**'];
+  it('does not register a breadcrumb on auth or 404 routes', () => {
+    const authPaths = ['signin', 'signup', 'forgot-password', 'reset-password', 'invite-accept', 'payment/result', '**'];
     for (const p of authPaths) {
       const route = routes.find((r) => r.path === p);
       expect(route?.data?.['breadcrumb']).toBeUndefined();
     }
+  });
+
+  it('payment result route is a top-level public route without an auth guard', () => {
+    const paymentRoute = routes.find((r) => r.path === 'payment/result');
+
+    expect(paymentRoute).toBeDefined();
+    expect(paymentRoute!.component).toBeDefined();
+    expect(paymentRoute!.canActivate).toBeUndefined();
+    // It lives outside the auth-guarded shell.
+    const shell = routes.find((r) => r.path === '' && r.children?.some((c) => c.path === 'parent/invoices'));
+    expect(shell).toBeDefined();
+    const nested = shell!.children!.some((c) => c.path === 'payment/result');
+    expect(nested).toBeFalse();
   });
 
   it('uses a resolve function for dynamic child-name and invoice-number segments', () => {

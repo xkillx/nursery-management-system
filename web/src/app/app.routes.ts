@@ -48,6 +48,7 @@ import { ForgotPasswordComponent } from './pages/auth-pages/forgot-password/forg
 import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
 import { InviteAcceptComponent } from './pages/auth-pages/invite-accept/invite-accept.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
+import { PaymentResultComponent } from './features/payment/pages/payment-result/payment-result.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 import {
   childNameResolver,
@@ -641,6 +642,11 @@ export const routes: Routes = [
     path: 'invite-accept',
     component: InviteAcceptComponent,
     title: 'Accept Invitation | Nursery Management',
+  },
+  {
+    path: 'payment/result',
+    component: PaymentResultComponent,
+    title: 'Payment Result | Nursery Management',
   },
   {
     path: '**',
