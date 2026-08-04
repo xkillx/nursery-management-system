@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -20,6 +21,195 @@ var payableStatuses = map[string]bool{
 	"issued":         true,
 	"payment_failed": true,
 	"overdue":        true,
+}
+
+// Sentinel errors returned by the shared checkout pipeline. Each use case maps
+// them to its own surface (portal: DomainError codes; email: ok=false fallback).
+var (
+	errCheckoutInvoiceNotFound   = errors.New("checkout invoice not found")
+	errCheckoutInvoiceNotPayable = errors.New("checkout invoice not payable")
+	errCheckoutStateNotPayable   = errors.New("checkout invoice no longer payable")
+	errCheckoutMarkCreated       = errors.New("mark payment attempt checkout created")
+)
+
+// checkoutSessionSteps carries the Stripe checkout-session creation pipeline
+// shared by the portal and email checkout use cases (KTD3): invoice resolution
+// under the row lock, attempt creation, the provider call, the post-Stripe state
+// re-check, and marking the attempt created (or failed).
+type checkoutSessionSteps struct {
+	repo     domain.PaymentRepository
+	txMgr    domain.TxManager
+	provider domain.CheckoutProvider
+	newUUID  func() uuid.UUID
+}
+
+// checkoutCandidateResolver resolves the invoice candidate for a checkout flow.
+// Portal passes the membership-joined lookup; email passes the non-membership one.
+type checkoutCandidateResolver func(ctx context.Context, tx domain.Tx) (domain.CheckoutInvoiceCandidate, bool, error)
+
+// createAttempt resolves the invoice under the row lock (FOR UPDATE), checks
+// payability, and creates a checkout_creation_started attempt. Returns the
+// resolved candidate and attempt id. Errors: errCheckoutInvoiceNotFound,
+// errCheckoutInvoiceNotPayable, or the wrapped repo error.
+func (s *checkoutSessionSteps) createAttempt(
+	ctx context.Context,
+	tenantID, branchID, invoiceID, requestID, userID, membershipID string,
+	resolve checkoutCandidateResolver,
+	logf func(msg string, args ...any),
+) (domain.CheckoutInvoiceCandidate, uuid.UUID, error) {
+	var candidate domain.CheckoutInvoiceCandidate
+	var attemptID uuid.UUID
+
+	txErr := s.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
+		row, found, err := resolve(ctx, tx)
+		if err != nil {
+			if logf != nil {
+				logf("checkout_session_repo",
+					"operation", "resolve_invoice_for_checkout",
+					"invoice_id", invoiceID,
+					"error", logging.SafeErr(err),
+				)
+			}
+			return fmt.Errorf("resolve invoice for checkout: %w", err)
+		}
+		if !found {
+			return errCheckoutInvoiceNotFound
+		}
+		if !isPayableCandidate(row) {
+			return errCheckoutInvoiceNotPayable
+		}
+
+		candidate = row
+		attemptID = s.newUUID()
+
+		return s.repo.CreatePaymentAttempt(ctx, tx, domain.PaymentAttemptCreateParams{
+			ID:                      attemptID.String(),
+			TenantID:                tenantID,
+			BranchID:                branchID,
+			InvoiceID:               invoiceID,
+			InitiatedByUserID:       userID,
+			InitiatedByMembershipID: membershipID,
+			RequestID:               requestID,
+			Status:                  domain.AttemptStatusCheckoutCreationStarted,
+			AmountMinor:             candidate.TotalDueMinor,
+			CurrencyCode:            domain.CurrencyGBP,
+		})
+	})
+	return candidate, attemptID, txErr
+}
+
+// callProviderAndMark calls the provider, re-checks the invoice payment state,
+// and marks the attempt checkout_created. On provider or state failure the
+// attempt is marked checkout_creation_failed and an error is returned:
+// errCheckoutStateNotPayable for the state re-check, errCheckoutMarkCreated for
+// a failed mark-created, and a wrapped provider error otherwise.
+func (s *checkoutSessionSteps) callProviderAndMark(
+	ctx context.Context,
+	tenantID, branchID, invoiceID, attemptID, requestID string,
+	candidate domain.CheckoutInvoiceCandidate,
+	successURL, cancelURL string,
+) (domain.CheckoutSessionResult, error) {
+	result, providerErr := s.provider.CreateCheckoutSession(ctx, domain.CheckoutSessionCreateParams{
+		PaymentAttemptID: attemptID,
+		InvoiceID:        invoiceID,
+		InvoiceNumber:    candidate.InvoiceNumber,
+		AmountMinor:      candidate.TotalDueMinor,
+		Currency:         "gbp",
+		ProductName:      "Nursery invoice payment",
+		ProductDesc:      invoiceProductDesc(candidate.InvoiceNumber),
+		SuccessURL:       successURL,
+		CancelURL:        cancelURL,
+		TenantID:         tenantID,
+		BranchID:         branchID,
+	})
+	if providerErr != nil {
+		_ = s.repo.MarkPaymentAttemptCheckoutCreationFailed(ctx, domain.PaymentAttemptCheckoutCreationFailedParams{
+			TenantID:             tenantID,
+			BranchID:             branchID,
+			AttemptID:            attemptID,
+			FailureReason:        domain.FailureReasonStripeError,
+			ProviderErrorCode:    safeProviderCode(providerErr),
+			ProviderErrorMessage: safeProviderMessage(providerErr),
+		})
+		return domain.CheckoutSessionResult{}, fmt.Errorf("payment provider: %w", providerErr)
+	}
+
+	state, found, err := s.repo.GetInvoicePaymentState(ctx, tenantID, branchID, invoiceID)
+	if err != nil || !found || !isStatePayable(state) {
+		_ = s.repo.MarkPaymentAttemptCheckoutCreationFailed(ctx, domain.PaymentAttemptCheckoutCreationFailedParams{
+			TenantID:      tenantID,
+			BranchID:      branchID,
+			AttemptID:     attemptID,
+			FailureReason: domain.FailureReasonInvoiceNoLongerPayable,
+		})
+		return domain.CheckoutSessionResult{}, errCheckoutStateNotPayable
+	}
+
+	var expiresAt *time.Time
+	if result.ExpiresAt != "" {
+		if ts, parseErr := parseTimestamp(result.ExpiresAt); parseErr == nil {
+			expiresAt = &ts
+		}
+	}
+
+	if markErr := s.repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
+		TenantID:                tenantID,
+		BranchID:                branchID,
+		AttemptID:               attemptID,
+		StripeCheckoutSessionID: result.CheckoutSessionID,
+		StripeCheckoutURL:       result.CheckoutURL,
+		StripePaymentIntentID:   result.PaymentIntentID,
+		StripeExpiresAt:         expiresAt,
+	}); markErr != nil {
+		return domain.CheckoutSessionResult{}, fmt.Errorf("%w: %v", errCheckoutMarkCreated, markErr)
+	}
+
+	return result, nil
+}
+
+func isPayableCandidate(c domain.CheckoutInvoiceCandidate) bool {
+	if c.InvoiceKind != "monthly" {
+		return false
+	}
+	if !payableStatuses[c.Status] {
+		return false
+	}
+	if c.CurrencyCode != "GBP" {
+		return false
+	}
+	if c.TotalDueMinor <= 0 {
+		return false
+	}
+	if c.AmountPaidMinor != 0 {
+		return false
+	}
+	return true
+}
+
+func isStatePayable(s domain.InvoicePaymentState) bool {
+	if s.InvoiceKind != "monthly" {
+		return false
+	}
+	if !payableStatuses[s.Status] {
+		return false
+	}
+	if s.CurrencyCode != "GBP" {
+		return false
+	}
+	if s.TotalDueMinor <= 0 {
+		return false
+	}
+	if s.AmountPaidMinor != 0 {
+		return false
+	}
+	return true
+}
+
+func invoiceProductDesc(invoiceNumber string) string {
+	if invoiceNumber == "" {
+		return ""
+	}
+	return "Invoice " + invoiceNumber
 }
 
 type CreateCheckoutSession struct {
@@ -107,81 +297,43 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 		}, nil
 	}
 
-	var candidate domain.CheckoutInvoiceCandidate
-	var attemptID uuid.UUID
-
-	txErr := uc.txMgr.ExecTx(ctx, func(tx domain.Tx) error {
-		row, found, err := uc.repo.GetParentInvoiceForCheckoutForUpdate(ctx, tx, tenantID, branchID, membershipID, invoiceID.String())
-		if err != nil {
-			uc.logDebug("checkout_session_repo",
-				"operation", "get_parent_invoice_for_checkout",
-				"request_id", requestID,
-				"invoice_id", invoiceID.String(),
-				"error", logging.SafeErr(err),
-			)
-			return fmt.Errorf("get parent invoice for checkout: %w", err)
-		}
-		if !found {
-			return domainerrors.NotFound("invoice", "Invoice not found.")
-		}
-
-		candidate = row
-
-		if !uc.isPayable(row) {
-			return domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
-		}
-
-		attemptID = uc.newUUID()
-
-		return uc.repo.CreatePaymentAttempt(ctx, tx, domain.PaymentAttemptCreateParams{
-			ID:                      attemptID.String(),
-			TenantID:                tenantID,
-			BranchID:                branchID,
-			InvoiceID:               invoiceID.String(),
-			InitiatedByUserID:       userID,
-			InitiatedByMembershipID: membershipID,
-			RequestID:               requestID,
-			Status:                  domain.AttemptStatusCheckoutCreationStarted,
-			AmountMinor:             candidate.TotalDueMinor,
-			CurrencyCode:            domain.CurrencyGBP,
-		})
-	})
+	steps := checkoutSessionSteps{repo: uc.repo, txMgr: uc.txMgr, provider: uc.provider, newUUID: uc.newUUID}
+	candidate, attemptID, txErr := steps.createAttempt(ctx, tenantID, branchID, invoiceID.String(), requestID, userID, membershipID,
+		func(ctx context.Context, tx domain.Tx) (domain.CheckoutInvoiceCandidate, bool, error) {
+			return uc.repo.GetParentInvoiceForCheckoutForUpdate(ctx, tx, tenantID, branchID, membershipID, invoiceID.String())
+		},
+		uc.logDebug,
+	)
 	if txErr != nil {
+		if errors.Is(txErr, errCheckoutInvoiceNotFound) {
+			return CreateCheckoutSessionResult{}, domainerrors.NotFound("invoice", "Invoice not found.")
+		}
+		if errors.Is(txErr, errCheckoutInvoiceNotPayable) {
+			return CreateCheckoutSessionResult{}, domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
+		}
 		return CreateCheckoutSessionResult{}, txErr
 	}
 
 	uc.recordTransition("parent_checkout", "payment_attempt", "none", "checkout_creation_started", "parent_checkout_requested")
 
-	productDesc := ""
-	if candidate.InvoiceNumber != "" {
-		productDesc = "Invoice " + candidate.InvoiceNumber
-	}
-
 	successURL := fmt.Sprintf("%s/parent/invoices/%s?checkout=success&session_id={CHECKOUT_SESSION_ID}", uc.webBaseURL, invoiceID.String())
 	cancelURL := fmt.Sprintf("%s/parent/invoices/%s?checkout=cancelled", uc.webBaseURL, invoiceID.String())
 
-	result, providerErr := uc.provider.CreateCheckoutSession(ctx, domain.CheckoutSessionCreateParams{
-		PaymentAttemptID: attemptID.String(),
-		InvoiceID:        invoiceID.String(),
-		InvoiceNumber:    candidate.InvoiceNumber,
-		AmountMinor:      candidate.TotalDueMinor,
-		Currency:         "gbp",
-		ProductName:      "Nursery invoice payment",
-		ProductDesc:      productDesc,
-		SuccessURL:       successURL,
-		CancelURL:        cancelURL,
-		TenantID:         tenantID,
-		BranchID:         branchID,
-	})
+	result, providerErr := steps.callProviderAndMark(ctx, tenantID, branchID, invoiceID.String(), attemptID.String(), requestID, candidate, successURL, cancelURL)
 	if providerErr != nil {
-		_ = uc.repo.MarkPaymentAttemptCheckoutCreationFailed(ctx, domain.PaymentAttemptCheckoutCreationFailedParams{
-			TenantID:             tenantID,
-			BranchID:             branchID,
-			AttemptID:            attemptID.String(),
-			FailureReason:        domain.FailureReasonStripeError,
-			ProviderErrorCode:    safeProviderCode(providerErr),
-			ProviderErrorMessage: safeProviderMessage(providerErr),
-		})
+		if errors.Is(providerErr, errCheckoutStateNotPayable) {
+			uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_creation_failed", "invoice_no_longer_payable")
+			uc.logDebug("checkout_session_state",
+				"operation", "check_invoice_payment_state",
+				"request_id", requestID,
+				"invoice_id", invoiceID.String(),
+				"attempt_id", attemptID.String(),
+			)
+			return CreateCheckoutSessionResult{}, domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
+		}
+		if errors.Is(providerErr, errCheckoutMarkCreated) {
+			return CreateCheckoutSessionResult{}, domainerrors.Internal(fmt.Errorf("mark payment attempt created: %w", providerErr))
+		}
 		uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_creation_failed", "stripe_error")
 		uc.logDebug("checkout_session_provider",
 			"operation", "create_checkout_session",
@@ -191,50 +343,6 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 			"error", logging.SafeErr(providerErr),
 		)
 		return CreateCheckoutSessionResult{}, domainerrors.New("payment_provider_error", "Payment provider failed to create checkout session.")
-	}
-
-	state, found, err := uc.repo.GetInvoicePaymentState(ctx, tenantID, branchID, invoiceID.String())
-	if err != nil || !found || !uc.isStatePayable(state) {
-		_ = uc.repo.MarkPaymentAttemptCheckoutCreationFailed(ctx, domain.PaymentAttemptCheckoutCreationFailedParams{
-			TenantID:      tenantID,
-			BranchID:      branchID,
-			AttemptID:     attemptID.String(),
-			FailureReason: domain.FailureReasonInvoiceNoLongerPayable,
-		})
-		uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_creation_failed", "invoice_no_longer_payable")
-		uc.logDebug("checkout_session_state",
-			"operation", "check_invoice_payment_state",
-			"request_id", requestID,
-			"invoice_id", invoiceID.String(),
-			"attempt_id", attemptID.String(),
-		)
-		return CreateCheckoutSessionResult{}, domainerrors.Conflict("invoice_not_payable", "Invoice is not payable.")
-	}
-
-	var expiresAt *time.Time
-	if result.ExpiresAt != "" {
-		if ts, parseErr := parseTimestamp(result.ExpiresAt); parseErr == nil {
-			expiresAt = &ts
-		}
-	}
-
-	if markErr := uc.repo.MarkPaymentAttemptCheckoutCreated(ctx, domain.PaymentAttemptCheckoutCreatedParams{
-		TenantID:                tenantID,
-		BranchID:                branchID,
-		AttemptID:               attemptID.String(),
-		StripeCheckoutSessionID: result.CheckoutSessionID,
-		StripeCheckoutURL:       result.CheckoutURL,
-		StripePaymentIntentID:   result.PaymentIntentID,
-		StripeExpiresAt:         expiresAt,
-	}); markErr != nil {
-		uc.logDebug("checkout_session_repo",
-			"operation", "mark_payment_attempt_checkout_created",
-			"request_id", requestID,
-			"invoice_id", invoiceID.String(),
-			"attempt_id", attemptID.String(),
-			"error", logging.SafeErr(markErr),
-		)
-		return CreateCheckoutSessionResult{}, domainerrors.Internal(fmt.Errorf("mark payment attempt created: %w", markErr))
 	}
 
 	uc.recordTransition("parent_checkout", "payment_attempt", "checkout_creation_started", "checkout_created", "checkout_created")
@@ -252,44 +360,6 @@ func (uc *CreateCheckoutSession) Execute(ctx context.Context, tenantID, branchID
 		CheckoutURL:       result.CheckoutURL,
 		PaymentAttemptID:  attemptID.String(),
 	}, nil
-}
-
-func (uc *CreateCheckoutSession) isPayable(c domain.CheckoutInvoiceCandidate) bool {
-	if c.InvoiceKind != "monthly" {
-		return false
-	}
-	if !payableStatuses[c.Status] {
-		return false
-	}
-	if c.CurrencyCode != "GBP" {
-		return false
-	}
-	if c.TotalDueMinor <= 0 {
-		return false
-	}
-	if c.AmountPaidMinor != 0 {
-		return false
-	}
-	return true
-}
-
-func (uc *CreateCheckoutSession) isStatePayable(s domain.InvoicePaymentState) bool {
-	if s.InvoiceKind != "monthly" {
-		return false
-	}
-	if !payableStatuses[s.Status] {
-		return false
-	}
-	if s.CurrencyCode != "GBP" {
-		return false
-	}
-	if s.TotalDueMinor <= 0 {
-		return false
-	}
-	if s.AmountPaidMinor != 0 {
-		return false
-	}
-	return true
 }
 
 func safeProviderCode(err error) string {
