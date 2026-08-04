@@ -31,6 +31,7 @@ tail -f tmp/web.log
 **Cross-cutting rules (applies to every task):**
 - **Main branch only:** Always work on the `main` branch. Do not create or switch to other branches unless explicitly instructed by the user.
 - **Plan first:** Before writing or modifying any code, create an implementation plan covering the approach, files affected, and any design decisions.
+- **Unit tests always:** Every new or modified Go or Angular code must include unit tests. Follow the patterns in [Testing Patterns](docs/agents/TESTING.md). Do not skip or defer tests — incomplete test coverage is a failed task.
 - **Forbidden imports:** `domain` → postgres/gin/http/sql; `application` → sql/http/framework types; handler → direct DB
 - **Cross-module:** never import another module directly. Define interface in consumer, wire adapter in `bootstrap/adapters.go`.
 - **Transactions:** always `txMgr.ExecTx(ctx, func(tx pgx.Tx) error{...})`. Never Begin/Commit/Rollback directly.
