@@ -1,42 +1,51 @@
 {{define "content"}}
 <tr>
-    <td class="nurserypro-heading nurserypro-px" style="padding:16px 32px 8px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;">
+    <td class="nurserypro-px" style="padding:0 40px 32px;">
+        <h1 style="margin:0 0 16px;padding:0;font-size:22px;font-weight:700;color:#000000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Payment Due Today</h1>
+        <p style="margin:0 0 24px;padding:0;font-size:15px;color:#555555;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Your invoice for <strong>{{.ChildName}}</strong> is due today. Please make payment today to avoid late fees.
+        </p>
+
+        <!-- Key Details Card -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f6f8" style="background-color:#f4f6f8;border-radius:6px;margin-bottom:24px;">
             <tr>
-                <td bgcolor="#fef2f2" style="background-color:#fef2f2;color:#dc2626;font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;border:1px solid #fecaca;">
-                    Due Today
+                <td style="padding:18px 24px;font-size:15px;color:#333333;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <div style="margin-bottom:6px;"><strong>Amount Due:</strong> {{.TotalDue}}</div>
+                    {{if .DueDate}}<div><strong>Due By:</strong> {{.DueDate}}</div>{{end}}
                 </td>
             </tr>
         </table>
-        <h1 style="margin:0;padding:0;font-size:24px;font-weight:800;color:#0f172a;">Payment Due Today</h1>
-        <p class="nurserypro-text" style="margin:10px 0 0;padding:0;font-size:15px;color:#475569;line-height:1.5;">Your invoice for <strong>{{.ChildName}}</strong> is due today. Please make payment today to avoid late fees.</p>
-    </td>
-</tr>
-<tr>
-    <td style="padding:16px 32px;" class="nurserypro-px">
-        <table class="nurserypro-card nurserypro-text" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8fafc" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+
+        <!-- Primary CTA Button -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:36px;">
             <tr>
-                <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;font-size:14px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                            <td style="color:#64748b;font-weight:500;">Invoice Number</td>
-                            <td align="right" style="font-weight:700;color:#0f172a;">{{.InvoiceNumber}}</td>
-                        </tr>
-                    </table>
+                <td align="center">
+                    <a href="{{if .PayLink}}{{.PayLink}}{{else}}{{.PortalLink}}{{end}}" style="background-color:#2563eb;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:12px 32px;border-radius:4px;display:inline-block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Pay Invoice</a>
                 </td>
             </tr>
-            {{if .DueDate}}
+        </table>
+
+        <!-- Support & Sign-off -->
+        <p style="margin:0 0 20px;padding:0;font-size:14px;color:#555555;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            If you have any questions about this invoice, simply reply to this email or reach out to our <a href="mailto:support@example.com" style="color:#2563eb;text-decoration:underline;">support team</a> for help.
+        </p>
+        <p style="margin:0 0 4px;padding:0;font-size:14px;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Cheers,</p>
+        <p style="margin:0 0 32px;padding:0;font-size:14px;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            The {{if .NurseryName}}{{.NurseryName}}{{else}}Team{{end}} Team
+        </p>
+
+        <!-- Divider & Troubleshooting Link -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
-                <td style="padding:14px 20px;font-size:14px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                            <td style="color:#64748b;font-weight:500;">Due Date</td>
-                            <td align="right" style="font-weight:700;color:#0f172a;">{{.DueDate}}</td>
-                        </tr>
-                    </table>
+                <td style="border-top:1px solid #eeeeee;padding-top:24px;">
+                    <p style="margin:0 0 8px;font-size:13px;color:#666666;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                        If you're having trouble with the button above, copy and paste the URL below into your web browser.
+                    </p>
+                    <p style="margin:0;font-size:13px;color:#2563eb;word-break:break-all;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                        {{if .PayLink}}{{.PayLink}}{{else}}{{.PortalLink}}{{end}}
+                    </p>
                 </td>
             </tr>
-            {{end}}
         </table>
     </td>
 </tr>

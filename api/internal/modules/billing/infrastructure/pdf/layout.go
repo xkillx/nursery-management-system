@@ -11,18 +11,14 @@ import (
 const (
 	pageWidth    = 595.28 // A4
 	pageHeight   = 841.89
-	marginLeft   = 40.0
-	marginRight  = 40.0
-	contentWidth = pageWidth - marginLeft - marginRight
+	marginLeft   = 36.0
+	marginRight  = 36.0
+	contentWidth = pageWidth - marginLeft - marginRight // 523.28
 
-	headerY       = 35.0
-	invoiceLabelY = 35.0
-	separatorY    = 92.0
-	detailsY      = 100.0
-	billToY       = 142.0
-	tableStartY   = 224.0
-
-	footerReserve = 80.0
+	headerY       = 30.0
+	detailsY      = 88.0
+	tableStartY   = 196.0
+	footerReserve = 70.0
 )
 
 type InvoicePDFInput struct {

@@ -1,16 +1,26 @@
-New Invoice Issued - {{.ChildName}}
+Hi {{if .ParentName}}{{.ParentName}}{{else if .ChildName}}{{.ChildName}}{{else}}there{{end}},
 
-A new invoice has been issued for {{.ChildName}} at {{.NurseryName}}.
+Thanks for using {{if .NurseryName}}{{.NurseryName}}{{else}}our company{{end}}. This is an invoice for your recent purchase.
 
-Invoice Number: {{.InvoiceNumber}}
-{{if .BillingMonth}}Billing Month: {{.BillingMonth}}
-{{end}}{{if .DueDate}}Due Date: {{.DueDate}}
-{{end}}Amount Due: {{.TotalDue}}
-
+Amount Due: {{.TotalDue}}
+{{if .DueDate}}Due By: {{.DueDate}}
+{{end}}
 {{if .PayLink}}Pay Now: {{.PayLink}}
 View Invoice Details: {{.PortalLink}}{{else}}View Invoice & Pay Online: {{.PortalLink}}{{end}}
 
-If you have any questions about this invoice, please contact the nursery.
+{{.InvoiceNumber}} | {{if .Date}}{{.Date}}{{else if .BillingMonth}}{{.BillingMonth}}{{end}}
 
-Best regards,
-{{.NurseryName}}
+Description: Amount
+{{if .Lines}}{{range .Lines}}{{.Description}}: {{.Amount}}
+{{end}}{{else}}Nursery Care Services for {{.ChildName}}{{if .BillingMonth}} ({{.BillingMonth}}){{end}}: {{.TotalDue}}
+{{end}}
+Total: {{.TotalDue}}
+
+If you have any questions about this invoice, simply reply to this email or reach out to our support team for help.
+
+Cheers,
+The {{if .NurseryName}}{{.NurseryName}}{{else}}Team{{end}} Team
+
+If you're having trouble with the button above, copy and paste the URL below into your web browser:
+{{if .PayLink}}{{.PayLink}}{{else}}{{.PortalLink}}{{end}}
+

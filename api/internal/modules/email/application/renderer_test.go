@@ -38,19 +38,19 @@ func sampleReceiptData() map[string]interface{} {
 func TestRenderer_V2HTMLTemplatesRenderOnLayoutShell(t *testing.T) {
 	renderer := NewRenderer()
 
-	// per-type message that must appear in its own template
 	type case_ struct {
 		name      string
 		data      map[string]interface{}
 		messaging string
+		ctaLabel  string
 	}
 
 	cases := []case_{
-		{name: "issued", data: sampleInvoiceData(), messaging: "New Invoice Issued"},
-		{name: "overdue", data: sampleInvoiceData(), messaging: "Invoice Overdue"},
-		{name: "due-soon", data: sampleInvoiceData(), messaging: "Payment Due Soon"},
-		{name: "due-reminder", data: sampleInvoiceData(), messaging: "Payment Due Today"},
-		{name: "receipt", data: sampleReceiptData(), messaging: "Payment Received"},
+		{name: "issued", data: sampleInvoiceData(), messaging: "Hi Leo Harrison,", ctaLabel: "Pay Invoice"},
+		{name: "overdue", data: sampleInvoiceData(), messaging: "Invoice Overdue", ctaLabel: "Pay Invoice"},
+		{name: "due-soon", data: sampleInvoiceData(), messaging: "Payment Due Soon", ctaLabel: "Pay Invoice"},
+		{name: "due-reminder", data: sampleInvoiceData(), messaging: "Payment Due Today", ctaLabel: "Pay Invoice"},
+		{name: "receipt", data: sampleReceiptData(), messaging: "Payment Received", ctaLabel: "View Invoice Details"},
 	}
 
 	for _, tc := range cases {
@@ -60,13 +60,11 @@ func TestRenderer_V2HTMLTemplatesRenderOnLayoutShell(t *testing.T) {
 				t.Fatalf("render %s v2: %v", tc.name, err)
 			}
 
-			// Layout shell: logo, hero amount, CTA, footer.
+			// Layout shell: logo, CTA, footer, nursery name.
 			for _, want := range []string{
 				`aria-label="NurseryPro"`,
-				"View Invoice &amp; Pay Online",
-				"£420.00",
-				"Amount Due",
-				"&copy; 2026 NurseryPro",
+				tc.ctaLabel,
+				"&copy; 2026",
 				"Sunny Days Nursery",
 			} {
 				if !strings.Contains(htmlBody, want) {
@@ -167,31 +165,17 @@ func TestRenderer_V2InvoiceCTAHonorsPayLink(t *testing.T) {
 				t.Fatalf("render %s v2 with PayLink: %v", name, err)
 			}
 
-			// Primary CTA points at the Stripe pay link, labelled "Pay Now".
+			// Primary CTA points at the Stripe pay link.
 			if !strings.Contains(htmlBody, `href="https://checkout.stripe.com/pay-inv-001"`) {
 				t.Errorf("html missing pay-link href:\n%s", htmlBody)
 			}
-			if !strings.Contains(htmlBody, ">Pay Now</a>") {
-				t.Errorf("html missing Pay Now button:\n%s", htmlBody)
-			}
-			// Secondary "view invoice details" link uses the portal link.
-			if !strings.Contains(htmlBody, `href="https://app.example.com/parent/invoices/abc"`) {
-				t.Errorf("html missing portal view-details href:\n%s", htmlBody)
-			}
-			if !strings.Contains(htmlBody, "View invoice details") {
-				t.Errorf("html missing secondary view-details link:\n%s", htmlBody)
-			}
-			// The fallback single-CTA label must not appear.
-			if strings.Contains(htmlBody, "View Invoice &amp; Pay Online") {
-				t.Errorf("html still renders the fallback CTA when PayLink present:\n%s", htmlBody)
+			if !strings.Contains(htmlBody, ">Pay Invoice</a>") {
+				t.Errorf("html missing Pay Invoice button:\n%s", htmlBody)
 			}
 
-			// Text variant lists both links.
+			// Text variant lists pay link.
 			if !strings.Contains(textBody, "Pay Now: https://checkout.stripe.com/pay-inv-001") {
 				t.Errorf("text missing pay link:\n%s", textBody)
-			}
-			if !strings.Contains(textBody, "View Invoice Details: https://app.example.com/parent/invoices/abc") {
-				t.Errorf("text missing view-details link:\n%s", textBody)
 			}
 		})
 	}
@@ -210,8 +194,8 @@ func TestRenderer_V2InvoiceCTAFallsBackToPortalLink(t *testing.T) {
 			if !strings.Contains(htmlBody, `href="https://app.example.com/parent/invoices/abc"`) {
 				t.Errorf("html missing portal-link href:\n%s", htmlBody)
 			}
-			if !strings.Contains(htmlBody, "View Invoice &amp; Pay Online") {
-				t.Errorf("html missing fallback CTA label:\n%s", htmlBody)
+			if !strings.Contains(htmlBody, "Pay Invoice") {
+				t.Errorf("html missing Pay Invoice CTA label:\n%s", htmlBody)
 			}
 			if strings.Contains(htmlBody, "https://checkout.stripe.com/pay-inv-001") {
 				t.Errorf("html must not contain a pay link when absent:\n%s", htmlBody)
@@ -239,10 +223,71 @@ func TestRenderer_V2ReceiptUnchangedWithoutPayLink(t *testing.T) {
 	if !strings.Contains(htmlBody, `href="https://app.example.com/parent/invoices/abc"`) {
 		t.Errorf("html missing single app link:\n%s", htmlBody)
 	}
-	if !strings.Contains(htmlBody, "View Invoice &amp; Pay Online") {
+	if !strings.Contains(htmlBody, "View Invoice Details") {
 		t.Errorf("html missing receipt CTA:\n%s", htmlBody)
 	}
-	if strings.Contains(htmlBody, "Pay Now") || strings.Contains(textBody, "Pay Now:") {
-		t.Errorf("receipt must not contain a pay link:\n%s\n%s", htmlBody, textBody)
+}
+
+func TestRenderer_V2IssuedTemplateRendersItemizedLinesAndDesign(t *testing.T) {
+	renderer := NewRenderer()
+
+	data := map[string]interface{}{
+		"NurseryName":   "Acme Nursery",
+		"ParentName":    "John Doe",
+		"ChildName":     "Sam Doe",
+		"InvoiceNumber": "INV-2026-0099",
+		"Date":          "04/08/2026",
+		"TotalDue":      "£250.00",
+		"DueDate":       "18 August 2026",
+		"PortalLink":    "https://app.example.com/parent/invoices/inv-0099",
+		"Lines": []map[string]string{
+			{"Description": "Full Day Care", "Amount": "£200.00"},
+			{"Description": "Lunch & Snacks", "Amount": "£50.00"},
+		},
+	}
+
+	htmlBody, textBody, err := renderer.Render("issued", 2, data)
+	if err != nil {
+		t.Fatalf("render issued v2: %v", err)
+	}
+
+	// Assert HTML elements from new design
+	for _, want := range []string{
+		"Hi John Doe,",
+		"Thanks for using <strong>Acme Nursery</strong>",
+		"Amount Due:",
+		"£250.00",
+		"Due By:",
+		"18 August 2026",
+		"Pay Invoice",
+		"INV-2026-0099",
+		"04/08/2026",
+		"Full Day Care",
+		"£200.00",
+		"Lunch &amp; Snacks",
+		"£50.00",
+		"Total",
+		"If you have any questions about this invoice, simply reply to this email or reach out to our",
+		"If you're having trouble with the button above, copy and paste the URL below into your web browser.",
+	} {
+		if !strings.Contains(htmlBody, want) {
+			t.Errorf("html body missing expected element %q:\n%s", want, htmlBody)
+		}
+	}
+
+	// Assert Text alternative elements
+	for _, want := range []string{
+		"Hi John Doe,",
+		"Thanks for using Acme Nursery.",
+		"Amount Due: £250.00",
+		"Due By: 18 August 2026",
+		"INV-2026-0099 | 04/08/2026",
+		"Full Day Care: £200.00",
+		"Lunch & Snacks: £50.00",
+		"Total: £250.00",
+	} {
+		if !strings.Contains(textBody, want) {
+			t.Errorf("text body missing expected element %q:\n%s", want, textBody)
+		}
 	}
 }

@@ -782,7 +782,9 @@ func (a *billingNotificationAdapter) SendInvoiceIssuedEmail(ctx context.Context,
 
 	subject := fmt.Sprintf("New Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
+	lines, _ := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID, parent, lines))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -852,7 +854,9 @@ func (a *billingNotificationAdapter) SendInvoiceResendEmail(ctx context.Context,
 
 	subject := fmt.Sprintf("New Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
+	lines, _ := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID, parent, lines))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -946,7 +950,9 @@ func (a *billingNotificationAdapter) SendInvoiceOverdueEmail(ctx context.Context
 
 	subject := fmt.Sprintf("Invoice Overdue %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
+	lines, _ := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID, parent, lines))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -1007,7 +1013,9 @@ func (a *billingNotificationAdapter) SendInvoiceDueSoonEmail(ctx context.Context
 
 	subject := fmt.Sprintf("Payment Reminder: Invoice %s Due Soon - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
+	lines, _ := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID, parent, lines))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -1068,7 +1076,9 @@ func (a *billingNotificationAdapter) SendInvoiceDueReminderEmail(ctx context.Con
 
 	subject := fmt.Sprintf("Payment Due Today: Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID))
+	lines, _ := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+
+	payloadJSON, err := json.Marshal(a.invoicePayload(site, invoice, invoiceID, parent, lines))
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
@@ -1129,7 +1139,8 @@ func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pg
 
 	subject := fmt.Sprintf("Payment Received - Invoice %s - %s", invoiceNumber, site.NurseryName)
 
-	payload := a.invoicePayload(site, invoice, invoiceID)
+	lines, _ := a.repo.ListInvoiceLinesForManagerReviewTx(ctx, tx, tenantID, branchID, invoiceID)
+	payload := a.invoicePayload(site, invoice, invoiceID, parent, lines)
 	delete(payload, "DueDate")
 	payload["AmountPaid"] = formatMoney(billingdomain.MustGBP(amountPaid))
 	payload["PaymentDate"] = paymentDate
@@ -1166,7 +1177,7 @@ func (a *billingNotificationAdapter) SendReceiptEmail(ctx context.Context, tx pg
 // invoicePayload builds the v2 template payload shared by the invoice
 // notification emails. Template fields use the v1 field names so the v2
 // templates and text alternatives render the same data.
-func (a *billingNotificationAdapter) invoicePayload(site *siteprofiledomain.SiteProfile, invoice billingdomain.InvoiceReviewRow, invoiceID uuid.UUID) map[string]interface{} {
+func (a *billingNotificationAdapter) invoicePayload(site *siteprofiledomain.SiteProfile, invoice billingdomain.InvoiceReviewRow, invoiceID uuid.UUID, parent *billingdomain.ParentContact, lines []billingdomain.InvoiceReviewLineRow) map[string]interface{} {
 	childName := invoice.ChildFirstName
 	if invoice.ChildLastName != nil {
 		childName += " " + *invoice.ChildLastName
@@ -1177,12 +1188,35 @@ func (a *billingNotificationAdapter) invoicePayload(site *siteprofiledomain.Site
 		invoiceNumber = *invoice.InvoiceNumber
 	}
 
+	parentName := ""
+	if parent != nil && parent.FullName != "" {
+		parentName = parent.FullName
+	}
+
+	dateStr := ""
+	if invoice.IssuedAt != nil {
+		dateStr = invoice.IssuedAt.Format("02/01/2006")
+	} else if !invoice.CreatedAt.IsZero() {
+		dateStr = invoice.CreatedAt.Format("02/01/2006")
+	}
+
+	lineItems := make([]map[string]string, 0, len(lines))
+	for _, line := range lines {
+		lineItems = append(lineItems, map[string]string{
+			"Description": line.Description,
+			"Amount":      formatMoney(line.LineAmount),
+		})
+	}
+
 	payload := map[string]interface{}{
 		"NurseryName":   site.NurseryName,
+		"ParentName":    parentName,
 		"ChildName":     childName,
 		"InvoiceNumber": invoiceNumber,
+		"Date":          dateStr,
 		"TotalDue":      formatMoney(invoice.TotalDue),
 		"PortalLink":    fmt.Sprintf("%s/parent/invoices/%s", a.webBaseURL, invoiceID),
+		"Lines":         lineItems,
 	}
 	if !invoice.BillingMonth.IsZero() {
 		payload["BillingMonth"] = invoice.BillingMonth.Format("January 2006")
