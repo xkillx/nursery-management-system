@@ -350,8 +350,8 @@ func BootstrapWithOptions(cfg config.Config, logger *slog.Logger, pool *pgxpool.
 			Preflight:              billingapp.NewPreflightDraftInvoices(billingRepo),
 			Generation:             billingapp.NewGenerateDraftInvoices(billingRepo, txManager, auditWriter, logger, recorder, termDateLookup, &adHocBookingLookupAdapter{repo: billingRepo}, nil, nil, nil, fundingLookup, bookingEntriesLookup),
 			ComputePrefill:         billingapp.NewComputeInvoicePrefill(billingRepo, txManager, bookingEntriesLookup, fundingLookup, nil, nil, nil),
-			CreateDraft:            billingapp.NewCreateDraftInvoice(billingRepo, txManager, auditWriter),
-			CreateAndIssueFromForm: billingapp.NewCreateAndIssueInvoiceFromForm(billingRepo, eventDispatcher, auditWriter, billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher)),
+			CreateDraft:            billingapp.NewCreateDraftInvoice(billingRepo, txManager, auditWriter, bookingEntriesLookup, termDateLookup, nil, nil),
+			CreateAndIssueFromForm: billingapp.NewCreateAndIssueInvoiceFromForm(billingRepo, eventDispatcher, auditWriter, billingapp.NewIssueInvoice(billingRepo, txManager, auditWriter, eventDispatcher), bookingEntriesLookup, termDateLookup, nil, nil),
 		},
 		Lifecycle: billinghandler.LifecycleUseCases{
 			ListInvoices:          billingapp.NewListInvoices(billingRepo),

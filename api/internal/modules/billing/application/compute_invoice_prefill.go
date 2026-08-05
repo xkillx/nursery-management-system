@@ -59,6 +59,7 @@ type PrefillLine struct {
 	FundedDeductionMinutes int
 	CoreBillableMinutes    int
 	SessionCount           int
+	Sessions               []domain.SessionRow
 }
 
 func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.ActorContext, childIDRaw, billingMonthRaw string) (ComputeInvoicePrefillResult, error) {
@@ -161,7 +162,7 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 
 		lines := make([]PrefillLine, 0, len(prefillResult.Lines))
 		for _, l := range prefillResult.Lines {
-			lines = append(lines, PrefillLine{
+			pl := PrefillLine{
 				LineKind:               l.LineKind,
 				Description:            l.Description,
 				SortOrder:              l.SortOrder,
@@ -172,7 +173,11 @@ func (uc *ComputeInvoicePrefill) Execute(ctx context.Context, actor tenant.Actor
 				FundedDeductionMinutes: l.FundedDeductionMinutes,
 				CoreBillableMinutes:    l.CoreBillableMinutes,
 				SessionCount:           l.SessionCount,
-			})
+			}
+			if l.LineKind == domain.LineKindCoreChildcare {
+				pl.Sessions = domain.SessionRowsFromBooked(prefillResult.Sessions, l.LineAmountMinor)
+			}
+			lines = append(lines, pl)
 		}
 
 		warnings = append(warnings, prefillResult.Warnings...)

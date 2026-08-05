@@ -44,6 +44,7 @@ type InvoicePrefillResult struct {
 	TermDatesUsed          []string
 	ClosureDaysExcluded    []string
 	HolidayPeriodsExcluded []string
+	Sessions               []BookedSession
 }
 
 // ComputeInvoicePrefill is a pure domain service that computes invoice line
@@ -142,5 +143,6 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 		TermDatesUsed:          calc.TermDatesUsed,
 		ClosureDaysExcluded:    calc.ClosureDaysExcluded,
 		HolidayPeriodsExcluded: calc.HolidayPeriodsExcluded,
+		Sessions:               calc.Sessions,
 	}, nil
 }

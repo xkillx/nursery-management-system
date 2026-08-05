@@ -129,3 +129,20 @@ func BuildSessionRows(details json.RawMessage, lineKind string, quantityMinutes 
 	}
 	return rows
 }
+
+// SessionRowsFromBooked converts a computed BookedSession slice into the
+// display-ready SessionRow DTO, allocating the given line total across the
+// sessions. It delegates to BuildSessionRows (KTD4) so sorting, invalid-date
+// handling and allocation are identical to the persisted-details path. Used
+// for prefill and manual-draft recomputation where no persisted details exist
+// yet.
+func SessionRowsFromBooked(sessions []BookedSession, lineAmountMinor int) []SessionRow {
+	if len(sessions) == 0 {
+		return nil
+	}
+	details, err := json.Marshal(CoreLineDetails{BookedSessions: sessions})
+	if err != nil {
+		return nil
+	}
+	return BuildSessionRows(details, LineKindCoreChildcare, nil, lineAmountMinor)
+}

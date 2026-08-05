@@ -22,6 +22,7 @@ type CreateAndIssueInvoiceFromForm struct {
 	dispatcher *events.EventDispatcher
 	auditW     *audit.Writer
 	issueUC    *IssueInvoice
+	core       *coreSessionsComputer
 }
 
 func NewCreateAndIssueInvoiceFromForm(
@@ -29,12 +30,23 @@ func NewCreateAndIssueInvoiceFromForm(
 	dispatcher *events.EventDispatcher,
 	auditW *audit.Writer,
 	issueUC *IssueInvoice,
+	bookingEntriesLookup domain.BookingEntriesLookup,
+	termDateLookup domain.TermDateLookup,
+	closureDateLookup domain.ClosureDateLookup,
+	holidayPeriodLookup domain.HolidayPeriodLookup,
 ) *CreateAndIssueInvoiceFromForm {
 	return &CreateAndIssueInvoiceFromForm{
 		repo:       repo,
 		dispatcher: dispatcher,
 		auditW:     auditW,
 		issueUC:    issueUC,
+		core: &coreSessionsComputer{
+			repo:                 repo,
+			bookingEntriesLookup: bookingEntriesLookup,
+			termDateLookup:       termDateLookup,
+			closureDateLookup:    closureDateLookup,
+			holidayPeriodLookup:  holidayPeriodLookup,
+		},
 	}
 }
 
@@ -117,6 +129,7 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 		}
 
 		for _, line := range input.Lines {
+			var err error
 			unitAmount := domain.MustGBP(line.UnitAmountMinor)
 			lineAmount := domain.MustGBP(line.LineAmountMinor)
 			if line.LineKind == domain.LineKindFundedDeduction {
@@ -127,6 +140,15 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 					lineAmount = domain.MustGBP(-line.LineAmountMinor)
 				}
 			}
+
+			var lineDetails []byte
+			if line.LineKind == domain.LineKindCoreChildcare && uc.core != nil {
+				lineDetails, err = uc.core.computeCoreLineDetails(ctx, tx, actor, input.ChildID, billingMonth, line)
+				if err != nil {
+					return fmt.Errorf("compute core line details: %w", err)
+				}
+			}
+
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
 				ID:                     uid.NewUUID(),
 				TenantID:               actor.TenantID,
@@ -142,6 +164,7 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 				FundedDeductionMinutes: line.FundedDeductionMinutes,
 				CoreBillableMinutes:    line.CoreBillableMinutes,
 				SessionCount:           line.SessionCount,
+				Details:                lineDetails,
 			}); insErr != nil {
 				return fmt.Errorf("insert invoice line: %w", insErr)
 			}

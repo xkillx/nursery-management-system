@@ -363,6 +363,74 @@ func TestComputeInvoicePrefill_InvalidBillingMonth(t *testing.T) {
 	}
 }
 
+func TestComputeInvoicePrefill_CoreLineCarriesSessions(t *testing.T) {
+	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
+	bookingRow := makeBooking()
+	bookingRow.SiteHourlyRateMinor = 600
+	lookupEntries := []domain.BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 780, DurationMinutes: 300}},
+		{DayOfWeek: 2, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 780, DurationMinutes: 300}},
+	}
+
+	repo := &stubPrefillRepo{
+		bookings: []domain.BillableChildRow{bookingRow},
+	}
+	bookingLookup := &stubBookingEntriesLookup{entries: lookupEntries}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
+
+	actor := tenant.ActorContext{
+		TenantID: bookingRow.TenantID,
+		BranchID: bookingRow.BranchID,
+	}
+	result, err := uc.Execute(context.Background(), actor, childID.String(), "2026-06")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	core := result.Lines[0]
+	if core.LineKind != domain.LineKindCoreChildcare {
+		t.Fatalf("line[0] kind: got %q, want %q", core.LineKind, domain.LineKindCoreChildcare)
+	}
+	if len(core.Sessions) != 10 {
+		t.Fatalf("expected 10 session rows (June 2026: 5 Mondays + 5 Tuesdays), got %d", len(core.Sessions))
+	}
+	total := 0
+	for _, s := range core.Sessions {
+		total += s.SessionAmountMinor
+		if s.StartMinutes != 480 || s.EndMinutes != 780 {
+			t.Errorf("session start/end = %d/%d, want 480/780", s.StartMinutes, s.EndMinutes)
+		}
+	}
+	if total != core.LineAmountMinor {
+		t.Errorf("session amounts sum to %d, want line amount %d", total, core.LineAmountMinor)
+	}
+}
+
+func TestComputeInvoicePrefill_CoreLineNoSessions(t *testing.T) {
+	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
+	bookingRow := makeBooking()
+
+	repo := &stubPrefillRepo{
+		bookings: []domain.BillableChildRow{bookingRow},
+	}
+	bookingLookup := &stubBookingEntriesLookup{entries: []domain.BookedPatternEntry{}}
+	uc := NewComputeInvoicePrefill(repo, &stubPrefillTxMgr{repo: repo}, bookingLookup, nil, nil, nil, nil)
+
+	actor := tenant.ActorContext{
+		TenantID: bookingRow.TenantID,
+		BranchID: bookingRow.BranchID,
+	}
+	result, err := uc.Execute(context.Background(), actor, childID.String(), "2026-06")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	core := result.Lines[0]
+	if len(core.Sessions) != 0 {
+		t.Errorf("expected no session rows for empty pattern, got %d", len(core.Sessions))
+	}
+}
+
 func TestComputeInvoicePrefill_SiteRateNotSet(t *testing.T) {
 	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
 	bookingRow := makeBooking()

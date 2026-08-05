@@ -331,9 +331,9 @@ func InitializeApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Pool) (
 	bookingEntriesLookupAdapter := application11.NewBookingEntriesLookupAdapter(pool)
 	generateDraftInvoicesUseCase := application10.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
 	computeInvoicePrefill := application10.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter, bootstrapFundingLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
-	createDraftInvoice := application10.NewCreateDraftInvoice(repository2, transactionManager, writer)
+	createDraftInvoice := application10.NewCreateDraftInvoice(repository2, transactionManager, writer, bookingEntriesLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
 	issueInvoice := application10.NewIssueInvoice(repository2, transactionManager, writer, eventDispatcher)
-	createAndIssueInvoiceFromForm := application10.NewCreateAndIssueInvoiceFromForm(repository2, eventDispatcher, writer, issueInvoice)
+	createAndIssueInvoiceFromForm := application10.NewCreateAndIssueInvoiceFromForm(repository2, eventDispatcher, writer, issueInvoice, bookingEntriesLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
 	draftUseCases := httpbilling.DraftUseCases{
 		Preflight:              preflightDraftInvoices,
 		Generation:             generateDraftInvoicesUseCase,
@@ -753,9 +753,9 @@ func InitializeTestApp(cfg config.Config, logger *slog.Logger, pool *pgxpool.Poo
 	bookingEntriesLookupAdapter := application11.NewBookingEntriesLookupAdapter(pool)
 	generateDraftInvoicesUseCase := application10.NewGenerateDraftInvoices(repository2, transactionManager, writer, logger, recorder, bootstrapTermDateLookupAdapter, bootstrapAdHocBookingLookupAdapter, bootstrapHourlyBookingLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter, bootstrapFundingLookupAdapter, bookingEntriesLookupAdapter)
 	computeInvoicePrefill := application10.NewComputeInvoicePrefill(repository2, transactionManager, bookingEntriesLookupAdapter, bootstrapFundingLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
-	createDraftInvoice := application10.NewCreateDraftInvoice(repository2, transactionManager, writer)
+	createDraftInvoice := application10.NewCreateDraftInvoice(repository2, transactionManager, writer, bookingEntriesLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
 	issueInvoice := application10.NewIssueInvoice(repository2, transactionManager, writer, eventDispatcher)
-	createAndIssueInvoiceFromForm := application10.NewCreateAndIssueInvoiceFromForm(repository2, eventDispatcher, writer, issueInvoice)
+	createAndIssueInvoiceFromForm := application10.NewCreateAndIssueInvoiceFromForm(repository2, eventDispatcher, writer, issueInvoice, bookingEntriesLookupAdapter, bootstrapTermDateLookupAdapter, bootstrapClosureDateLookupAdapter, bootstrapHolidayPeriodLookupAdapter)
 	draftUseCases := httpbilling.DraftUseCases{
 		Preflight:              preflightDraftInvoices,
 		Generation:             generateDraftInvoicesUseCase,

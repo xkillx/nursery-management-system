@@ -20,14 +20,34 @@ type CreateDraftInvoice struct {
 	repo   domain.BillingRepository
 	txMgr  DraftInvoiceTxManager
 	auditW *audit.Writer
+	core   *coreSessionsComputer
 }
 
 type DraftInvoiceTxManager interface {
 	ExecTx(ctx context.Context, fn func(tx pgx.Tx) error) error
 }
 
-func NewCreateDraftInvoice(repo domain.BillingRepository, txMgr DraftInvoiceTxManager, auditW *audit.Writer) *CreateDraftInvoice {
-	return &CreateDraftInvoice{repo: repo, txMgr: txMgr, auditW: auditW}
+func NewCreateDraftInvoice(
+	repo domain.BillingRepository,
+	txMgr DraftInvoiceTxManager,
+	auditW *audit.Writer,
+	bookingEntriesLookup domain.BookingEntriesLookup,
+	termDateLookup domain.TermDateLookup,
+	closureDateLookup domain.ClosureDateLookup,
+	holidayPeriodLookup domain.HolidayPeriodLookup,
+) *CreateDraftInvoice {
+	return &CreateDraftInvoice{
+		repo:  repo,
+		txMgr: txMgr,
+		auditW: auditW,
+		core: &coreSessionsComputer{
+			repo:                 repo,
+			bookingEntriesLookup: bookingEntriesLookup,
+			termDateLookup:       termDateLookup,
+			closureDateLookup:    closureDateLookup,
+			holidayPeriodLookup:  holidayPeriodLookup,
+		},
+	}
 }
 
 type CreateDraftInvoiceInput struct {
@@ -153,6 +173,7 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 
 		lineResults := make([]DraftLineResult, 0, len(input.Lines))
 		for _, line := range input.Lines {
+			var err error
 			lineID := uid.NewUUID()
 			unitAmount := domain.MustGBP(line.UnitAmountMinor)
 			lineAmount := domain.MustGBP(line.LineAmountMinor)
@@ -162,6 +183,14 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 				}
 				if lineAmount.Minor() > 0 {
 					lineAmount = domain.MustGBP(-line.LineAmountMinor)
+				}
+			}
+
+			var lineDetails []byte
+			if line.LineKind == domain.LineKindCoreChildcare && uc.core != nil {
+				lineDetails, err = uc.core.computeCoreLineDetails(ctx, tx, actor, input.ChildID, billingMonth, line)
+				if err != nil {
+					return fmt.Errorf("compute core line details: %w", err)
 				}
 			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{
@@ -179,6 +208,7 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 				FundedDeductionMinutes: line.FundedDeductionMinutes,
 				CoreBillableMinutes:    line.CoreBillableMinutes,
 				SessionCount:           line.SessionCount,
+				Details:                lineDetails,
 			}); insErr != nil {
 				return fmt.Errorf("insert invoice line: %w", insErr)
 			}
