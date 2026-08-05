@@ -633,6 +633,7 @@ func mapInvoiceReviewLines(rows []sqlc.InvoiceLinesForManagerReviewRow) []domain
 				line.FundingModel = &details.FundingModel
 			}
 		}
+		line.Sessions = domain.BuildSessionRows(row.Details, row.LineKind, line.QuantityMinutes, line.LineAmount.Minor())
 		result = append(result, line)
 	}
 	return result
@@ -907,6 +908,7 @@ func (r *Repository) ListInvoiceLinesForParent(ctx context.Context, tenantID, br
 				line.FundingModel = &details.FundingModel
 			}
 		}
+		line.Sessions = domain.BuildSessionRows(row.Details, row.LineKind, line.QuantityMinutes, line.LineAmount.Minor())
 		result = append(result, line)
 	}
 	return result, nil

@@ -1265,6 +1265,7 @@ func toPrefillResponse(r application.ComputeInvoicePrefillResult) prefillRespons
 			FundedDeductionMinutes: l.FundedDeductionMinutes,
 			CoreBillableMinutes:    l.CoreBillableMinutes,
 			SessionCount:           l.SessionCount,
+			Sessions:               toSessionRows(l.Sessions),
 		})
 	}
 
@@ -1380,6 +1381,21 @@ func moneyPtrToIntPtr(m *domain.Money) *int {
 	}
 	v := m.Minor()
 	return &v
+}
+
+func toSessionRows(rows []domain.SessionRow) []sessionRowResponse {
+	out := make([]sessionRowResponse, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, sessionRowResponse{
+			OccurrenceDate:     r.OccurrenceDate.Format("2006-01-02"),
+			StartMinutes:       r.StartMinutes,
+			EndMinutes:         r.EndMinutes,
+			DurationMinutes:    r.DurationMinutes,
+			SessionTypeName:    r.SessionTypeName,
+			SessionAmountMinor: r.SessionAmountMinor,
+		})
+	}
+	return out
 }
 
 func invoiceNumberDisplay(status string, invoiceNumber *string) string {
@@ -1619,6 +1635,7 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 			CoreBillableMinutes:    line.CoreBillableMinutes,
 			SessionCount:           line.SessionCount,
 			FundingModel:           line.FundingModel,
+			Sessions:               toSessionRows(line.Sessions),
 		})
 	}
 
@@ -1860,6 +1877,7 @@ func toParentInvoiceDetailResponse(r application.GetParentInvoiceResult) parentI
 			UnitAmountMinor: moneyPtrToIntPtr(line.UnitAmount),
 			LineAmountMinor: line.LineAmount.Minor(),
 			FundingModel:    line.FundingModel,
+			Sessions:        toSessionRows(line.Sessions),
 		})
 	}
 

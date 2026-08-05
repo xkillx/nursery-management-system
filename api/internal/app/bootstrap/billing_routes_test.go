@@ -1625,7 +1625,6 @@ func TestInvoiceDetailDraft(t *testing.T) {
 	invoiceID := uuid.MustParse("c8000000-0000-0000-0000-000000000001")
 	lineID1 := uuid.MustParse("c9000000-0000-0000-0000-000000000001")
 	lineID2 := uuid.MustParse("c9000000-0000-0000-0000-000000000002")
-	sessionID := uuid.MustParse("c9000000-0000-0000-0000-000000000003")
 
 	dbtest.InsertChild(t, h.pool, childID, h.tenantID, h.branchID, "Detail Child",
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), true)
@@ -1641,7 +1640,7 @@ func TestInvoiceDetailDraft(t *testing.T) {
 		t.Fatalf("insert run: %v", err)
 	}
 
-	calcDetails := `{"billing_month":"2026-05","child_id":"` + childID.String() + `","core_hourly_rate_minor":500,"core_subtotal_minor":4000,"extras_total_minor":0,"manual_extras_supported":false,"funded_allowance_minutes":300,"funded_deduction_minutes":300,"core_billable_minutes":180,"raw_attended_minutes":480,"rounded_attended_minutes":480,"included_session_count":1,"source_sessions":[{"session_id":"` + sessionID.String() + `","status":"complete","check_in_at":"2026-05-15T08:00:00Z","check_out_at":"2026-05-15T16:00:00Z","raw_elapsed_minutes":480,"rounded_billable_minutes":480}]}`
+	calcDetails := `{"billing_month":"2026-05","child_id":"` + childID.String() + `","core_hourly_rate_minor":500,"booked_core_minutes":480,"core_subtotal_minor":4000,"extras_total_minor":0,"manual_extras_supported":false,"funded_allowance_minutes":300,"funded_deduction_minutes":300,"core_billable_minutes":180,"booking_id":"` + uuid.MustParse("b2000000-0000-0000-0000-000000000001").String() + `","booked_sessions":[{"DayOfWeek":1,"OccurrenceDate":"2026-05-04T00:00:00Z","DurationMinutes":480,"SessionTypeID":"st1","SessionTypeName":"Full Day"}],"booked_per_entry":[]}`
 
 	_, err = h.pool.Exec(ctx,
 		`INSERT INTO invoices (id, tenant_id, branch_id, child_id, billing_month, invoice_kind, status, currency_code, generated_run_id, subtotal_minor, funded_deduction_minor, total_due_minor, period_start_date, period_end_date, calculation_details)
@@ -1653,10 +1652,11 @@ func TestInvoiceDetailDraft(t *testing.T) {
 	}
 
 	// Insert invoice lines
+	coreDetails := `{"booked_core_minutes":480,"booked_sessions":[{"DayOfWeek":1,"OccurrenceDate":"2026-05-04T00:00:00Z","DurationMinutes":480,"SessionTypeID":"st1","SessionTypeName":"Full Day","StartMinutes":480,"EndMinutes":960,"SessionAmountMinor":4000}],"booked_per_entry":[]}`
 	_, err = h.pool.Exec(ctx,
-		`INSERT INTO invoice_lines (id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order, quantity_minutes, unit_amount_minor, line_amount_minor, raw_attended_minutes, rounded_attended_minutes, session_count)
-		 VALUES ($1, $2, $3, $4, 'core_childcare', 'Core childcare', 1, 480, 500, 4000, 480, 480, 1)`,
-		lineID1, h.tenantID, h.branchID, invoiceID)
+		`INSERT INTO invoice_lines (id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order, quantity_minutes, unit_amount_minor, line_amount_minor, raw_attended_minutes, rounded_attended_minutes, session_count, details)
+		 VALUES ($1, $2, $3, $4, 'core_childcare', 'Core childcare', 1, 480, 500, 4000, 480, 480, 1, $5)`,
+		lineID1, h.tenantID, h.branchID, invoiceID, coreDetails)
 	if err != nil {
 		t.Fatalf("insert line 1: %v", err)
 	}
@@ -1709,18 +1709,36 @@ func TestInvoiceDetailDraft(t *testing.T) {
 		t.Fatalf("expected line 1 kind 'funded_deduction', got %s", resp.Lines[1].LineKind)
 	}
 
+	// Sessions: core line exposes the per-session breakdown; non-core line an
+	// empty array.
+	if len(resp.Lines[0].Sessions) != 1 {
+		t.Fatalf("expected 1 session on core line, got %d", len(resp.Lines[0].Sessions))
+	}
+	if resp.Lines[0].Sessions[0].OccurrenceDate != "2026-05-04" {
+		t.Fatalf("expected session occurrence_date '2026-05-04', got %s", resp.Lines[0].Sessions[0].OccurrenceDate)
+	}
+	if resp.Lines[0].Sessions[0].SessionAmountMinor != 4000 {
+		t.Fatalf("expected session amount 4000, got %d", resp.Lines[0].Sessions[0].SessionAmountMinor)
+	}
+	if len(resp.Lines[1].Sessions) != 0 {
+		t.Fatalf("expected 0 sessions on funded deduction line, got %d", len(resp.Lines[1].Sessions))
+	}
+
 	// Calculation
 	if resp.Calculation.CoreHourlyRateMinor != 500 {
 		t.Fatalf("expected core_hourly_rate_minor 500, got %d", resp.Calculation.CoreHourlyRateMinor)
 	}
-	if resp.Calculation.RawAttendedMinutes != 480 {
-		t.Fatalf("expected raw_attended_minutes 480, got %d", resp.Calculation.RawAttendedMinutes)
+	if resp.Calculation.BookedCoreMinutes != 480 {
+		t.Fatalf("expected booked_core_minutes 480, got %d", resp.Calculation.BookedCoreMinutes)
 	}
-	if len(resp.Calculation.SourceSessions) != 1 {
-		t.Fatalf("expected 1 source session, got %d", len(resp.Calculation.SourceSessions))
+	if resp.Calculation.BookedSessionCount != 1 {
+		t.Fatalf("expected booked_session_count 1, got %d", resp.Calculation.BookedSessionCount)
 	}
-	if resp.Calculation.SourceSessions[0].CheckInAt != "2026-05-15T08:00:00Z" {
-		t.Fatalf("expected source session check_in_at '2026-05-15T08:00:00Z', got %s", resp.Calculation.SourceSessions[0].CheckInAt)
+	if len(resp.Calculation.BookedSessions) != 1 {
+		t.Fatalf("expected 1 booked session in calculation, got %d", len(resp.Calculation.BookedSessions))
+	}
+	if resp.Calculation.BookedSessions[0].OccurrenceDate != "2026-05-04" {
+		t.Fatalf("expected booked session occurrence_date '2026-05-04', got %s", resp.Calculation.BookedSessions[0].OccurrenceDate)
 	}
 
 	// Exceptions
@@ -1905,26 +1923,36 @@ type invoiceDetailResponseTest struct {
 }
 
 type invoiceLineResponseTest struct {
-	LineID          string `json:"line_id"`
-	LineKind        string `json:"line_kind"`
-	Description     string `json:"description"`
-	SortOrder       int    `json:"sort_order"`
-	LineAmountMinor int    `json:"line_amount_minor"`
+	LineID          string                   `json:"line_id"`
+	LineKind        string                   `json:"line_kind"`
+	Description     string                   `json:"description"`
+	SortOrder       int                      `json:"sort_order"`
+	LineAmountMinor int                      `json:"line_amount_minor"`
+	Sessions        []sessionRowResponseTest `json:"sessions"`
+}
+
+type sessionRowResponseTest struct {
+	OccurrenceDate     string `json:"occurrence_date"`
+	StartMinutes       int    `json:"start_minutes"`
+	EndMinutes         int    `json:"end_minutes"`
+	DurationMinutes    int    `json:"duration_minutes"`
+	SessionTypeName    string `json:"session_type_name"`
+	SessionAmountMinor int    `json:"session_amount_minor"`
 }
 
 type invoiceCalculationResponseTest struct {
-	CoreHourlyRateMinor    int                         `json:"core_hourly_rate_minor"`
-	RawAttendedMinutes     int                         `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int                         `json:"rounded_attended_minutes"`
-	CoreBillableMinutes    int                         `json:"core_billable_minutes"`
-	IncludedSessionCount   int                         `json:"included_session_count"`
-	SourceSessions         []sourceSessionResponseTest `json:"source_sessions"`
+	CoreHourlyRateMinor int                         `json:"core_hourly_rate_minor"`
+	BookedCoreMinutes   int                         `json:"booked_core_minutes"`
+	BookedSessionCount  int                         `json:"booked_session_count"`
+	CoreBillableMinutes int                         `json:"core_billable_minutes"`
+	CoreSubtotalMinor   int                         `json:"core_subtotal_minor"`
+	BookedSessions      []bookedSessionResponseTest `json:"booked_sessions"`
 }
 
-type sourceSessionResponseTest struct {
-	SessionID string `json:"session_id"`
-	Status    string `json:"status"`
-	CheckInAt string `json:"check_in_at"`
+type bookedSessionResponseTest struct {
+	OccurrenceDate  string `json:"occurrence_date"`
+	DurationMinutes int    `json:"duration_minutes"`
+	SessionTypeName string `json:"session_type_name"`
 }
 
 type invoiceRunExceptionResponseTest struct {

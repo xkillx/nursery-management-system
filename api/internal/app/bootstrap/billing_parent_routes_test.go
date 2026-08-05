@@ -29,7 +29,7 @@ func seedParentAccessChain(t *testing.T, h *billingHarness, suffix string, child
 		dbtest.DateAt(2023, 1, 1), dbtest.DateAt(2026, 1, 1), childIsActive)
 	dbtest.InsertGuardian(t, h.pool, guardianID, h.tenantID, h.branchID, "Guardian "+childName, true)
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
-	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, guardianID)
+	dbtest.InsertParentMapping(t, h.pool, mappingID, h.tenantID, h.branchID, h.parentMID, childID)
 
 	return childID, guardianID, linkID, mappingID
 }
@@ -112,7 +112,7 @@ func seedIssuedInvoiceWithLines(t *testing.T, h *billingHarness, suffix string, 
 		t.Fatalf("insert invoice run for lines test: %v", err)
 	}
 
-	calcDetails := `{"billing_month":"2026-05","child_id":"` + childID.String() + `","core_hourly_rate_minor":500,"core_subtotal_minor":4000,"extras_total_minor":0,"manual_extras_supported":false,"funded_allowance_minutes":300,"funded_deduction_minutes":300,"core_billable_minutes":180,"raw_attended_minutes":480,"rounded_attended_minutes":480,"included_session_count":1}`
+	calcDetails := `{"billing_month":"2026-05","child_id":"` + childID.String() + `","core_hourly_rate_minor":500,"booked_core_minutes":480,"core_subtotal_minor":4000,"extras_total_minor":0,"manual_extras_supported":false,"funded_allowance_minutes":300,"funded_deduction_minutes":300,"core_billable_minutes":180,"booking_id":"` + uuid.MustParse("b2000000-0000-0000-0000-000000000001").String() + `","booked_sessions":[{"DayOfWeek":1,"OccurrenceDate":"2026-05-04T00:00:00Z","DurationMinutes":480,"SessionTypeID":"st1","SessionTypeName":"Full Day"}],"booked_per_entry":[]}`
 
 	// Insert as draft first (so lines can be inserted)
 	_, err = h.pool.Exec(ctx,
@@ -130,10 +130,11 @@ func seedIssuedInvoiceWithLines(t *testing.T, h *billingHarness, suffix string, 
 
 	// Core childcare line
 	line1 := uuid.MustParse(fmt.Sprintf("f7000000-0000-0000-0000-%012s", suffix))
+	coreDetails := `{"booked_core_minutes":480,"booked_sessions":[{"DayOfWeek":1,"OccurrenceDate":"2026-05-04T00:00:00Z","DurationMinutes":480,"SessionTypeID":"st1","SessionTypeName":"Full Day","StartMinutes":480,"EndMinutes":960,"SessionAmountMinor":4000}],"booked_per_entry":[]}`
 	_, err = h.pool.Exec(ctx,
-		`INSERT INTO invoice_lines (id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order, quantity_minutes, unit_amount_minor, line_amount_minor, raw_attended_minutes, rounded_attended_minutes, session_count)
-		 VALUES ($1, $2, $3, $4, 'core_childcare', 'Core childcare', 1, 480, 500, 4000, 480, 480, 1)`,
-		line1, h.tenantID, h.branchID, invoiceID)
+		`INSERT INTO invoice_lines (id, tenant_id, branch_id, invoice_id, line_kind, description, sort_order, quantity_minutes, unit_amount_minor, line_amount_minor, raw_attended_minutes, rounded_attended_minutes, session_count, details)
+		 VALUES ($1, $2, $3, $4, 'core_childcare', 'Core childcare', 1, 480, 500, 4000, 480, 480, 1, $5)`,
+		line1, h.tenantID, h.branchID, invoiceID, coreDetails)
 	if err != nil {
 		t.Fatalf("insert core line: %v", err)
 	}
@@ -651,17 +652,14 @@ func TestParentInvoiceDetailLinkedIssued(t *testing.T) {
 	if resp.Calculation.CoreHourlyRateMinor != 500 {
 		t.Fatalf("expected core_hourly_rate_minor 500, got %d", resp.Calculation.CoreHourlyRateMinor)
 	}
-	if resp.Calculation.RawAttendedMinutes != 480 {
-		t.Fatalf("expected raw_attended_minutes 480, got %d", resp.Calculation.RawAttendedMinutes)
-	}
-	if resp.Calculation.RoundedAttendedMinutes != 480 {
-		t.Fatalf("expected rounded_attended_minutes 480, got %d", resp.Calculation.RoundedAttendedMinutes)
+	if resp.Calculation.BookedCoreMinutes != 480 {
+		t.Fatalf("expected booked_core_minutes 480, got %d", resp.Calculation.BookedCoreMinutes)
 	}
 	if resp.Calculation.FundedAllowanceMinutes != 300 {
 		t.Fatalf("expected funded_allowance_minutes 300, got %d", resp.Calculation.FundedAllowanceMinutes)
 	}
-	if resp.Calculation.IncludedSessionCount != 1 {
-		t.Fatalf("expected included_session_count 1, got %d", resp.Calculation.IncludedSessionCount)
+	if resp.Calculation.BookedSessionCount != 1 {
+		t.Fatalf("expected booked_session_count 1, got %d", resp.Calculation.BookedSessionCount)
 	}
 	if resp.Calculation.CoreSubtotalMinor != 4000 {
 		t.Fatalf("expected core_subtotal_minor 4000, got %d", resp.Calculation.CoreSubtotalMinor)
@@ -682,6 +680,25 @@ func TestParentInvoiceDetailLinkedIssued(t *testing.T) {
 	}
 	if resp.Lines[1].LineAmountMinor != -2500 {
 		t.Fatalf("expected line 1 amount -2500, got %d", resp.Lines[1].LineAmountMinor)
+	}
+
+	// Sessions: core line exposes the per-session breakdown, sorted
+	// chronologically; non-core line exposes an empty array.
+	if len(resp.Lines[0].Sessions) != 1 {
+		t.Fatalf("expected 1 session on core line, got %d", len(resp.Lines[0].Sessions))
+	}
+	s := resp.Lines[0].Sessions[0]
+	if s.OccurrenceDate != "2026-05-04" {
+		t.Errorf("session occurrence_date = %q, want 2026-05-04", s.OccurrenceDate)
+	}
+	if s.SessionTypeName != "Full Day" {
+		t.Errorf("session type name = %q, want Full Day", s.SessionTypeName)
+	}
+	if s.SessionAmountMinor != 4000 {
+		t.Errorf("session amount = %d, want 4000", s.SessionAmountMinor)
+	}
+	if len(resp.Lines[1].Sessions) != 0 {
+		t.Errorf("expected 0 sessions on funded deduction line, got %d", len(resp.Lines[1].Sessions))
 	}
 }
 
@@ -995,22 +1012,22 @@ type parentInvoiceDetailResponseTest struct {
 }
 
 type parentInvoiceLineResponseTest struct {
-	LineKind        string `json:"line_kind"`
-	Description     string `json:"description"`
-	SortOrder       int    `json:"sort_order"`
-	QuantityMinutes *int   `json:"quantity_minutes"`
-	UnitAmountMinor *int   `json:"unit_amount_minor"`
-	LineAmountMinor int    `json:"line_amount_minor"`
+	LineKind        string                   `json:"line_kind"`
+	Description     string                   `json:"description"`
+	SortOrder       int                      `json:"sort_order"`
+	QuantityMinutes *int                     `json:"quantity_minutes"`
+	UnitAmountMinor *int                     `json:"unit_amount_minor"`
+	LineAmountMinor int                      `json:"line_amount_minor"`
+	Sessions        []sessionRowResponseTest `json:"sessions"`
 }
 
 type parentInvoiceCalculationResponseTest struct {
 	CoreHourlyRateMinor    int `json:"core_hourly_rate_minor"`
-	RawAttendedMinutes     int `json:"raw_attended_minutes"`
-	RoundedAttendedMinutes int `json:"rounded_attended_minutes"`
+	BookedCoreMinutes      int `json:"booked_core_minutes"`
+	BookedSessionCount     int `json:"booked_session_count"`
 	FundedAllowanceMinutes int `json:"funded_allowance_minutes"`
 	FundedDeductionMinutes int `json:"funded_deduction_minutes"`
 	CoreBillableMinutes    int `json:"core_billable_minutes"`
-	IncludedSessionCount   int `json:"included_session_count"`
 	CoreSubtotalMinor      int `json:"core_subtotal_minor"`
 	ExtrasTotalMinor       int `json:"extras_total_minor"`
 }

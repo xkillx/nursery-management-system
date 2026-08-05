@@ -204,18 +204,28 @@ type invoiceDetailResponse struct {
 }
 
 type invoiceLineResponse struct {
-	LineID                 string  `json:"line_id"`
-	LineKind               string  `json:"line_kind"`
-	Description            string  `json:"description"`
-	SortOrder              int     `json:"sort_order"`
-	QuantityMinutes        *int    `json:"quantity_minutes"`
-	UnitAmountMinor        *int    `json:"unit_amount_minor"`
-	LineAmountMinor        int     `json:"line_amount_minor"`
-	FundedAllowanceMinutes *int    `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes *int    `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    *int    `json:"core_billable_minutes"`
-	SessionCount           *int    `json:"session_count"`
-	FundingModel           *string `json:"funding_model,omitempty"`
+	LineID                 string               `json:"line_id"`
+	LineKind               string               `json:"line_kind"`
+	Description            string               `json:"description"`
+	SortOrder              int                  `json:"sort_order"`
+	QuantityMinutes        *int                 `json:"quantity_minutes"`
+	UnitAmountMinor        *int                 `json:"unit_amount_minor"`
+	LineAmountMinor        int                  `json:"line_amount_minor"`
+	FundedAllowanceMinutes *int                 `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes *int                 `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    *int                 `json:"core_billable_minutes"`
+	SessionCount           *int                 `json:"session_count"`
+	FundingModel           *string              `json:"funding_model,omitempty"`
+	Sessions               []sessionRowResponse `json:"sessions"`
+}
+
+type sessionRowResponse struct {
+	OccurrenceDate     string `json:"occurrence_date"`
+	StartMinutes       int    `json:"start_minutes"`
+	EndMinutes         int    `json:"end_minutes"`
+	DurationMinutes    int    `json:"duration_minutes"`
+	SessionTypeName    string `json:"session_type_name"`
+	SessionAmountMinor int    `json:"session_amount_minor"`
 }
 
 type invoiceCalculationResponse struct {
@@ -463,13 +473,14 @@ type parentInvoiceDetailResponse struct {
 }
 
 type parentInvoiceLineResponse struct {
-	LineKind        string  `json:"line_kind"`
-	Description     string  `json:"description"`
-	SortOrder       int     `json:"sort_order"`
-	QuantityMinutes *int    `json:"quantity_minutes"`
-	UnitAmountMinor *int    `json:"unit_amount_minor"`
-	LineAmountMinor int     `json:"line_amount_minor"`
-	FundingModel    *string `json:"funding_model,omitempty"`
+	LineKind        string               `json:"line_kind"`
+	Description     string               `json:"description"`
+	SortOrder       int                  `json:"sort_order"`
+	QuantityMinutes *int                 `json:"quantity_minutes"`
+	UnitAmountMinor *int                 `json:"unit_amount_minor"`
+	LineAmountMinor int                  `json:"line_amount_minor"`
+	FundingModel    *string              `json:"funding_model,omitempty"`
+	Sessions        []sessionRowResponse `json:"sessions"`
 }
 
 // --- Invoice Prefill DTOs ---
@@ -497,16 +508,17 @@ type entitlementResponse struct {
 }
 
 type prefillLineResponse struct {
-	LineKind               string `json:"line_kind"`
-	Description            string `json:"description"`
-	SortOrder              int    `json:"sort_order"`
-	QuantityMinutes        int    `json:"quantity_minutes"`
-	UnitAmountMinor        int    `json:"unit_amount_minor"`
-	LineAmountMinor        int    `json:"line_amount_minor"`
-	FundedAllowanceMinutes int    `json:"funded_allowance_minutes"`
-	FundedDeductionMinutes int    `json:"funded_deduction_minutes"`
-	CoreBillableMinutes    int    `json:"core_billable_minutes"`
-	SessionCount           int    `json:"session_count"`
+	LineKind               string               `json:"line_kind"`
+	Description            string               `json:"description"`
+	SortOrder              int                  `json:"sort_order"`
+	QuantityMinutes        int                  `json:"quantity_minutes"`
+	UnitAmountMinor        int                  `json:"unit_amount_minor"`
+	LineAmountMinor        int                  `json:"line_amount_minor"`
+	FundedAllowanceMinutes int                  `json:"funded_allowance_minutes"`
+	FundedDeductionMinutes int                  `json:"funded_deduction_minutes"`
+	CoreBillableMinutes    int                  `json:"core_billable_minutes"`
+	SessionCount           int                  `json:"session_count"`
+	Sessions               []sessionRowResponse `json:"sessions"`
 }
 
 // --- Create Draft Invoice DTOs ---

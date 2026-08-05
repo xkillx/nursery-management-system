@@ -55,6 +55,7 @@ type ParentInvoiceLineRow struct {
 	UnitAmount      *Money
 	LineAmount      Money
 	FundingModel    *string
+	Sessions        []SessionRow
 }
 
 // ParentInvoiceDetail is the full detail response for a parent invoice.
