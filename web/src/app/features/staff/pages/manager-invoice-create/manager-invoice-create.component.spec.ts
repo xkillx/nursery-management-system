@@ -37,7 +37,7 @@ const mockPrefill = {
   lines: [
     {
       lineKind: 'core_childcare',
-      description: 'Core Childcare',
+      description: 'May 2026 Recurring Booking',
       sortOrder: 1,
       quantityHours: 4800,
       unitAmountMinor: 6500,
@@ -209,6 +209,31 @@ describe('ManagerInvoiceCreateComponent', () => {
 
       component.updateLine('core-1', 'description', 'Core childcare (updated)');
       expect(component.lines()[0].sessions?.length).toBe(1);
+    });
+
+    it('prefill core line carries the month-scoped booking label', () => {
+      const core = toFormLine(mockPrefill.lines[0], 'auto-1');
+      expect(core.description).toBe('May 2026 Recurring Booking');
+    });
+
+    it('preserves session sub-rows when renaming core description to the new label', () => {
+      const core = toFormLine(mockPrefill.lines[0], 'core-1');
+      core.sessions = [
+        { occurrenceDate: '2026-07-06', startMinutes: 480, endMinutes: 720, durationMinutes: 240, sessionTypeName: 'Morning', sessionAmountMinor: 6500 },
+      ];
+      component.lines.set([core]);
+
+      component.updateLine('core-1', 'description', 'Wrap-around care');
+      expect(component.lines()[0].sessions?.length).toBe(1);
+      expect(component.lines()[0].description).toBe('Wrap-around care');
+    });
+
+    it('trims whitespace around description edits', () => {
+      const core = toFormLine(mockPrefill.lines[0], 'core-1');
+      component.lines.set([core]);
+
+      component.updateLine('core-1', 'description', '  Wrap-around care  ');
+      expect(component.lines()[0].description).toBe('Wrap-around care');
     });
 
     it('addPresetLine adds a preset extra line', () => {

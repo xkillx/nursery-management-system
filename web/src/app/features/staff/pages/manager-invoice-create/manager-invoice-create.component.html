@@ -380,6 +380,7 @@
                           [ngModel]="line.description"
                           (ngModelChange)="updateLine(line.id, 'description', $event)"
                           placeholder="e.g. Late Pickup, Extra Session..."
+                          maxlength="120"
                         />
                       }
                     </td>

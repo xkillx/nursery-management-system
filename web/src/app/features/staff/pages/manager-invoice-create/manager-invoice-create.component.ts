@@ -493,7 +493,11 @@ export class ManagerInvoiceCreateComponent implements OnInit {
     this.lines.update((prev) =>
       prev.map((l) => {
         if (l.id !== lineId) return l;
-        const updated = { ...l, [field]: value };
+        let nextValue: number | string = value;
+        if (field === 'description') {
+          nextValue = String(value).trim();
+        }
+        const updated = { ...l, [field]: nextValue };
         if (field === 'quantityHours' || field === 'unitAmountMinor') {
           const q = typeof updated.quantityHours === 'number' ? updated.quantityHours : 0;
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
