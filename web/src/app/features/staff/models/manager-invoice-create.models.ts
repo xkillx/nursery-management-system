@@ -9,6 +9,8 @@ export interface ManagerInvoicePrefillLine {
   fundedDeductionMinutes: number;
   coreBillableMinutes: number;
   sessionCount: number;
+  descriptionOverride: boolean;
+  hourlyBookingId: string | null;
   sessions: InvoiceSession[];
 }
 
@@ -50,6 +52,8 @@ export interface FormInvoiceLine {
   coreBillableMinutes: number;
   sessionCount: number;
   isFundingOffset: boolean;
+  descriptionOverride?: boolean;
+  hourlyBookingId?: string | null;
   sessions?: InvoiceSession[];
 }
 

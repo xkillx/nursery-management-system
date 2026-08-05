@@ -121,7 +121,7 @@
             <div class="border-b border-gray-200/70 bg-gray-50/40 p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.02] flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">Line Items</h2>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Core childcare, extras, and government funding deductions</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Recurring bookings, extras, and government funding deductions — labels are editable on drafts</p>
               </div>
               <span class="rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/10 dark:border-brand-500/20 dark:text-brand-300">
                 Currency: GBP (£)
@@ -142,41 +142,32 @@
                   @for (line of lines(); track line.id) {
                     <tr class="group transition-colors hover:bg-gray-50/60 dark:hover:bg-white/[0.01]">
                       <td class="px-6 py-4">
-                        @if (isEditableLine(line)) {
-                          <input
-                            type="text"
-                            [ngModel]="line.description"
-                            (ngModelChange)="updateLine(line.id, 'description', $event)"
-                            class="w-full bg-transparent border-none text-sm text-gray-900 dark:text-white focus:ring-0 outline-none"
-                            placeholder="Description"
-                            [aria-label]="'Description for ' + (line.description || 'line item')"
-                          />
-                        } @else {
-                          <p
-                            class="text-sm font-bold"
-                            [class.text-orange-900]="line.lineKind === 'funded_deduction'"
-                            [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'"
-                            [class.text-gray-900]="line.lineKind !== 'funded_deduction'"
-                            [class.dark:text-white]="line.lineKind !== 'funded_deduction'"
-                          >
-                            {{ line.description }}
-                          </p>
-                          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                            @if (line.lineKind === 'core_childcare') {
-                              Standard full-day rate
-                            } @else if (line.lineKind === 'funded_deduction') {
-                              <span class="inline-flex items-center gap-1.5 text-orange-700 dark:text-orange-400 font-medium">
-                                <span class="inline-block size-1.5 rounded-full bg-orange-500"></span>
-                                Government funding offset
-                              </span>
-                            } @else {
-                              System calculated
-                            }
-                          </p>
-                        }
+                        <input
+                          type="text"
+                          [ngModel]="line.description"
+                          (ngModelChange)="updateLine(line.id, 'description', $event)"
+                          class="w-full bg-transparent border-none text-sm text-gray-900 dark:text-white focus:ring-0 outline-none"
+                          placeholder="Description"
+                          maxlength="120"
+                          [aria-label]="'Description for ' + (line.description || 'line item')"
+                        />
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          @if (line.lineKind === 'core_childcare') {
+                            Recurring core booking — editable label
+                          } @else if (line.lineKind === 'funded_deduction') {
+                            <span class="inline-flex items-center gap-1.5 text-orange-700 dark:text-orange-400 font-medium">
+                              <span class="inline-block size-1.5 rounded-full bg-orange-500"></span>
+                              Government funding offset — editable label
+                            </span>
+                          } @else if (line.lineKind === 'hourly') {
+                            System calculated — editable label
+                          } @else {
+                            Custom line item
+                          }
+                        </p>
                       </td>
                       <td class="px-4 py-4 text-right">
-                        @if (isEditableLine(line)) {
+                        @if (isValueEditableLine(line)) {
                           <input
                             type="number"
                             [ngModel]="line.quantityHours"
@@ -193,7 +184,7 @@
                         }
                       </td>
                       <td class="px-4 py-4 text-right">
-                        @if (isEditableLine(line)) {
+                        @if (isValueEditableLine(line)) {
                           <input
                             type="number"
                             [ngModel]="line.unitAmountMinor"
@@ -222,7 +213,7 @@
                         }
                       </td>
                       <td class="px-4 py-4 text-center">
-                        @if (isEditableLine(line)) {
+                        @if (isValueEditableLine(line)) {
                           <button
                             type="button"
                             class="p-1.5 rounded-lg text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors opacity-0 group-hover:opacity-100"

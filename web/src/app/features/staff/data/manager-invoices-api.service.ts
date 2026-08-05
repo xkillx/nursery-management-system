@@ -90,6 +90,8 @@ interface InvoiceLineApi {
   core_billable_minutes?: number | null;
   session_count?: number | null;
   funding_model?: string | null;
+  description_override?: boolean | null;
+  hourly_booking_id?: string | null;
   sessions?: InvoiceSessionApi[] | null;
 }
 
@@ -358,7 +360,7 @@ export class ManagerInvoicesApiService {
     return this.http.post<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines`), {
       line_kind: input.lineKind,
       description: input.description,
-      quantity_minutes: input.quantityHours * 60,
+      quantity_minutes: Math.round(input.quantityHours * 60),
       unit_amount_minor: input.unitAmountMinor,
       line_amount_minor: input.lineAmountMinor,
     });
@@ -367,7 +369,7 @@ export class ManagerInvoicesApiService {
   updateLine(invoiceId: string, lineId: string, input: UpdateInvoiceLineInput): Observable<InvoiceLineResult> {
     return this.http.put<InvoiceLineResult>(apiUrl(`/invoices/${invoiceId}/lines/${lineId}`), {
       description: input.description,
-      quantity_minutes: input.quantityHours * 60,
+      quantity_minutes: Math.round(input.quantityHours * 60),
       unit_amount_minor: input.unitAmountMinor,
       line_amount_minor: input.lineAmountMinor,
     });
@@ -641,6 +643,8 @@ export class ManagerInvoicesApiService {
       coreBillableMinutes: l.core_billable_minutes ?? null,
       sessionCount: l.session_count ?? null,
       fundingModel: l.funding_model ?? null,
+      descriptionOverride: l.description_override ?? false,
+      hourlyBookingId: l.hourly_booking_id ?? null,
       sessions: (l.sessions ?? []).map((s) => this.toSession(s)),
     };
   }

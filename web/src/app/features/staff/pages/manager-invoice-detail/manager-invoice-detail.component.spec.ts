@@ -84,6 +84,8 @@ const issuedDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+      descriptionOverride: false,
+      hourlyBookingId: null,
       sessions: [
         { occurrenceDate: '2026-05-04', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 },
         { occurrenceDate: '2026-05-11', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 },
@@ -104,6 +106,8 @@ const issuedDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+      descriptionOverride: false,
+      hourlyBookingId: null,
       sessions: [],
     },
   ],

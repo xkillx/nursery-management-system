@@ -60,7 +60,7 @@ const draftDetail: ManagerInvoiceDetail = {
     {
       lineId: 'l1',
       lineKind: 'core_childcare',
-      description: 'Core childcare',
+      description: 'May 2026 Recurring Booking',
       sortOrder: 1,
       quantityHours: 1320,
       unitAmountMinor: 25,
@@ -72,14 +72,15 @@ const draftDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
-    
+      descriptionOverride: false,
+      hourlyBookingId: null,
       sessions: [],
     },
 
     {
       lineId: 'l2',
       lineKind: 'funded_deduction',
-      description: 'Funded deduction',
+      description: 'Funded hours deduction',
       sortOrder: 2,
       quantityHours: 360,
       unitAmountMinor: 25,
@@ -91,7 +92,8 @@ const draftDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
-    
+      descriptionOverride: false,
+      hourlyBookingId: null,
       sessions: [],
     },
 
@@ -110,7 +112,8 @@ const draftDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
-    
+      descriptionOverride: false,
+      hourlyBookingId: null,
       sessions: [],
     },
 
@@ -165,8 +168,8 @@ describe('ManagerInvoiceEditComponent', () => {
       billingMonth: '2026-05',
       entitlementStatus: { fundingProfileId: 'fp1', fundedAllowanceMinutes: 360, statusLabel: 'Standard' },
       lines: [
-        { lineKind: 'core_childcare', description: 'Core childcare', sortOrder: 1, quantityHours: 1320, unitAmountMinor: 25, lineAmountMinor: 33000, fundedAllowanceMinutes: 0, fundedDeductionMinutes: 0, coreBillableMinutes: 960, sessionCount: 4 },
-        { lineKind: 'funded_deduction', description: 'Funded deduction', sortOrder: 2, quantityHours: 360, unitAmountMinor: 25, lineAmountMinor: -9000, fundedAllowanceMinutes: 360, fundedDeductionMinutes: 360, coreBillableMinutes: 0, sessionCount: 0 },
+        { lineKind: 'core_childcare', description: 'May 2026 Recurring Booking', sortOrder: 1, quantityHours: 1320, unitAmountMinor: 25, lineAmountMinor: 33000, fundedAllowanceMinutes: 0, fundedDeductionMinutes: 0, coreBillableMinutes: 960, sessionCount: 4 },
+        { lineKind: 'funded_deduction', description: 'Funded hours deduction', sortOrder: 2, quantityHours: 360, unitAmountMinor: 25, lineAmountMinor: -9000, fundedAllowanceMinutes: 360, fundedDeductionMinutes: 360, coreBillableMinutes: 0, sessionCount: 0 },
       ],
       subtotalMinor: 33000,
       fundedDeductionMinor: 9000,
@@ -215,18 +218,29 @@ describe('ManagerInvoiceEditComponent', () => {
 
     it('displays all line items in the table', () => {
       createFixture();
-      const text = fixture.nativeElement.textContent;
-      expect(text).toContain('Core childcare');
-      expect(text).toContain('Funded deduction');
+      fixture.detectChanges();
       const comp = fixture.componentInstance;
-      expect(comp.lines().some((l) => l.description === 'Late pick-up')).toBeTrue();
+      const descs = comp.lines().map((l) => l.description);
+      expect(descs).toContain('May 2026 Recurring Booking');
+      expect(descs).toContain('Funded hours deduction');
+      expect(descs).toContain('Late pick-up');
     });
 
-    it('renders system lines as read-only (no input fields for system lines)', () => {
+    it('renders a description input for every line kind', () => {
       createFixture();
       const inputs: HTMLInputElement[] = fixture.nativeElement.querySelectorAll('input');
       const descriptions = Array.from(inputs).filter((i) => i.placeholder === 'Description');
-      expect(descriptions.length).toBe(1);
+      expect(descriptions.length).toBe(3);
+    });
+
+    it('renders system line quantity/unit cells read-only but description editable', () => {
+      createFixture();
+      const inputs: HTMLInputElement[] = fixture.nativeElement.querySelectorAll('input');
+      const editableQty = Array.from(inputs).filter((i) => i.type === 'number' && i.step === '1');
+      // Only the extra line has an editable quantity input.
+      expect(editableQty.length).toBe(1);
+      const unitInputs = Array.from(inputs).filter((i) => i.type === 'number' && i.step === '0.01');
+      expect(unitInputs.length).toBe(0);
     });
 
     it('shows summary sidebar with correct totals', () => {
@@ -334,11 +348,11 @@ describe('ManagerInvoiceEditComponent', () => {
       expect(comp.lines().find((l) => l.id === 'l3')).toBeUndefined();
     });
 
-    it('prevents editing system-generated lines (no edit controls rendered)', () => {
+    it('makes every line kind description-editable', () => {
       createFixture();
       const inputs: HTMLInputElement[] = fixture.nativeElement.querySelectorAll('input');
       const descriptionInputs = Array.from(inputs).filter((i) => i.placeholder === 'Description');
-      expect(descriptionInputs.length).toBe(1);
+      expect(descriptionInputs.length).toBe(3);
     });
 
     it('regenerates system lines while preserving manual lines', () => {
@@ -350,6 +364,61 @@ describe('ManagerInvoiceEditComponent', () => {
       const lines = comp.lines();
       expect(lines.some((l) => l.lineKind === 'core_childcare')).toBe(true);
       expect(lines.some((l) => l.lineKind === 'extra')).toBe(true);
+    });
+
+    it('updates a core line description through the editable input', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      comp.updateLine('l1', 'description', 'Wrap-around care');
+      expect(comp.lines().find((l) => l.id === 'l1')?.description).toBe('Wrap-around care');
+    });
+
+    it('preserves core session sub-rows on description-only edit', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      comp.lines.update((prev) =>
+        prev.map((l) =>
+          l.id === 'l1'
+            ? { ...l, sessions: [{ occurrenceDate: '2026-05-04', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 }] }
+            : l,
+        ),
+      );
+      comp.updateLine('l1', 'description', 'Wrap-around care');
+      expect(comp.lines().find((l) => l.id === 'l1')?.sessions?.length).toBe(1);
+    });
+
+    it('regenerate keeps renamed core label and its real ID for Save', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      // Rename the core line, then regenerate: prefill default is overridden
+      // by the human label which must survive with its real line ID.
+      comp.updateLine('l1', 'description', 'Wrap-around care');
+      comp.regenerate();
+      fixture.detectChanges();
+      const core = comp.lines().find((l) => l.lineKind === 'core_childcare');
+      expect(core?.description).toBe('Wrap-around care');
+      expect(core?.id).toBe('l1');
+    });
+
+    it('regenerate resets an untouched legacy core label to the prefilled default', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      // Prefill provides the new default label; an untouched core line (no
+      // override marker) takes the prefill description.
+      comp.lines.update((prev) => prev.map((l) => (l.id === 'l1' ? { ...l, description: 'Core childcare' } : l)));
+      comp.regenerate();
+      fixture.detectChanges();
+      const core = comp.lines().find((l) => l.lineKind === 'core_childcare');
+      expect(core?.description).toBe('May 2026 Recurring Booking');
+    });
+
+    it('blocks empty and over-120-char descriptions client-side', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      comp.updateLine('l3', 'description', '');
+      expect(comp.lines().find((l) => l.id === 'l3')?.description).toBe('');
+      comp.updateLine('l3', 'description', 'x'.repeat(121));
+      expect(comp.lines().find((l) => l.id === 'l3')?.description.length).toBe(121);
     });
 
     it('updates computed totals when lines change', () => {

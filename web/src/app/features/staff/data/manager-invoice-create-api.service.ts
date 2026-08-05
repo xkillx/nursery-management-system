@@ -22,6 +22,8 @@ interface PrefillLineApi {
   funded_deduction_minutes: number;
   core_billable_minutes: number;
   session_count: number;
+  description_override?: boolean | null;
+  hourly_booking_id?: string | null;
   sessions?: InvoiceSessionApi[] | null;
 }
 
@@ -231,6 +233,8 @@ export class ManagerInvoiceCreateApiService {
       fundedDeductionMinutes: l.funded_deduction_minutes,
       coreBillableMinutes: l.core_billable_minutes,
       sessionCount: l.session_count,
+      descriptionOverride: l.description_override ?? false,
+      hourlyBookingId: l.hourly_booking_id ?? null,
       sessions: (l.sessions ?? []).map((s) => this.toSession(s)),
     };
   }

@@ -40,7 +40,13 @@ import {
 
 const SYSTEM_LINE_KINDS = new Set(['core_childcare', 'funded_deduction', 'hourly']);
 
-function isEditableLine(line: FormInvoiceLine): boolean {
+// Every line kind on a draft invoice is description-editable; system lines
+// (core, funded deduction, hourly) keep quantity/unit/total read-only.
+function isDescriptionEditable(): boolean {
+  return true;
+}
+
+function isValueEditableLine(line: FormInvoiceLine): boolean {
   return line.lineKind === 'extra' || line.lineKind === 'ad_hoc';
 }
 
@@ -58,6 +64,8 @@ function mapApiLineToForm(line: ManagerInvoiceLine): FormInvoiceLine {
     coreBillableMinutes: line.coreBillableMinutes ?? 0,
     sessionCount: line.sessionCount ?? 0,
     isFundingOffset: line.lineKind === 'funded_deduction',
+    descriptionOverride: line.descriptionOverride,
+    hourlyBookingId: line.hourlyBookingId,
     sessions: line.sessions ?? [],
   };
 }
@@ -105,7 +113,8 @@ export class ManagerInvoiceEditComponent implements OnInit {
   readonly formatGbp = formatGbp;
   readonly formatMinutes = formatMinutes;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
-  readonly isEditableLine = isEditableLine;
+  readonly isDescriptionEditable = isDescriptionEditable;
+  readonly isValueEditableLine = isValueEditableLine;
   readonly Math = Math;
 
   invoice: ManagerInvoiceDetail | null = null;
@@ -222,10 +231,15 @@ export class ManagerInvoiceEditComponent implements OnInit {
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
           updated.lineAmountMinor = q * u;
           // Editing a core childcare line's quantity or unit amount collapses
-          // its session sub-rows (R12); description-only edits preserve them.
+          // its session sub-rows; description-only edits preserve them.
           if (l.lineKind === 'core_childcare') {
             updated.sessions = [];
           }
+        }
+        // A description edit marks the line human-owned so regeneration keeps
+        // the label (mirrors the server's description_override marker).
+        if (field === 'description' && value !== l.description) {
+          updated.descriptionOverride = true;
         }
         return updated;
       }),
@@ -265,25 +279,45 @@ export class ManagerInvoiceEditComponent implements OnInit {
         const manualLines = this.lines().filter(
           (l) => l.lineKind === 'extra' || l.lineKind === 'ad_hoc',
         );
-        const systemLines = prefill.lines
-          .filter((l) => SYSTEM_LINE_KINDS.has(l.lineKind))
-          .map(
-            (l, i): FormInvoiceLine => ({
-              id: `regen-${Date.now()}-${i}`,
-              lineKind: l.lineKind,
-              description: l.description,
-              sortOrder: l.sortOrder,
-              quantityHours: l.quantityHours,
-              unitAmountMinor: l.unitAmountMinor,
-              lineAmountMinor: l.lineAmountMinor,
-              fundedAllowanceMinutes: l.fundedAllowanceMinutes,
-              fundedDeductionMinutes: l.fundedDeductionMinutes,
-              coreBillableMinutes: l.coreBillableMinutes,
-              sessionCount: l.sessionCount,
-              isFundingOffset: l.lineKind === 'funded_deduction',
-              sessions: l.sessions ?? [],
-            }),
-          );
+
+        const prefillSystem = prefill.lines.filter((l) => SYSTEM_LINE_KINDS.has(l.lineKind));
+        const currentSystem = this.lines().filter((l) => SYSTEM_LINE_KINDS.has(l.lineKind));
+
+        // Match existing system lines to prefill lines: core/funded deduction by
+        // line kind (single instance), hourly by booking reference. A matched
+        // existing line keeps its real ID so Save issues updateLine rather than
+        // delete+add; a description the manager renamed (override marker) is kept,
+        // otherwise the prefilled default (or server reset) wins.
+        const systemLines = prefillSystem.map((pl): FormInvoiceLine => {
+          const existing =
+            pl.lineKind === 'hourly'
+              ? currentSystem.find(
+                  (l) =>
+                    l.lineKind === 'hourly' &&
+                    l.hourlyBookingId != null &&
+                    l.hourlyBookingId === pl.hourlyBookingId,
+                )
+              : currentSystem.find((l) => l.lineKind === pl.lineKind);
+
+          return {
+            id: existing?.id ?? `regen-${Date.now()}-${pl.lineKind}-${pl.hourlyBookingId ?? ''}`,
+            lineKind: pl.lineKind,
+            description: existing?.descriptionOverride ? existing.description : pl.description,
+            sortOrder: pl.sortOrder,
+            quantityHours: pl.quantityHours,
+            unitAmountMinor: pl.unitAmountMinor,
+            lineAmountMinor: pl.lineAmountMinor,
+            fundedAllowanceMinutes: pl.fundedAllowanceMinutes,
+            fundedDeductionMinutes: pl.fundedDeductionMinutes,
+            coreBillableMinutes: pl.coreBillableMinutes,
+            sessionCount: pl.sessionCount,
+            isFundingOffset: pl.lineKind === 'funded_deduction',
+            descriptionOverride: existing?.descriptionOverride ?? false,
+            hourlyBookingId: pl.hourlyBookingId,
+            sessions: pl.sessions ?? [],
+          };
+        });
+
         this.lines.set([...systemLines, ...manualLines]);
         this.isRegenerating = false;
         this.toast.success('System lines regenerated.');
@@ -308,7 +342,12 @@ export class ManagerInvoiceEditComponent implements OnInit {
     const originalMap = new Map(original.map((l) => [l.id, l]));
     const currentMap = new Map(current.map((l) => [l.id, l]));
 
-    const toDelete = original.filter((l) => !currentMap.has(l.id) && !l.id.startsWith('line-'));
+    // System lines are regenerated server-side and never deleted from the edit
+    // screen; exclude them from the delete bucket so a regen'd system line is
+    // not deleted when Save runs.
+    const toDelete = original.filter(
+      (l) => !currentMap.has(l.id) && !l.id.startsWith('line-') && !SYSTEM_LINE_KINDS.has(l.lineKind),
+    );
     const toUpdate = current.filter((l) => {
       const orig = originalMap.get(l.id);
       return (
@@ -385,7 +424,9 @@ export class ManagerInvoiceEditComponent implements OnInit {
     const originalMap = new Map(original.map((l) => [l.id, l]));
     const currentMap = new Map(current.map((l) => [l.id, l]));
 
-    const toDelete = original.filter((l) => !currentMap.has(l.id) && !l.id.startsWith('line-'));
+    const toDelete = original.filter(
+      (l) => !currentMap.has(l.id) && !l.id.startsWith('line-') && !SYSTEM_LINE_KINDS.has(l.lineKind),
+    );
     const toUpdate = current.filter((l) => {
       const orig = originalMap.get(l.id);
       return (

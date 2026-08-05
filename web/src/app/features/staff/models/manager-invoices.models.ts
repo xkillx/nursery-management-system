@@ -83,6 +83,8 @@ export interface ManagerInvoiceLine {
   coreBillableMinutes: number | null;
   sessionCount: number | null;
   fundingModel: string | null;
+  descriptionOverride: boolean;
+  hourlyBookingId: string | null;
   sessions: InvoiceSession[];
 }
 
