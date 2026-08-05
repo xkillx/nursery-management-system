@@ -13,6 +13,11 @@ import { LoadingStateComponent } from '../../../../shared/components/common/load
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { TableShellComponent } from '../../../../shared/components/ui/table/table-shell.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import {
+  InvoiceLineItemsTableComponent,
+  InvoiceLineItemsTableLine,
+  buildLineItemsTableLine,
+} from '../../../../shared/components/invoice/invoice-line-items-table/invoice-line-items-table.component';
 import { InvoiceTimelineComponent, TimelineEntry } from '../../../../shared/components/invoice/invoice-timeline/invoice-timeline.component';
 import { ParentInvoicesApiService } from '../../data/parent-invoices-api.service';
 import { ParentInvoiceDetail, ParentInvoiceStatus } from '../../models/parent-invoices.models';
@@ -21,7 +26,6 @@ import {
   formatBillingMonthLabel,
   formatInstant,
   formatMinutes,
-  lineKindLabel,
   balanceDueMinor,
   isPayableInvoice,
 } from '../../utils/parent-invoice-formatters';
@@ -44,6 +48,7 @@ const POLL_MAX_DURATION_MS = 20000;
     TableShellComponent,
     StatusBadgeComponent,
     InvoiceTimelineComponent,
+    InvoiceLineItemsTableComponent,
     NgIcon,
   ],
   providers: [
@@ -75,9 +80,25 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
   readonly formatInstant = formatInstant;
   readonly formatMinutes = formatMinutes;
-  readonly lineKindLabel = lineKindLabel;
   readonly balanceDueMinor = balanceDueMinor;
-  readonly fundingModelLabel = fundingModelLabel;
+
+  get tableLines(): InvoiceLineItemsTableLine[] {
+    if (!this.detail) return [];
+    return this.detail.lines
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((l) =>
+        buildLineItemsTableLine({
+          lineKind: l.lineKind,
+          description: l.description,
+          quantityMinutes: l.quantityHours != null ? Math.round(l.quantityHours * 60) : null,
+          unitAmountMinor: l.unitAmountMinor,
+          lineAmountMinor: l.lineAmountMinor,
+          fundingModel: l.fundingModel,
+          sessions: l.sessions,
+        }),
+      );
+  }
 
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
@@ -357,10 +378,4 @@ export class ParentInvoiceDetailComponent implements OnInit, OnDestroy {
 
 function isTerminalStatus(status: ParentInvoiceStatus | undefined): boolean {
   return status === 'paid' || status === 'payment_failed';
-}
-
-function fundingModelLabel(model: string | null): string {
-  if (model === 'term_time_only') return 'Term-time funding';
-  if (model === 'stretched') return 'Stretched funding';
-  return 'Funded hours';
 }

@@ -29,6 +29,39 @@ export function fundingModelLabel(model: string | null): string {
   return 'Funded hours';
 }
 
+export function buildLineItemsTableLine(
+  input: {
+    lineKind: string;
+    description: string;
+    quantityMinutes: number | null;
+    unitAmountMinor: number | null;
+    lineAmountMinor: number;
+    fundingModel: string | null;
+    sessions: InvoiceSession[];
+  },
+): InvoiceLineItemsTableLine {
+  const sessions = input.sessions ?? [];
+  const aggregate: InvoiceLineAggregate | null =
+    input.lineKind === 'core_childcare' && sessions.length > 0
+      ? {
+          description: input.description,
+          sessionCount: sessions.length,
+          quantityMinutes: input.quantityMinutes,
+          totalMinor: sessions.reduce((sum, s) => sum + (s.sessionAmountMinor || 0), 0),
+        }
+      : null;
+  return {
+    lineKind: input.lineKind,
+    description: input.description,
+    quantityMinutes: input.quantityMinutes,
+    unitAmountMinor: input.unitAmountMinor,
+    lineAmountMinor: input.lineAmountMinor,
+    fundingModel: input.fundingModel,
+    sessions,
+    aggregate,
+  };
+}
+
 @Component({
   selector: 'app-invoice-line-items-table',
   imports: [CommonModule, InvoiceSessionRowsComponent],

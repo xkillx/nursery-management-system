@@ -222,41 +222,7 @@
       <section aria-labelledby="lines-heading">
         <h2 id="lines-heading" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Line items</h2>
         <app-table-shell>
-          <table class="w-full text-left text-sm">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Description</th>
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Kind</th>
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Quantity</th>
-                <th class="pb-3 pr-4 font-medium text-gray-500 dark:text-gray-400 text-right">Unit amount</th>
-                <th class="pb-3 font-medium text-gray-500 dark:text-gray-400 text-right">Line amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (line of detail.lines; track line.sortOrder + '-' + line.description) {
-                <tr class="border-b border-gray-100 dark:border-gray-800">
-                  <td class="py-3 pr-4 text-gray-800 dark:text-white/90">
-                    {{ line.description }}
-                    @if (line.lineKind === 'funded_deduction' && line.fundingModel) {
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ fundingModelLabel(line.fundingModel) }}</p>
-                    }
-                  </td>
-                  <td class="py-3 pr-4 text-gray-500 dark:text-gray-400">{{ lineKindLabel(line.lineKind) }}</td>
-                  <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
-                    @if (line.quantityHours !== null) {
-                      {{ line.quantityHours }} hr{{ line.quantityHours === 1 ? '' : 's' }}
-                    }
-                  </td>
-                  <td class="py-3 pr-4 text-right text-gray-800 dark:text-white/90">
-                    @if (line.unitAmountMinor !== null) {
-                      {{ formatGbp(line.unitAmountMinor) }}
-                    }
-                  </td>
-                  <td class="py-3 text-right font-medium text-gray-800 dark:text-white/90">{{ formatGbp(line.lineAmountMinor) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <app-invoice-line-items-table [lines]="tableLines" />
         </app-table-shell>
       </section>
     }

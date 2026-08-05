@@ -185,6 +185,61 @@ describe('ParentInvoiceDetailComponent', () => {
     expect(component.detail?.lines[1].description).toBe('Extras');
   });
 
+  it('renders per-session breakdown for core line with sessions', () => {
+    createTestBed();
+    const detail = makeDetail({
+      lines: [
+        {
+          lineKind: 'core_childcare',
+          description: 'Core childcare',
+          sortOrder: 1,
+          quantityHours: 8,
+          unitAmountMinor: 3750,
+          lineAmountMinor: 30000,
+          fundingModel: null,
+          sessions: [
+            { occurrenceDate: '2026-05-04', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 15000 },
+            { occurrenceDate: '2026-05-11', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 15000 },
+          ],
+        },
+        {
+          lineKind: 'funded_deduction',
+          description: 'Funded hours deduction',
+          sortOrder: 2,
+          quantityHours: null,
+          unitAmountMinor: null,
+          lineAmountMinor: -5000,
+          fundingModel: 'term_time_only',
+          sessions: [],
+        },
+      ],
+    });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    fixture.detectChanges();
+
+    const text = fixture.debugElement.nativeElement.textContent;
+    expect(text).toContain('Mon 4 May');
+    expect(text).toContain('Full Day (08:00–16:00)');
+    expect(text).toContain('Standard Weekly / Monthly Session Rate');
+    expect(text).toContain('Core childcare · 2 sessions');
+    expect(text).toContain('£150.00');
+    expect(text).toContain('Term-time funding');
+  });
+
+  it('renders legacy core line as a single aggregate row', () => {
+    createTestBed();
+    const detail = makeDetail({
+      lines: [
+        { lineKind: 'core_childcare', description: 'Core childcare', sortOrder: 1, quantityHours: 8, unitAmountMinor: 3750, lineAmountMinor: 30000, fundingModel: null, sessions: [] },
+      ],
+    });
+    apiMock.getInvoice.and.returnValue(of(detail));
+    fixture.detectChanges();
+
+    const text = fixture.debugElement.nativeElement.textContent;
+    expect(text).toContain('Core childcare');
+  });
+
   it('handles checkout creation and redirects', () => {
     createTestBed();
     const detail = makeDetail({ status: 'issued' });
