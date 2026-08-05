@@ -150,3 +150,76 @@ func TestCoreSessionsComputer_ZeroBookedSessionsCollapses(t *testing.T) {
 		t.Fatal("expected nil details when month has zero booked sessions")
 	}
 }
+
+func TestCoreSessionsComputer_DescriptionOnlyEditPreservesSessions(t *testing.T) {
+	// Q2: a description-only edit does not invalidate the pattern-derived
+	// breakdown, so sessions are preserved.
+	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
+	bookingRow := makeBooking()
+	bookingRow.SiteHourlyRateMinor = 600
+	entries := []domain.BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 780, DurationMinutes: 300}},
+	}
+
+	computer := &coreSessionsComputer{
+		repo:                 &stubPrefillRepo{bookings: []domain.BillableChildRow{bookingRow}},
+		bookingEntriesLookup: &stubBookingEntriesLookup{entries: entries},
+	}
+
+	actor := tenant.ActorContext{TenantID: bookingRow.TenantID, BranchID: bookingRow.BranchID}
+	line := DraftInvoiceLineInput{
+		LineKind:        domain.LineKindCoreChildcare,
+		Description:     "Core childcare (renamed)",
+		QuantityMinutes: 1500,
+		UnitAmountMinor: 600,
+		LineAmountMinor: 15000,
+	}
+
+	details, err := computer.computeCoreLineDetails(context.Background(), nil, actor, childID, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if details == nil {
+		t.Fatal("expected persisted details on description-only edit (sessions preserved)")
+	}
+	var core domain.CoreLineDetails
+	if err := json.Unmarshal(details, &core); err != nil {
+		t.Fatalf("unmarshal details: %v", err)
+	}
+	if len(core.BookedSessions) == 0 {
+		t.Fatal("expected booked sessions to be preserved on description-only edit")
+	}
+}
+
+func TestCoreSessionsComputer_NoOpEditPreservesSessions(t *testing.T) {
+	// A no-op save (identical quantity/unit/amount) preserves the breakdown.
+	childID := uuid.MustParse("33333333-3333-4333-8333-333333333003")
+	bookingRow := makeBooking()
+	bookingRow.SiteHourlyRateMinor = 600
+	entries := []domain.BookedPatternEntry{
+		{DayOfWeek: 1, SessionType: domain.BookedSessionType{ID: uuid.New().String(), Name: "Full Day", StartMinutes: 480, EndMinutes: 780, DurationMinutes: 300}},
+	}
+
+	computer := &coreSessionsComputer{
+		repo:                 &stubPrefillRepo{bookings: []domain.BillableChildRow{bookingRow}},
+		bookingEntriesLookup: &stubBookingEntriesLookup{entries: entries},
+	}
+
+	actor := tenant.ActorContext{TenantID: bookingRow.TenantID, BranchID: bookingRow.BranchID}
+	line := DraftInvoiceLineInput{
+		LineKind:        domain.LineKindCoreChildcare,
+		Description:     "Core childcare",
+		QuantityMinutes: 1500,
+		UnitAmountMinor: 600,
+		LineAmountMinor: 15000,
+	}
+
+	details, err := computer.computeCoreLineDetails(context.Background(), nil, actor, childID, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if details == nil {
+		t.Fatal("expected persisted details on no-op edit (sessions preserved)")
+	}
+}
+
