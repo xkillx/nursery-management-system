@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nursery-management-system/api/internal/modules/billing/domain"
 )
 
 func TestRenderer_Render_HappyPath(t *testing.T) {
@@ -134,6 +136,99 @@ func TestRenderer_Render_MoneyFormatting(t *testing.T) {
 			t.Errorf("formatMoney(%d) = %q, want %q", tt.minor, got, tt.expected)
 		}
 	}
+}
+
+func TestAppendPDFLines_SessionExpansion(t *testing.T) {
+	unit := domain.MustGBP(600)
+	lines := appendPDFLines(nil, domain.LineKindCoreChildcare, "Core childcare", nil, &unit, 12000, nil, []domain.SessionRow{
+		{OccurrenceDate: timeMustParsePdf("2026-11-02"), StartMinutes: 480, EndMinutes: 720, DurationMinutes: 240, SessionTypeName: "Morning Session", SessionAmountMinor: 6000},
+		{OccurrenceDate: timeMustParsePdf("2026-11-09"), StartMinutes: 480, EndMinutes: 720, DurationMinutes: 240, SessionTypeName: "Morning Session", SessionAmountMinor: 6000},
+	}, false)
+
+	if len(lines) != 2 {
+		t.Fatalf("got %d PDF lines, want 2", len(lines))
+	}
+	if lines[0].Description != "Mon 2 Nov · Morning Session (08:00–12:00)" {
+		t.Errorf("line 0 description = %q, want 'Mon 2 Nov · Morning Session (08:00–12:00)'", lines[0].Description)
+	}
+	if lines[0].SubDescription != "Standard Weekly / Monthly Session Rate" {
+		t.Errorf("sub-description = %q, want 'Standard Weekly / Monthly Session Rate'", lines[0].SubDescription)
+	}
+	if lines[0].QuantityMinutes == nil || *lines[0].QuantityMinutes != 240 {
+		t.Errorf("quantity minutes = %v, want 240", lines[0].QuantityMinutes)
+	}
+	if lines[0].UnitAmountMinor == nil || *lines[0].UnitAmountMinor != 600 {
+		t.Errorf("unit amount = %v, want 600", lines[0].UnitAmountMinor)
+	}
+	if lines[0].LineAmountMinor != 6000 {
+		t.Errorf("line amount = %d, want 6000", lines[0].LineAmountMinor)
+	}
+	if lines[0].SessionDate != "Mon 2 Nov" {
+		t.Errorf("session date = %q, want 'Mon 2 Nov'", lines[0].SessionDate)
+	}
+	if lines[1].LineAmountMinor != 6000 {
+		t.Errorf("line 1 amount = %d, want 6000", lines[1].LineAmountMinor)
+	}
+}
+
+func TestAppendPDFLines_SessionNameOnlyFallback(t *testing.T) {
+	unit := domain.MustGBP(600)
+	lines := appendPDFLines(nil, domain.LineKindCoreChildcare, "Core childcare", nil, &unit, 4000, nil, []domain.SessionRow{
+		{OccurrenceDate: timeMustParsePdf("2026-11-02"), DurationMinutes: 240, SessionTypeName: "Legacy Session", SessionAmountMinor: 4000},
+	}, false)
+
+	if len(lines) != 1 {
+		t.Fatalf("got %d PDF lines, want 1", len(lines))
+	}
+	if lines[0].Description != "Mon 2 Nov · Legacy Session" {
+		t.Errorf("description = %q, want 'Mon 2 Nov · Legacy Session'", lines[0].Description)
+	}
+}
+
+func TestAppendPDFLines_LegacySingleRow(t *testing.T) {
+	qty := 480
+	lines := appendPDFLines(nil, domain.LineKindCoreChildcare, "Core childcare", &qty, nil, 4000, nil, nil, false)
+	if len(lines) != 1 {
+		t.Fatalf("got %d PDF lines, want 1 (legacy aggregate)", len(lines))
+	}
+	if lines[0].Description != "Core childcare" {
+		t.Errorf("description = %q, want 'Core childcare'", lines[0].Description)
+	}
+	if lines[0].QuantityMinutes == nil || *lines[0].QuantityMinutes != 480 {
+		t.Errorf("quantity = %v, want 480", lines[0].QuantityMinutes)
+	}
+}
+
+func TestAppendPDFLines_FundedLineUnaffected(t *testing.T) {
+	lines := appendPDFLines(nil, domain.LineKindFundedDeduction, "Funded hours deduction", nil, nil, -2500, nil, nil, true)
+	if len(lines) != 1 {
+		t.Fatalf("got %d PDF lines, want 1", len(lines))
+	}
+	if !lines[0].IsFunded {
+		t.Error("expected funded line to be flagged IsFunded")
+	}
+	if lines[0].LineAmountMinor != -2500 {
+		t.Errorf("line amount = %d, want -2500", lines[0].LineAmountMinor)
+	}
+}
+
+func TestFormatQuantity_SessionHours(t *testing.T) {
+	mins := 240
+	if got := formatQuantity(InvoicePDFLine{QuantityMinutes: &mins}); got != "4 hrs" {
+		t.Errorf("formatQuantity(240) = %q, want '4 hrs'", got)
+	}
+	mins2 := 210
+	if got := formatQuantity(InvoicePDFLine{QuantityMinutes: &mins2}); got != "3.5 hrs" {
+		t.Errorf("formatQuantity(210) = %q, want '3.5 hrs'", got)
+	}
+}
+
+func timeMustParsePdf(s string) time.Time {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 func TestRenderer_Render_LongDescription(t *testing.T) {

@@ -142,7 +142,7 @@ func ManagerInput(sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, li
 			ChildID:   inv.ChildID.String()[:8],
 			RoomName:  room,
 		},
-		Lines:           make([]InvoicePDFLine, len(lines)),
+		Lines:           make([]InvoicePDFLine, 0, len(lines)),
 		SubtotalMinor:   subtotal.Minor(),
 		DeductionMinor:  deduction.Minor(),
 		PaidMinor:       paidVal,
@@ -177,19 +177,8 @@ func ManagerInput(sp *domain.InvoiceSiteProfile, inv domain.InvoiceReviewRow, li
 			Phone:           pc.Telephone,
 		}
 	}
-	for i, l := range lines {
-		mainDesc, subDesc, isFunded, isDiscount := parseLineInfo(l.Description, l.LineKind, l.LineKind == "funded_deduction", l.LineAmount.Minor())
-		inp.Lines[i] = InvoicePDFLine{
-			Description:     mainDesc,
-			SubDescription:  subDesc,
-			QuantityMinutes: l.QuantityMinutes,
-			SessionCount:    l.SessionCount,
-			UnitAmountMinor: moneyPtrMinor(l.UnitAmount),
-			LineAmountMinor: l.LineAmount.Minor(),
-			IsFunded:        isFunded,
-			IsDiscount:      isDiscount,
-			LineKind:        l.LineKind,
-		}
+	for _, l := range lines {
+		inp.Lines = appendPDFLines(inp.Lines, l.LineKind, l.Description, l.QuantityMinutes, l.UnitAmount, l.LineAmount.Minor(), l.SessionCount, l.Sessions, l.LineKind == "funded_deduction")
 	}
 	return inp
 }
@@ -239,7 +228,7 @@ func ParentInput(sp *domain.ParentInvoiceSiteProfile, inv domain.ParentInvoiceRo
 			ChildName: childName,
 			ChildID:   inv.ChildID.String()[:8],
 		},
-		Lines:           make([]InvoicePDFLine, len(lines)),
+		Lines:           make([]InvoicePDFLine, 0, len(lines)),
 		SubtotalMinor:   subtotal.Minor(),
 		DeductionMinor:  deduction.Minor(),
 		PaidMinor:       paidVal,
@@ -263,18 +252,8 @@ func ParentInput(sp *domain.ParentInvoiceSiteProfile, inv domain.ParentInvoiceRo
 			AccountNumber:   "83920147",
 		}
 	}
-	for i, l := range lines {
-		mainDesc, subDesc, isFunded, isDiscount := parseLineInfo(l.Description, l.LineKind, l.LineKind == "funded_deduction", l.LineAmount.Minor())
-		inp.Lines[i] = InvoicePDFLine{
-			Description:     mainDesc,
-			SubDescription:  subDesc,
-			QuantityMinutes: l.QuantityMinutes,
-			UnitAmountMinor: moneyPtrMinor(l.UnitAmount),
-			LineAmountMinor: l.LineAmount.Minor(),
-			IsFunded:        isFunded,
-			IsDiscount:      isDiscount,
-			LineKind:        l.LineKind,
-		}
+	for _, l := range lines {
+		inp.Lines = appendPDFLines(inp.Lines, l.LineKind, l.Description, l.QuantityMinutes, l.UnitAmount, l.LineAmount.Minor(), nil, l.Sessions, l.LineKind == "funded_deduction")
 	}
 	return inp
 }
@@ -290,6 +269,64 @@ func parseLineInfo(desc, lineKind string, isFunded bool, lineAmountMinor int) (m
 		subDesc = strings.TrimSpace(desc[idx+1:])
 	}
 	return mainDesc, subDesc, funded, discount
+}
+
+// appendPDFLines appends one PDF line per session for a core childcare line
+// that carries a breakdown, falling back to the single aggregate row otherwise
+// (R4, R14).
+func appendPDFLines(out []InvoicePDFLine, lineKind, description string, quantityMinutes *int, unitAmount *domain.Money, lineAmountMinor int, sessionCount *int, sessions []domain.SessionRow, isFundedLine bool) []InvoicePDFLine {
+	if lineKind == domain.LineKindCoreChildcare && len(sessions) > 0 {
+		for _, s := range sessions {
+			out = append(out, sessionPDFLine(s, unitAmount))
+		}
+		return out
+	}
+
+	mainDesc, subDesc, isFunded, isDiscount := parseLineInfo(description, lineKind, isFundedLine, lineAmountMinor)
+	out = append(out, InvoicePDFLine{
+		Description:     mainDesc,
+		SubDescription:  subDesc,
+		QuantityMinutes: quantityMinutes,
+		SessionCount:    sessionCount,
+		UnitAmountMinor: moneyPtrMinor(unitAmount),
+		LineAmountMinor: lineAmountMinor,
+		IsFunded:        isFunded,
+		IsDiscount:      isDiscount,
+		LineKind:        lineKind,
+	})
+	return out
+}
+
+// sessionPDFLine renders a single session as a PDF line: the date and booking
+// as the main description, "Standard Weekly / Monthly Session Rate" as the
+// sub-description, hours as the quantity, the hourly rate as the price, and
+// the allocated session amount as the line amount (R4).
+func sessionPDFLine(s domain.SessionRow, unitAmount *domain.Money) InvoicePDFLine {
+	desc := sessionDescription(s)
+	qty := s.DurationMinutes
+	return InvoicePDFLine{
+		Description:     desc,
+		SubDescription:  "Standard Weekly / Monthly Session Rate",
+		SessionDate:     s.OccurrenceDate.Format("Mon 2 Jan"),
+		QuantityMinutes: &qty,
+		UnitAmountMinor: moneyPtrMinor(unitAmount),
+		LineAmountMinor: s.SessionAmountMinor,
+		LineKind:        domain.LineKindCoreChildcare,
+	}
+}
+
+// sessionDescription builds "Mon 2 Nov · Morning Session (08:00–12:00)",
+// falling back to the session-type name alone when times are absent.
+func sessionDescription(s domain.SessionRow) string {
+	base := s.OccurrenceDate.Format("Mon 2 Jan") + " · " + s.SessionTypeName
+	if s.StartMinutes > 0 || s.EndMinutes > 0 {
+		base += " (" + formatSessionTime(s.StartMinutes) + "–" + formatSessionTime(s.EndMinutes) + ")"
+	}
+	return base
+}
+
+func formatSessionTime(minutes int) string {
+	return fmt.Sprintf("%02d:%02d", minutes/60, minutes%60)
 }
 
 func formatMoney(minor int) string {
