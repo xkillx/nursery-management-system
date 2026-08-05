@@ -1,0 +1,27 @@
+@if (sessions.length > 0) {
+  @for (session of sessions; track $index) {
+    <tr class="bg-gray-50/40 dark:bg-white/[0.01]">
+      @for (_ of spacerCells(leadingSpacers); track $index) {
+        <td class="px-3 py-2"></td>
+      }
+      <td class="px-3 py-2 pl-6">
+        <p class="text-xs font-medium text-gray-600 dark:text-gray-300">
+          {{ formatSessionDate(session.occurrenceDate) }}
+          <span class="text-gray-400 dark:text-gray-500"> · {{ formatSessionBooking(session) }}</span>
+        </p>
+      </td>
+      <td class="px-3 py-2 text-right text-xs text-gray-500 dark:text-gray-400">
+        {{ formatSessionQuantity(session.durationMinutes) }}
+      </td>
+      <td class="px-3 py-2 text-right text-xs text-gray-500 dark:text-gray-400">
+        {{ formatUnitAmount(unitAmountMinor) }}
+      </td>
+      <td class="px-3 py-2 text-right text-xs font-medium text-gray-600 dark:text-gray-300">
+        {{ formatUnitAmount(session.sessionAmountMinor) }}
+      </td>
+      @for (_ of spacerCells(trailingSpacers); track $index) {
+        <td class="px-3 py-2"></td>
+      }
+    </tr>
+  }
+}

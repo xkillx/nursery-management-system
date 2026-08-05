@@ -189,6 +189,28 @@ describe('ManagerInvoiceCreateComponent', () => {
       expect(component.lines()[0].lineAmountMinor).toBe(3000);
     });
 
+    it('collapses core childcare session sub-rows when quantity is edited', () => {
+      const core = toFormLine(mockPrefill.lines[0], 'core-1');
+      core.sessions = [
+        { occurrenceDate: '2026-07-06', startMinutes: 480, endMinutes: 720, durationMinutes: 240, sessionTypeName: 'Morning', sessionAmountMinor: 6500 },
+      ];
+      component.lines.set([core]);
+
+      component.updateLine('core-1', 'quantityHours', 10);
+      expect(component.lines()[0].sessions?.length).toBe(0);
+    });
+
+    it('preserves core childcare session sub-rows on description-only edit', () => {
+      const core = toFormLine(mockPrefill.lines[0], 'core-1');
+      core.sessions = [
+        { occurrenceDate: '2026-07-06', startMinutes: 480, endMinutes: 720, durationMinutes: 240, sessionTypeName: 'Morning', sessionAmountMinor: 6500 },
+      ];
+      component.lines.set([core]);
+
+      component.updateLine('core-1', 'description', 'Core childcare (updated)');
+      expect(component.lines()[0].sessions?.length).toBe(1);
+    });
+
     it('addPresetLine adds a preset extra line', () => {
       component.addPresetLine('Full Day', 6500, 1);
       expect(component.lines().length).toBe(1);

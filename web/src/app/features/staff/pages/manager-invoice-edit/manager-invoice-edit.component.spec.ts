@@ -288,6 +288,34 @@ describe('ManagerInvoiceEditComponent', () => {
       expect(line?.lineAmountMinor).toBe(30 * 1000);
     });
 
+    it('collapses core childcare session sub-rows when quantity is edited', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      comp.lines.update((prev) =>
+        prev.map((l) =>
+          l.id === 'l1'
+            ? { ...l, sessions: [{ occurrenceDate: '2026-05-04', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 }] }
+            : l,
+        ),
+      );
+      comp.updateLine('l1', 'quantityHours', 1400);
+      expect(comp.lines().find((l) => l.id === 'l1')?.sessions?.length).toBe(0);
+    });
+
+    it('preserves core childcare session sub-rows on description-only edit', () => {
+      createFixture();
+      const comp = fixture.componentInstance;
+      comp.lines.update((prev) =>
+        prev.map((l) =>
+          l.id === 'l1'
+            ? { ...l, sessions: [{ occurrenceDate: '2026-05-04', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 }] }
+            : l,
+        ),
+      );
+      comp.updateLine('l1', 'description', 'Core childcare (updated)');
+      expect(comp.lines().find((l) => l.id === 'l1')?.sessions?.length).toBe(1);
+    });
+
     it('adds a new blank extra line', () => {
       createFixture();
       const comp = fixture.componentInstance;

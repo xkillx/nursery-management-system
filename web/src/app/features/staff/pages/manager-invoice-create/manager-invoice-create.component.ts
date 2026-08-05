@@ -30,6 +30,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { ChildAvatarComponent } from '../../../../shared/components/ui/avatar/child-avatar/child-avatar.component';
 import { MonthPickerComponent, MonthYear } from '../../../../shared/components/form/month-picker/month-picker.component';
+import { InvoiceSessionSubRowsComponent } from '../../../../shared/components/invoice/invoice-session-sub-rows/invoice-session-sub-rows.component';
 import { formatGbp } from '../../../owner/utils/owner-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
 import { formatChildName } from '../../utils/manager-list-formatters';
@@ -46,6 +47,7 @@ import { ChildRecord } from '../../models/children.models';
     LoadingStateComponent,
     ChildAvatarComponent,
     MonthPickerComponent,
+    InvoiceSessionSubRowsComponent,
   ],
   templateUrl: './manager-invoice-create.component.html',
   providers: [
@@ -427,6 +429,7 @@ export class ManagerInvoiceCreateComponent implements OnInit {
             coreBillableMinutes: l.coreBillableMinutes,
             sessionCount: l.sessionCount,
             isFundingOffset: l.lineKind === 'funded_deduction',
+            sessions: l.sessions ?? [],
           })),
         );
         this.entitlementLabel = prefill.entitlementStatus.statusLabel;
@@ -495,6 +498,12 @@ export class ManagerInvoiceCreateComponent implements OnInit {
           const q = typeof updated.quantityHours === 'number' ? updated.quantityHours : 0;
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
           updated.lineAmountMinor = q * u;
+        }
+        // Editing a core childcare line's quantity, unit or line amount
+        // collapses its session sub-rows (R13); a description-only edit
+        // preserves the breakdown (KTD7/Q2).
+        if (l.lineKind === 'core_childcare' && (field === 'quantityHours' || field === 'unitAmountMinor')) {
+          updated.sessions = [];
         }
         return updated;
       }),

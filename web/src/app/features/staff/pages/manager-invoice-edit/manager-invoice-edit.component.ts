@@ -30,6 +30,7 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { LoadingStateComponent } from '../../../../shared/components/common/loading-state/loading-state.component';
 import { formatGbp, formatMinutes, formatBillingMonthLabel } from '../../utils/invoice-run-formatters';
 import { FormInvoiceLine } from '../../models/manager-invoice-create.models';
+import { InvoiceSessionSubRowsComponent } from '../../../../shared/components/invoice/invoice-session-sub-rows/invoice-session-sub-rows.component';
 import {
   ManagerInvoiceDetail,
   ManagerInvoiceLine,
@@ -57,6 +58,7 @@ function mapApiLineToForm(line: ManagerInvoiceLine): FormInvoiceLine {
     coreBillableMinutes: line.coreBillableMinutes ?? 0,
     sessionCount: line.sessionCount ?? 0,
     isFundingOffset: line.lineKind === 'funded_deduction',
+    sessions: line.sessions ?? [],
   };
 }
 
@@ -69,6 +71,7 @@ function mapApiLineToForm(line: ManagerInvoiceLine): FormInvoiceLine {
     NgIcon,
     AlertComponent,
     LoadingStateComponent,
+    InvoiceSessionSubRowsComponent,
   ],
   templateUrl: './manager-invoice-edit.component.html',
   providers: [
@@ -218,6 +221,11 @@ export class ManagerInvoiceEditComponent implements OnInit {
           const q = typeof updated.quantityHours === 'number' ? updated.quantityHours : 0;
           const u = typeof updated.unitAmountMinor === 'number' ? updated.unitAmountMinor : 0;
           updated.lineAmountMinor = q * u;
+          // Editing a core childcare line's quantity or unit amount collapses
+          // its session sub-rows (R12); description-only edits preserve them.
+          if (l.lineKind === 'core_childcare') {
+            updated.sessions = [];
+          }
         }
         return updated;
       }),
@@ -273,6 +281,7 @@ export class ManagerInvoiceEditComponent implements OnInit {
               coreBillableMinutes: l.coreBillableMinutes,
               sessionCount: l.sessionCount,
               isFundingOffset: l.lineKind === 'funded_deduction',
+              sessions: l.sessions ?? [],
             }),
           );
         this.lines.set([...systemLines, ...manualLines]);

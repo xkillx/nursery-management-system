@@ -234,6 +234,9 @@
                         }
                       </td>
                     </tr>
+                    @if (line.lineKind === 'core_childcare' && line.sessions && line.sessions.length > 0) {
+                      <app-invoice-session-sub-rows [sessions]="line.sessions" [unitAmountMinor]="line.unitAmountMinor" [leadingSpacers]="0" [trailingSpacers]="1" />
+                    }
                   }
                 </tbody>
               </table>
