@@ -6,8 +6,54 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"nursery-management-system/api/internal/modules/billing/domain"
 )
+
+func TestCaptureRenamedSystemLines_KeysByKindAndBookingRef(t *testing.T) {
+	hourlyBookingID := uuid.New()
+	lines := []domain.InvoiceReviewLineRow{
+		{ID: uuid.New(), LineKind: domain.LineKindCoreChildcare, Description: "Wrap-around care", DescriptionOverride: true},
+		{ID: uuid.New(), LineKind: domain.LineKindCoreChildcare, Description: "May 2026 Recurring Booking", DescriptionOverride: false},
+		{ID: uuid.New(), LineKind: domain.LineKindFundedDeduction, Description: "Renamed deduction", DescriptionOverride: true},
+		{ID: uuid.New(), LineKind: domain.LineKindHourly, Description: "Renamed hourly A", DescriptionOverride: true, HourlyBookingID: &hourlyBookingID},
+		{ID: uuid.New(), LineKind: domain.LineKindHourly, Description: "Hourly booking: 05 Jan (60min)", DescriptionOverride: false, HourlyBookingID: &hourlyBookingID},
+		{ID: uuid.New(), LineKind: domain.LineKindAdHoc, Description: "Ad-hoc session", DescriptionOverride: true},
+		{ID: uuid.New(), LineKind: domain.LineKindExtra, Description: "Extra", DescriptionOverride: true},
+	}
+
+	preserved := captureRenamedSystemLines(lines)
+
+	if got := preserved[domain.LineKindCoreChildcare].Description; got != "Wrap-around care" {
+		t.Errorf("core preserved = %q, want %q", got, "Wrap-around care")
+	}
+	if _, ok := preserved[domain.LineKindFundedDeduction]; !ok {
+		t.Error("expected funded deduction to be preserved")
+	}
+	if got := preserved[domain.LineKindHourly+":"+hourlyBookingID.String()].Description; got != "Renamed hourly A" {
+		t.Errorf("hourly preserved = %q, want %q", got, "Renamed hourly A")
+	}
+	if _, ok := preserved[domain.LineKindAdHoc]; ok {
+		t.Error("ad-hoc lines must not be captured (they survive deletion naturally)")
+	}
+	if _, ok := preserved[domain.LineKindExtra]; ok {
+		t.Error("extra lines must not be captured (they survive deletion naturally)")
+	}
+	if len(preserved) != 3 {
+		t.Errorf("preserved count = %d, want 3", len(preserved))
+	}
+}
+
+func TestCaptureRenamedSystemLines_NoMarkerNoPreservation(t *testing.T) {
+	lines := []domain.InvoiceReviewLineRow{
+		{ID: uuid.New(), LineKind: domain.LineKindCoreChildcare, Description: "May 2026 Recurring Booking", DescriptionOverride: false},
+	}
+	preserved := captureRenamedSystemLines(lines)
+	if len(preserved) != 0 {
+		t.Errorf("expected no preserved lines, got %d", len(preserved))
+	}
+}
 
 func TestEnrichBookedSessions_PersistsAllocatedAmounts(t *testing.T) {
 	// Two same-duration sessions on different days get equal allocated

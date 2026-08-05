@@ -413,10 +413,11 @@ func (r *Repository) GetInvoiceLine(ctx context.Context, tx domain.Tx, tenantID,
 		FundedDeductionMinutes: pgtypeInt4ToInt(row.FundedDeductionMinutes),
 		CoreBillableMinutes:    pgtypeInt4ToInt(row.CoreBillableMinutes),
 		SessionCount:           pgtypeInt4ToInt(row.SessionCount),
+		Details:                json.RawMessage(row.Details),
 	}, true, nil
 }
 
-func (r *Repository) UpdateInvoiceLine(ctx context.Context, tx domain.Tx, tenantID, branchID, lineID uuid.UUID, description string, quantityMinutes int, unitAmount, lineAmount domain.Money) (int64, error) {
+func (r *Repository) UpdateInvoiceLine(ctx context.Context, tx domain.Tx, tenantID, branchID, lineID uuid.UUID, description string, quantityMinutes int, unitAmount, lineAmount domain.Money, details []byte) (int64, error) {
 	n, err := r.queriesTx(tx).InvoiceLineUpdate(ctx, sqlc.InvoiceLineUpdateParams{
 		ID:              uuidToPgtype(lineID),
 		TenantID:        uuidToPgtype(tenantID),
@@ -425,6 +426,7 @@ func (r *Repository) UpdateInvoiceLine(ctx context.Context, tx domain.Tx, tenant
 		QuantityMinutes: pgtypeInt4OrNil(quantityMinutes),
 		UnitAmountMinor: pgtypeInt4OrNil(unitAmount.Minor()),
 		LineAmountMinor: int32(lineAmount.Minor()),
+		Details:         details,
 	})
 	if err != nil {
 		return 0, err
@@ -627,12 +629,19 @@ func mapInvoiceReviewLines(rows []sqlc.InvoiceLinesForManagerReviewRow) []domain
 		}
 		if len(row.Details) > 0 {
 			var details struct {
-				FundingModel string `json:"funding_model"`
+				FundingModel    string     `json:"funding_model"`
+				DescriptionOvr  bool       `json:"description_override"`
+				HourlyBookingID *uuid.UUID `json:"hourly_booking_id"`
 			}
-			if json.Unmarshal(row.Details, &details) == nil && details.FundingModel != "" {
-				line.FundingModel = &details.FundingModel
+			if json.Unmarshal(row.Details, &details) == nil {
+				if details.FundingModel != "" {
+					line.FundingModel = &details.FundingModel
+				}
+				line.DescriptionOverride = details.DescriptionOvr
+				line.HourlyBookingID = details.HourlyBookingID
 			}
 		}
+		line.Details = append(json.RawMessage(nil), row.Details...)
 		line.Sessions = domain.BuildSessionRows(row.Details, row.LineKind, line.QuantityMinutes, line.LineAmount.Minor())
 		result = append(result, line)
 	}

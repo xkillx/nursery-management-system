@@ -161,12 +161,54 @@ func MarshalCalculationDetails(d InvoiceCalculationDetails) ([]byte, error) {
 	return json.Marshal(d)
 }
 
+// SetLineDescriptionOverride returns the given line `details` JSON with the
+// description_override marker set to true, preserving all existing keys (e.g.
+// booked_sessions). A nil/empty input is treated as an empty object so the
+// marker still lands on a details-less line.
+func SetLineDescriptionOverride(details []byte) ([]byte, error) {
+	var m map[string]json.RawMessage
+	if len(details) > 0 {
+		if err := json.Unmarshal(details, &m); err != nil {
+			return nil, fmt.Errorf("unmarshal line details: %w", err)
+		}
+	}
+	if m == nil {
+		m = make(map[string]json.RawMessage)
+	}
+	m[LineDetailsDescriptionOverrideKey] = json.RawMessage("true")
+	return json.Marshal(m)
+}
+
+// HasLineDescriptionOverride reports whether the line `details` JSON carries
+// the description_override marker.
+func HasLineDescriptionOverride(details []byte) bool {
+	var m map[string]json.RawMessage
+	if len(details) == 0 {
+		return false
+	}
+	if err := json.Unmarshal(details, &m); err != nil {
+		return false
+	}
+	raw, ok := m[LineDetailsDescriptionOverrideKey]
+	if !ok {
+		return false
+	}
+	var v bool
+	return json.Unmarshal(raw, &v) == nil && v
+}
+
 // CoreLineDetails is stored as JSON in the core_childcare invoice line details.
 type CoreLineDetails struct {
 	BookedCoreMinutes int                    `json:"booked_core_minutes"`
 	BookedSessions    []BookedSession        `json:"booked_sessions"`
 	BookedPerEntry    []BookedEntryBreakdown `json:"booked_per_entry"`
 }
+
+// LineDetailsDescriptionOverrideKey is the JSONB key in an invoice line's
+// `details` that marks a description as human-renamed. Once set it is sticky
+// (KTD2): regeneration preserves the description of any line carrying the
+// marker, while untouched system lines reset to their derived default.
+const LineDetailsDescriptionOverrideKey = "description_override"
 
 // FundedDeductionLineDetails is stored as JSON in the funded_deduction invoice line details.
 type FundedDeductionLineDetails struct {
@@ -416,6 +458,7 @@ type InvoiceLine struct {
 	FundedDeductionMinutes int
 	CoreBillableMinutes    int
 	SessionCount           int
+	Details                json.RawMessage
 }
 
 // Invoice is the domain entity representing an invoice with lifecycle state.

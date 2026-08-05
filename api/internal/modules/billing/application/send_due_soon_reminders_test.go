@@ -157,7 +157,7 @@ func (s *stubReminderRepo) ListInvoiceLinesForParent(_ context.Context, _, _, _,
 func (s *stubReminderRepo) GetInvoiceLine(_ context.Context, _ domain.Tx, _, _, _, _ uuid.UUID) (domain.InvoiceLine, bool, error) {
 	panic("stub")
 }
-func (s *stubReminderRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money) (int64, error) {
+func (s *stubReminderRepo) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money, _ []byte) (int64, error) {
 	panic("stub")
 }
 func (s *stubReminderRepo) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {

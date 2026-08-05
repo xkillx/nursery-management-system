@@ -236,7 +236,7 @@ func TestParentForbiddenOnManagerInvoiceRoutes(t *testing.T) {
 	requireStatus(t, w, http.StatusForbidden)
 	requireErrorCode(t, w, "forbidden_role")
 
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.parentToken, `{"billing_month":"2026-05"}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.parentToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusForbidden)
 	requireErrorCode(t, w, "forbidden_role")
 }

@@ -1414,11 +1414,11 @@ SET description = $4,
     quantity_minutes = $5,
     unit_amount_minor = $6,
     line_amount_minor = $7,
+    details = COALESCE($8, details),
     updated_at = now()
 WHERE id = $1
   AND tenant_id = $2
   AND branch_id = $3
-  AND line_kind IN ('extra', 'ad_hoc')
 `
 
 type InvoiceLineUpdateParams struct {
@@ -1429,6 +1429,7 @@ type InvoiceLineUpdateParams struct {
 	QuantityMinutes pgtype.Int4
 	UnitAmountMinor pgtype.Int4
 	LineAmountMinor int32
+	Details         []byte
 }
 
 func (q *Queries) InvoiceLineUpdate(ctx context.Context, arg InvoiceLineUpdateParams) (int64, error) {
@@ -1440,6 +1441,7 @@ func (q *Queries) InvoiceLineUpdate(ctx context.Context, arg InvoiceLineUpdatePa
 		arg.QuantityMinutes,
 		arg.UnitAmountMinor,
 		arg.LineAmountMinor,
+		arg.Details,
 	)
 	if err != nil {
 		return 0, err

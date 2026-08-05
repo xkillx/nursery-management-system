@@ -17,7 +17,7 @@ import (
 
 type GenerateTermInvoices struct {
 	repo                 domain.BillingRepository
-	auditW               *audit.Writer
+	auditW               LineAuditWriter
 	termDateLookup       domain.TermDateLookup
 	adHocLookup          domain.AdHocBookingLookup
 	hourlyLookup         domain.HourlyBookingLookup
@@ -27,7 +27,7 @@ type GenerateTermInvoices struct {
 	bookingEntriesLookup domain.BookingEntriesLookup
 }
 
-func NewGenerateTermInvoices(repo domain.BillingRepository, auditW *audit.Writer, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, holidayPeriodLookup domain.HolidayPeriodLookup, fundingLookup domain.FundingLookup, bookingEntriesLookup domain.BookingEntriesLookup) *GenerateTermInvoices {
+func NewGenerateTermInvoices(repo domain.BillingRepository, auditW LineAuditWriter, termDateLookup domain.TermDateLookup, adHocLookup domain.AdHocBookingLookup, hourlyLookup domain.HourlyBookingLookup, closureDateLookup domain.ClosureDateLookup, holidayPeriodLookup domain.HolidayPeriodLookup, fundingLookup domain.FundingLookup, bookingEntriesLookup domain.BookingEntriesLookup) *GenerateTermInvoices {
 	return &GenerateTermInvoices{repo: repo, auditW: auditW, termDateLookup: termDateLookup, adHocLookup: adHocLookup, hourlyLookup: hourlyLookup, closureDateLookup: closureDateLookup, holidayPeriodLookup: holidayPeriodLookup, fundingLookup: fundingLookup, bookingEntriesLookup: bookingEntriesLookup}
 }
 
@@ -324,6 +324,21 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 
 		var invoiceID uuid.UUID
 		var action domain.DraftInvoiceAction
+
+		// Capture human-renamed system-line descriptions before the delete-
+		// and-reinsert step so regeneration preserves them (KTD3): keyed by
+		// line kind for core/funded deduction and by hourly_booking_id for
+		// hourly lines. Ad-hoc lines are not deleted here, so their renames
+		// survive naturally.
+		var preservedDescriptions map[string]domain.InvoiceReviewLineRow
+		if invoiceFound {
+			existingLines, listErr := uc.repo.ListInvoiceLinesForManagerReviewTx(ctx, in.Tx, in.Actor.TenantID, in.Actor.BranchID, invoiceID)
+			if listErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("list existing lines for preservation: %w", listErr)
+			}
+			preservedDescriptions = captureRenamedSystemLines(existingLines)
+		}
+
 		if invoiceFound {
 			invoiceID = existingInvoice.ID
 			action = domain.DraftUpdated
@@ -378,19 +393,28 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		if jsonErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("marshal core line details: %w", jsonErr)
 		}
+		coreDescription := domain.CoreChildcareDefaultDescription(in.BillingMonth)
+		coreDetailsOut := coreLineDetailsJSON
+		if preserved, ok := preservedDescriptions[domain.LineKindCoreChildcare]; ok {
+			coreDescription = preserved.Description
+			coreDetailsOut, jsonErr = domain.SetLineDescriptionOverride(coreLineDetailsJSON)
+			if jsonErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("marshal core line override: %w", jsonErr)
+			}
+		}
 		if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
 			ID:              uid.NewUUID(),
 			TenantID:        in.Actor.TenantID,
 			BranchID:        in.Actor.BranchID,
 			InvoiceID:       invoiceID,
 			LineKind:        domain.LineKindCoreChildcare,
-			Description:     "Core childcare",
+			Description:     coreDescription,
 			SortOrder:       1,
 			QuantityMinutes: calc.TotalMinutes,
 			UnitAmount:      domain.MustGBP(bookingRow.SiteHourlyRateMinor),
 			LineAmount:      domain.MustGBP(calc.Subtotal.Minor()),
 			SessionCount:    len(calc.Sessions),
-			Details:         coreLineDetailsJSON,
+			Details:         coreDetailsOut,
 		}); insErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("insert core line: %w", insErr)
 		}
@@ -419,6 +443,14 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		} else if fundingModel == "stretched" && fundedHoursPerWeek > 0 {
 			deductionDescription = fmt.Sprintf("Stretched funding (≈%.1fh/week)", fundedHoursPerWeek)
 		}
+		deductionDetailsOut := deductionLineDetailsJSON
+		if preserved, ok := preservedDescriptions[domain.LineKindFundedDeduction]; ok {
+			deductionDescription = preserved.Description
+			deductionDetailsOut, jsonErr = domain.SetLineDescriptionOverride(deductionLineDetailsJSON)
+			if jsonErr != nil {
+				return GenerateTermInvoicesOutput{}, fmt.Errorf("marshal deduction line override: %w", jsonErr)
+			}
+		}
 		if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
 			ID:                     uid.NewUUID(),
 			TenantID:               in.Actor.TenantID,
@@ -431,7 +463,7 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			FundedDeductionMinutes: fundedDeductionMinutes,
 			CoreBillableMinutes:    billableMinutes,
 			LineAmount:             domain.MustGBP(deductionLineAmountAbs),
-			Details:                deductionLineDetailsJSON,
+			Details:                deductionDetailsOut,
 		}); insErr != nil {
 			return GenerateTermInvoicesOutput{}, fmt.Errorf("insert deduction line: %w", insErr)
 		}
@@ -464,18 +496,27 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			if jsonErr != nil {
 				return GenerateTermInvoicesOutput{}, fmt.Errorf("marshal hourly line details: %w", jsonErr)
 			}
+			description := hLine.description
+			detailsOut := lineDetailsJSON
+			if preserved, ok := preservedDescriptions[domain.LineKindHourly+":"+hLine.bookingID.String()]; ok {
+				description = preserved.Description
+				detailsOut, jsonErr = domain.SetLineDescriptionOverride(lineDetailsJSON)
+				if jsonErr != nil {
+					return GenerateTermInvoicesOutput{}, fmt.Errorf("marshal hourly line override: %w", jsonErr)
+				}
+			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, in.Tx, domain.InvoiceLineCreateParams{
 				ID:              uid.NewUUID(),
 				TenantID:        in.Actor.TenantID,
 				BranchID:        in.Actor.BranchID,
 				InvoiceID:       invoiceID,
 				LineKind:        domain.LineKindHourly,
-				Description:     hLine.description,
+				Description:     description,
 				SortOrder:       3 + len(adHocLines) + i,
 				QuantityMinutes: hLine.minutes,
 				UnitAmount:      domain.MustGBP(hLine.unitMinor),
 				LineAmount:      domain.MustGBP(hLine.lineMinor),
-				Details:         lineDetailsJSON,
+				Details:         detailsOut,
 			}); insErr != nil {
 				return GenerateTermInvoicesOutput{}, fmt.Errorf("insert hourly line: %w", insErr)
 			}
@@ -521,6 +562,28 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		Blocked:     blocked,
 		TotalDueSum: totalDueSum,
 	}, nil
+}
+
+// captureRenamedSystemLines returns the existing system lines whose details
+// carry the description-override marker, keyed by line kind (core childcare,
+// funded deduction) or by hourly_booking_id (hourly). Only lines the manager
+// has explicitly renamed are preserved across regeneration (KTD3).
+func captureRenamedSystemLines(lines []domain.InvoiceReviewLineRow) map[string]domain.InvoiceReviewLineRow {
+	preserved := make(map[string]domain.InvoiceReviewLineRow)
+	for _, l := range lines {
+		if !l.DescriptionOverride {
+			continue
+		}
+		switch l.LineKind {
+		case domain.LineKindCoreChildcare, domain.LineKindFundedDeduction:
+			preserved[l.LineKind] = l
+		case domain.LineKindHourly:
+			if l.HourlyBookingID != nil {
+				preserved[domain.LineKindHourly+":"+l.HourlyBookingID.String()] = l
+			}
+		}
+	}
+	return preserved
 }
 
 // enrichBookedSessions copies the calculated sessions and persists each

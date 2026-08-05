@@ -264,11 +264,11 @@ SET description = $4,
     quantity_minutes = $5,
     unit_amount_minor = $6,
     line_amount_minor = $7,
+    details = COALESCE($8, details),
     updated_at = now()
 WHERE id = $1
   AND tenant_id = $2
-  AND branch_id = $3
-  AND line_kind IN ('extra', 'ad_hoc');
+  AND branch_id = $3;
 
 -- name: InvoiceLineDelete :execrows
 DELETE FROM invoice_lines

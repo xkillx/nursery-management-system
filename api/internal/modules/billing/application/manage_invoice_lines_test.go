@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
+	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/tenant"
 )
@@ -26,6 +28,8 @@ type manageLinesRepoStub struct {
 	deletedIDs  []uuid.UUID
 	updateErr   error
 	deleteErr   error
+	updatedDesc string
+	updatedDtls []byte
 }
 
 func (s *manageLinesRepoStub) GetInvoiceForManagerReview(_ context.Context, _, _, _ uuid.UUID) (domain.InvoiceReviewRow, bool, error) {
@@ -56,10 +60,12 @@ func (s *manageLinesRepoStub) InsertInvoiceLine(_ context.Context, _ domain.Tx, 
 	s.insertedIDs = append(s.insertedIDs, params.ID)
 	return nil
 }
-func (s *manageLinesRepoStub) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money) (int64, error) {
+func (s *manageLinesRepoStub) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, description string, _ int, _, _ domain.Money, details []byte) (int64, error) {
 	if s.updateErr != nil {
 		return 0, s.updateErr
 	}
+	s.updatedDesc = description
+	s.updatedDtls = append([]byte(nil), details...)
 	return 1, nil
 }
 func (s *manageLinesRepoStub) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
@@ -185,7 +191,7 @@ func (s *stubTxManager) ExecTx(_ context.Context, fn func(pgx.Tx) error) error {
 
 type stubAuditWriter struct{}
 
-func (s *stubAuditWriter) WriteWithTx(_ context.Context, _ pgx.Tx, _ tenant.ActorContext, _ interface{}) error {
+func (s *stubAuditWriter) WriteWithTx(_ context.Context, _ pgx.Tx, _ tenant.ActorContext, _ audit.WriteParams) error {
 	return nil
 }
 
@@ -280,14 +286,224 @@ func TestUpdateLine_RejectsImmutableKind(t *testing.T) {
 		LineAmountMinor: 500,
 	})
 	if err == nil {
-		t.Fatal("expected error for updating system line")
+		t.Fatal("expected error for value change on system line")
 	}
 	de, ok := err.(*domainerrors.DomainError)
 	if !ok {
 		t.Fatalf("expected DomainError, got %T", err)
 	}
-	if de.Code != "invoice_line_kind_immutable" {
-		t.Errorf("expected code invoice_line_kind_immutable, got %s", de.Code)
+	if de.Code != "invoice_line_values_immutable" {
+		t.Errorf("expected code invoice_line_values_immutable, got %s", de.Code)
+	}
+}
+
+func TestUpdateLine_DescriptionOnlyOnSystemLinePersistsOverride(t *testing.T) {
+	line := systemLine()
+	line.Description = "May 2026 Recurring Booking"
+	line.QuantityMinutes = 12000
+	line.UnitAmount = domain.MustGBP(1000)
+	line.LineAmount = domain.MustGBP(200000)
+	line.Details = []byte(`{"booked_sessions":[{"day":"mon","minutes":300}]}`)
+	repo := &manageLinesRepoStub{
+		invoice:   draftInvoice(),
+		invoiceOK: true,
+		line:      line,
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: &stubAuditWriter{}}
+
+	actor := testActor()
+	_, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), UpdateLineInput{
+		Description:     "Wrap-around care",
+		QuantityMinutes: 12000,
+		UnitAmountMinor: 1000,
+		LineAmountMinor: 200000,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if repo.updatedDesc != "Wrap-around care" {
+		t.Errorf("updated description = %q, want %q", repo.updatedDesc, "Wrap-around care")
+	}
+	if !domain.HasLineDescriptionOverride(repo.updatedDtls) {
+		t.Errorf("expected description_override marker in details %s", repo.updatedDtls)
+	}
+	if !strings.Contains(string(repo.updatedDtls), "booked_sessions") {
+		t.Errorf("expected booked_sessions preserved in details, got %s", repo.updatedDtls)
+	}
+}
+
+func TestUpdateLine_SystemLineValuesReadOnlyServerSide(t *testing.T) {
+	line := systemLine()
+	line.Description = "May 2026 Recurring Booking"
+	line.QuantityMinutes = 12000
+	line.UnitAmount = domain.MustGBP(1000)
+	line.LineAmount = domain.MustGBP(200000)
+	repo := &manageLinesRepoStub{
+		invoice:   draftInvoice(),
+		invoiceOK: true,
+		line:      line,
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: nil}
+
+	actor := testActor()
+	for _, tc := range []struct {
+		name  string
+		input UpdateLineInput
+	}{
+		{"quantity", UpdateLineInput{Description: "x", QuantityMinutes: 999, UnitAmountMinor: 1000, LineAmountMinor: 200000}},
+		{"unit", UpdateLineInput{Description: "x", QuantityMinutes: 12000, UnitAmountMinor: 999, LineAmountMinor: 200000}},
+		{"amount", UpdateLineInput{Description: "x", QuantityMinutes: 12000, UnitAmountMinor: 1000, LineAmountMinor: 999}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), tc.input)
+			if err == nil {
+				t.Fatal("expected error for value change on system line")
+			}
+			de, ok := err.(*domainerrors.DomainError)
+			if !ok {
+				t.Fatalf("expected DomainError, got %T", err)
+			}
+			if de.Code != "invoice_line_values_immutable" {
+				t.Errorf("expected code invoice_line_values_immutable, got %s", de.Code)
+			}
+		})
+	}
+}
+
+func TestUpdateLine_DescriptionChangeOnSystemLineLeavesAmountsUntouched(t *testing.T) {
+	line := systemLine()
+	line.Description = "May 2026 Recurring Booking"
+	line.QuantityMinutes = 12000
+	line.UnitAmount = domain.MustGBP(1000)
+	line.LineAmount = domain.MustGBP(200000)
+	repo := &manageLinesRepoStub{
+		invoice:   draftInvoice(),
+		invoiceOK: true,
+		line:      line,
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: &stubAuditWriter{}}
+
+	actor := testActor()
+	// Description-only request that omits amount fields: incoming amounts match
+	// stored values, so quantity/unit/line amount stay unchanged.
+	result, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), UpdateLineInput{
+		Description:     "Renamed core",
+		QuantityMinutes: 12000,
+		UnitAmountMinor: 1000,
+		LineAmountMinor: 200000,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.QuantityMinutes != 12000 || result.UnitAmountMinor != 1000 || result.LineAmountMinor != 200000 {
+		t.Errorf("amounts changed unexpectedly: q=%d u=%d a=%d", result.QuantityMinutes, result.UnitAmountMinor, result.LineAmountMinor)
+	}
+}
+
+func TestUpdateLine_ExtraLineKeepsFullEditability(t *testing.T) {
+	line := extraLine()
+	line.Description = "Late pick-up"
+	line.QuantityMinutes = 30
+	line.UnitAmount = domain.MustGBP(500)
+	line.LineAmount = domain.MustGBP(1500)
+	repo := &manageLinesRepoStub{
+		invoice:   draftInvoice(),
+		invoiceOK: true,
+		line:      line,
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: &stubAuditWriter{}}
+
+	actor := testActor()
+	result, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), UpdateLineInput{
+		Description:     "Late pick-up (updated)",
+		QuantityMinutes: 60,
+		UnitAmountMinor: 600,
+		LineAmountMinor: 3600,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.QuantityMinutes != 60 || result.UnitAmountMinor != 600 || result.LineAmountMinor != 3600 {
+		t.Errorf("extra line values not applied: q=%d u=%d a=%d", result.QuantityMinutes, result.UnitAmountMinor, result.LineAmountMinor)
+	}
+}
+
+func TestUpdateLine_RejectsEmptyDescription(t *testing.T) {
+	repo := &manageLinesRepoStub{
+		invoice:   draftInvoice(),
+		invoiceOK: true,
+		line:      extraLine(),
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: nil}
+
+	actor := testActor()
+	_, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), UpdateLineInput{
+		Description: "   ",
+	})
+	if err == nil {
+		t.Fatal("expected error for whitespace-only description")
+	}
+	de, ok := err.(*domainerrors.DomainError)
+	if !ok {
+		t.Fatalf("expected DomainError, got %T", err)
+	}
+	if de.Code != "validation_error" {
+		t.Errorf("expected code validation_error, got %s", de.Code)
+	}
+}
+
+func TestUpdateLine_RejectsTooLongDescription(t *testing.T) {
+	repo := &manageLinesRepoStub{
+		invoice:   draftInvoice(),
+		invoiceOK: true,
+		line:      extraLine(),
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: nil}
+
+	actor := testActor()
+	_, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), UpdateLineInput{
+		Description: strings.Repeat("a", 121),
+	})
+	if err == nil {
+		t.Fatal("expected error for description over 120 chars")
+	}
+	de, ok := err.(*domainerrors.DomainError)
+	if !ok {
+		t.Fatalf("expected DomainError, got %T", err)
+	}
+	if de.Code != "validation_error" {
+		t.Errorf("expected code validation_error, got %s", de.Code)
+	}
+}
+
+func TestUpdateLine_RejectsNonDraftInvoice(t *testing.T) {
+	repo := &manageLinesRepoStub{
+		invoice:   issuedInvoice(),
+		invoiceOK: true,
+		line:      extraLine(),
+		lineOK:    true,
+	}
+	uc := &ManageInvoiceLines{repo: repo, txMgr: &stubTxManager{}, auditW: nil}
+
+	actor := testActor()
+	_, err := uc.UpdateLine(context.Background(), actor, uuid.New().String(), uuid.New().String(), UpdateLineInput{
+		Description: "x",
+	})
+	if err == nil {
+		t.Fatal("expected error for non-draft invoice")
+	}
+	de, ok := err.(*domainerrors.DomainError)
+	if !ok {
+		t.Fatalf("expected DomainError, got %T", err)
+	}
+	if de.Code != "invoice_not_draft" {
+		t.Errorf("expected code invoice_not_draft, got %s", de.Code)
 	}
 }
 

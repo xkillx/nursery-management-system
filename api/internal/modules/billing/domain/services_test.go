@@ -337,3 +337,52 @@ func TestComputeInvoicePrefill(t *testing.T) {
 		}
 	})
 }
+
+func TestCoreChildcareDefaultDescription(t *testing.T) {
+	cases := []struct {
+		month time.Time
+		want  string
+	}{
+		{time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC), "May 2026 Recurring Booking"},
+		{time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC), "December 2026 Recurring Booking"},
+		{time.Date(2027, 1, 15, 0, 0, 0, 0, time.UTC), "January 2027 Recurring Booking"},
+	}
+	for _, tc := range cases {
+		if got := CoreChildcareDefaultDescription(tc.month); got != tc.want {
+			t.Errorf("CoreChildcareDefaultDescription(%v) = %q, want %q", tc.month, got, tc.want)
+		}
+	}
+}
+
+func TestComputeInvoicePrefill_DefaultDescriptionIsBookingTypeLabel(t *testing.T) {
+	entries := []BookedPatternEntry{
+		{
+			DayOfWeek: 1,
+			SessionType: BookedSessionType{
+				ID:              "st1",
+				Name:            "Full Day",
+				StartMinutes:    480,
+				EndMinutes:      720,
+				DurationMinutes: 240,
+			},
+		},
+	}
+	params := InvoicePrefillParams{
+		Entries:                entries,
+		BillingMonthStart:      time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC),
+		SiteHourlyRateMinor:    500,
+		FundedAllowanceMinutes: 0,
+		HasFunding:             false,
+	}
+	result, err := ComputeInvoicePrefill(params)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Lines) == 0 {
+		t.Fatal("expected at least one line")
+	}
+	core := result.Lines[0]
+	if core.Description != "May 2026 Recurring Booking" {
+		t.Errorf("core line description = %q, want %q", core.Description, "May 2026 Recurring Booking")
+	}
+}

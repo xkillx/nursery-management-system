@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"nursery-management-system/api/internal/modules/billing/domain"
-	"nursery-management-system/api/internal/platform/audit"
 	domainerrors "nursery-management-system/api/internal/platform/errors"
 	"nursery-management-system/api/internal/platform/events"
 	"nursery-management-system/api/internal/platform/tenant"
@@ -20,7 +19,7 @@ import (
 type CreateAndIssueInvoiceFromForm struct {
 	repo       domain.BillingRepository
 	dispatcher *events.EventDispatcher
-	auditW     *audit.Writer
+	auditW     LineAuditWriter
 	issueUC    *IssueInvoice
 	core       *coreSessionsComputer
 }
@@ -28,7 +27,7 @@ type CreateAndIssueInvoiceFromForm struct {
 func NewCreateAndIssueInvoiceFromForm(
 	repo domain.BillingRepository,
 	dispatcher *events.EventDispatcher,
-	auditW *audit.Writer,
+	auditW LineAuditWriter,
 	issueUC *IssueInvoice,
 	bookingEntriesLookup domain.BookingEntriesLookup,
 	termDateLookup domain.TermDateLookup,
@@ -70,6 +69,11 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 	}
 
 	for _, line := range input.Lines {
+		trimmed, descErr := validateLineDescription(line.Description)
+		if descErr != nil {
+			return domain.IssueInvoiceResult{}, descErr
+		}
+		line.Description = trimmed
 		if line.LineKind != domain.LineKindFundedDeduction && line.LineKind != "" {
 			if line.QuantityMinutes < 0 {
 				return domain.IssueInvoiceResult{}, domainerrors.Validation("Quantity must be non-negative.", "lines")
@@ -146,6 +150,15 @@ func (uc *CreateAndIssueInvoiceFromForm) Execute(ctx context.Context, actor tena
 				lineDetails, err = uc.core.computeCoreLineDetails(ctx, tx, actor, input.ChildID, billingMonth, line)
 				if err != nil {
 					return fmt.Errorf("compute core line details: %w", err)
+				}
+			}
+			// A manually entered core-line label that differs from the derived
+			// default is human-owned: persist the override marker so a later
+			// regeneration keeps it (KTD6).
+			if line.LineKind == domain.LineKindCoreChildcare && line.Description != domain.CoreChildcareDefaultDescription(billingMonth) {
+				lineDetails, err = domain.SetLineDescriptionOverride(lineDetails)
+				if err != nil {
+					return fmt.Errorf("merge description override: %w", err)
 				}
 			}
 

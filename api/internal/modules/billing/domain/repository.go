@@ -90,7 +90,7 @@ type BillingRepository interface {
 
 	// Invoice Line CRUD — transactional methods using Tx.
 	GetInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, invoiceID, lineID uuid.UUID) (InvoiceLine, bool, error)
-	UpdateInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, lineID uuid.UUID, description string, quantityMinutes int, unitAmount, lineAmount Money) (int64, error)
+	UpdateInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, lineID uuid.UUID, description string, quantityMinutes int, unitAmount, lineAmount Money, details []byte) (int64, error)
 	DeleteInvoiceLine(ctx context.Context, tx Tx, tenantID, branchID, lineID uuid.UUID) (int64, error)
 
 	// Invoice Void — transactional method using Tx.

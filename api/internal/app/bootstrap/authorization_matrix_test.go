@@ -485,7 +485,7 @@ func allRouteEntries(h *authzHarness) []routeEntry {
 
 		// Billing (manager)
 		{"GET", "/api/v1/invoices/drafts/preflight", classProtectedBusiness, []string{"manager"}},
-		{"POST", "/api/v1/invoice-runs/drafts", classProtectedBusiness, []string{"manager"}},
+		{"POST", "/api/v1/invoices/drafts/generate", classProtectedBusiness, []string{"manager"}},
 		{"GET", "/api/v1/invoices", classProtectedBusiness, []string{"manager"}},
 		{"GET", "/api/v1/invoices/:invoice_id", classProtectedBusiness, []string{"manager"}},
 		{"POST", "/api/v1/invoices/:invoice_id/issue", classProtectedBusiness, []string{"manager"}},
@@ -688,7 +688,7 @@ func TestAuthorizationMatrixProtectedRoutesRequireAuthentication(t *testing.T) {
 
 		// Billing
 		{"preflight", "GET", "/api/v1/invoices/drafts/preflight?billing_month=2026-05", ""},
-		{"generate drafts", "POST", "/api/v1/invoice-runs/drafts", `{"billing_month":"2026-05"}`},
+		{"generate drafts", "POST", "/api/v1/invoices/drafts/generate", `{"billing_month":"2026-05"}`},
 		{"list invoices", "GET", "/api/v1/invoices", ""},
 		{"get invoice", "GET", "/api/v1/invoices/" + h.invoiceA.String(), ""},
 		{"issue invoice", "POST", "/api/v1/invoices/" + h.invoiceA.String() + "/issue", `{"confirm":true}`},
@@ -756,7 +756,7 @@ func TestAuthorizationMatrixProtectedRoutesRejectWrongRoles(t *testing.T) {
 		{"upsert funding", "PUT", "/api/v1/funding/children/" + h.childA.String(), `{"billing_month":"2026-05"}`},
 
 		{"preflight", "GET", "/api/v1/invoices/drafts/preflight?billing_month=2026-05", ""},
-		{"generate drafts", "POST", "/api/v1/invoice-runs/drafts", `{"billing_month":"2026-05"}`},
+		{"generate drafts", "POST", "/api/v1/invoices/drafts/generate", `{"billing_month":"2026-05"}`},
 		{"list invoices", "GET", "/api/v1/invoices", ""},
 		{"get invoice", "GET", "/api/v1/invoices/" + h.invoiceA.String(), ""},
 		{"issue invoice", "POST", "/api/v1/invoices/" + h.invoiceA.String() + "/issue", `{"confirm":true}`},

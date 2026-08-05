@@ -983,6 +983,7 @@ func testConfig() config.Config {
 		AppEnv:                       "local",
 		APIPort:                      "8080",
 		APIBasePath:                  "/api/v1",
+		MaxBodySizeBytes:             1048576,
 		DatabaseURL:                  "postgres://unused",
 		JWTAccessSecret:              "access-secret",
 		JWTRefreshSecret:             "refresh-secret",

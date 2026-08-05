@@ -47,6 +47,14 @@ type InvoicePrefillResult struct {
 	Sessions               []BookedSession
 }
 
+// CoreChildcareDefaultDescription returns the default description for the
+// recurring core-childcare line, scoped to the invoice's billing month (e.g.
+// "May 2026 Recurring Booking"). Shared by generation, prefill, and the
+// manual-draft create paths so they always agree (KTD5).
+func CoreChildcareDefaultDescription(billingMonth time.Time) string {
+	return fmt.Sprintf("%s Recurring Booking", billingMonth.Format("January 2006"))
+}
+
 // ComputeInvoicePrefill is a pure domain service that computes invoice line
 // items and totals from booking pattern data, hourly rate, and funding info.
 // It has no side effects and no infrastructure dependencies.
@@ -91,7 +99,7 @@ func ComputeInvoicePrefill(params InvoicePrefillParams) (InvoicePrefillResult, e
 	lines := make([]InvoicePrefillLine, 0, 2)
 	lines = append(lines, InvoicePrefillLine{
 		LineKind:               LineKindCoreChildcare,
-		Description:            "Core childcare",
+		Description:            CoreChildcareDefaultDescription(params.BillingMonthStart),
 		SortOrder:              1,
 		QuantityMinutes:        calc.TotalMinutes,
 		UnitAmountMinor:        params.SiteHourlyRateMinor,

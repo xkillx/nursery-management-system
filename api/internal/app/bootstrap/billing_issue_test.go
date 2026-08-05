@@ -620,7 +620,7 @@ func TestInvoiceIssueRegenerationGuard(t *testing.T) {
 	dbtest.InsertGuardianLink(t, h.pool, linkID, h.tenantID, h.branchID, guardianID, childID)
 
 	// Try draft generation for same month
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":["`+childID.String()+`"]}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05","child_ids":["`+childID.String()+`"]}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var genResp genDraftsResponse

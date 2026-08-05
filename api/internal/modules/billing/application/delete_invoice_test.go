@@ -122,7 +122,7 @@ func (s *deleteInvoiceRepoStub) MarkInvoiceIssued(_ context.Context, _ domain.Tx
 func (s *deleteInvoiceRepoStub) GetInvoiceLine(_ context.Context, _ domain.Tx, _, _, _, _ uuid.UUID) (domain.InvoiceLine, bool, error) {
 	panic("unused")
 }
-func (s *deleteInvoiceRepoStub) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money) (int64, error) {
+func (s *deleteInvoiceRepoStub) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money, _ []byte) (int64, error) {
 	panic("unused")
 }
 func (s *deleteInvoiceRepoStub) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {
@@ -480,7 +480,7 @@ func (s *mixedDeleteRepoStub) MarkInvoiceIssued(_ context.Context, _ domain.Tx, 
 func (s *mixedDeleteRepoStub) GetInvoiceLine(_ context.Context, _ domain.Tx, _, _, _, _ uuid.UUID) (domain.InvoiceLine, bool, error) {
 	panic("unused")
 }
-func (s *mixedDeleteRepoStub) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money) (int64, error) {
+func (s *mixedDeleteRepoStub) UpdateInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID, _ string, _ int, _, _ domain.Money, _ []byte) (int64, error) {
 	panic("unused")
 }
 func (s *mixedDeleteRepoStub) DeleteInvoiceLine(_ context.Context, _ domain.Tx, _, _, _ uuid.UUID) (int64, error) {

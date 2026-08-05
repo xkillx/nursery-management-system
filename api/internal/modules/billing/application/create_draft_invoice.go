@@ -19,7 +19,7 @@ import (
 type CreateDraftInvoice struct {
 	repo   domain.BillingRepository
 	txMgr  DraftInvoiceTxManager
-	auditW *audit.Writer
+	auditW LineAuditWriter
 	core   *coreSessionsComputer
 }
 
@@ -30,7 +30,7 @@ type DraftInvoiceTxManager interface {
 func NewCreateDraftInvoice(
 	repo domain.BillingRepository,
 	txMgr DraftInvoiceTxManager,
-	auditW *audit.Writer,
+	auditW LineAuditWriter,
 	bookingEntriesLookup domain.BookingEntriesLookup,
 	termDateLookup domain.TermDateLookup,
 	closureDateLookup domain.ClosureDateLookup,
@@ -112,6 +112,11 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 	}
 
 	for _, line := range input.Lines {
+		trimmed, descErr := validateLineDescription(line.Description)
+		if descErr != nil {
+			return CreateDraftInvoiceResult{}, descErr
+		}
+		line.Description = trimmed
 		if line.LineKind != domain.LineKindFundedDeduction && line.LineKind != "" {
 			if line.QuantityMinutes < 0 {
 				return CreateDraftInvoiceResult{}, domainerrors.Validation("Quantity must be non-negative.", "lines")
@@ -191,6 +196,15 @@ func (uc *CreateDraftInvoice) Execute(ctx context.Context, actor tenant.ActorCon
 				lineDetails, err = uc.core.computeCoreLineDetails(ctx, tx, actor, input.ChildID, billingMonth, line)
 				if err != nil {
 					return fmt.Errorf("compute core line details: %w", err)
+				}
+			}
+			// A manually entered core-line label that differs from the derived
+			// default is human-owned: persist the override marker so a later
+			// regeneration keeps it (KTD6).
+			if line.LineKind == domain.LineKindCoreChildcare && line.Description != domain.CoreChildcareDefaultDescription(billingMonth) {
+				lineDetails, err = domain.SetLineDescriptionOverride(lineDetails)
+				if err != nil {
+					return fmt.Errorf("merge description override: %w", err)
 				}
 			}
 			if insErr := uc.repo.InsertInvoiceLine(ctx, tx, domain.InvoiceLineCreateParams{

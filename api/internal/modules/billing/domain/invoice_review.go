@@ -78,6 +78,15 @@ type InvoiceReviewLineRow struct {
 	SessionCount           *int
 	FundingModel           *string
 	Sessions               []SessionRow
+	// Details is the raw line `details` JSONB, carried so regeneration can
+	// read the description-override marker and hourly booking reference (KTD3).
+	Details json.RawMessage
+	// DescriptionOverride is true when the line `details` carries the
+	// description_override marker (a human-renamed description).
+	DescriptionOverride bool
+	// HourlyBookingID is parsed from the hourly line's `details` for
+	// regeneration preservation keyed by booking reference.
+	HourlyBookingID *uuid.UUID
 }
 
 // InvoiceReviewCalculation is the curated calculation object for the API response.

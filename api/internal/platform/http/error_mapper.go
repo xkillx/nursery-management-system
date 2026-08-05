@@ -67,6 +67,7 @@ func mapDomainError(err error, requestID string) (int, ErrorResponse) {
 		"duplicate_child_month",
 		"invoice_not_draft", "invoice_not_monthly",
 		"invoice_not_payable", "invoice_resend_throttled",
+		"invoice_line_values_immutable", "invoice_line_kind_immutable",
 		"invite_email_already_registered", "invite_scope_conflict",
 		"invite_not_pending", "invite_already_accepted",
 		"room_name_duplicate", "room_has_children", "room_not_active":

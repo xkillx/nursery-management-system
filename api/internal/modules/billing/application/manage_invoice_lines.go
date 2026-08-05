@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -17,13 +19,19 @@ import (
 type ManageInvoiceLines struct {
 	repo   domain.BillingRepository
 	txMgr  DraftInvoiceTxManager
-	auditW *audit.Writer
+	auditW LineAuditWriter
+}
+
+// LineAuditWriter is the audit surface ManageInvoiceLines needs. Defined in
+// the consumer so tests can inject a stub without touching the audit module.
+type LineAuditWriter interface {
+	WriteWithTx(ctx context.Context, tx pgx.Tx, actor tenant.ActorContext, params audit.WriteParams) error
 }
 
 func NewManageInvoiceLines(
 	repo domain.BillingRepository,
 	txMgr DraftInvoiceTxManager,
-	auditW *audit.Writer,
+	auditW LineAuditWriter,
 ) *ManageInvoiceLines {
 	return &ManageInvoiceLines{repo: repo, txMgr: txMgr, auditW: auditW}
 }
@@ -71,9 +79,11 @@ func (uc *ManageInvoiceLines) AddLine(ctx context.Context, actor tenant.ActorCon
 		return InvoiceLineResult{}, domainerrors.Conflict("invoice_line_kind_immutable", "Only 'extra' and 'ad_hoc' line kinds can be added.")
 	}
 
-	if input.Description == "" {
-		return InvoiceLineResult{}, domainerrors.Validation("Description must not be empty.", "description")
+	description, descErr := validateLineDescription(input.Description)
+	if descErr != nil {
+		return InvoiceLineResult{}, descErr
 	}
+	input.Description = description
 
 	var result InvoiceLineResult
 
@@ -167,8 +177,9 @@ func (uc *ManageInvoiceLines) UpdateLine(ctx context.Context, actor tenant.Actor
 		return InvoiceLineResult{}, domainerrors.Validation("Invalid line ID format.", "line_id")
 	}
 
-	if input.Description == "" {
-		return InvoiceLineResult{}, domainerrors.Validation("Description must not be empty.", "description")
+	description, descErr := validateLineDescription(input.Description)
+	if descErr != nil {
+		return InvoiceLineResult{}, descErr
 	}
 
 	var result InvoiceLineResult
@@ -192,14 +203,44 @@ func (uc *ManageInvoiceLines) UpdateLine(ctx context.Context, actor tenant.Actor
 		if !lineFound {
 			return domainerrors.NotFound("invoice_line", "Invoice line not found.")
 		}
-		if line.LineKind != domain.LineKindExtra && line.LineKind != domain.LineKindAdHoc {
-			return domainerrors.Conflict("invoice_line_kind_immutable", "Only 'extra' and 'ad_hoc' lines can be updated.")
+
+		isSystemLine := line.LineKind != domain.LineKindExtra && line.LineKind != domain.LineKindAdHoc
+
+		// System lines (core childcare, funded deduction, hourly) are
+		// description-editable only; any quantity/unit/amount change is
+		// rejected server-side (KTD4). Extra/ad-hoc lines keep full value
+		// editability.
+		if isSystemLine {
+			if input.QuantityMinutes != line.QuantityMinutes ||
+				input.UnitAmountMinor != line.UnitAmount.Minor() ||
+				input.LineAmountMinor != line.LineAmount.Minor() {
+				return domainerrors.Conflict("invoice_line_values_immutable", "Only the description of this line can be updated.")
+			}
 		}
 
-		unitAmount := domain.MustGBP(input.UnitAmountMinor)
-		lineAmount := domain.MustGBP(input.LineAmountMinor)
+		descriptionChanged := description != line.Description
 
-		n, updErr := uc.repo.UpdateInvoiceLine(ctx, tx, actor.TenantID, actor.BranchID, lineID, input.Description, input.QuantityMinutes, unitAmount, lineAmount)
+		// Persist the override marker whenever the description changes, so a
+		// later regeneration preserves the human-renamed label (KTD2/KTD6).
+		details := line.Details
+		if descriptionChanged {
+			merged, mergeErr := domain.SetLineDescriptionOverride(line.Details)
+			if mergeErr != nil {
+				return fmt.Errorf("merge description override: %w", mergeErr)
+			}
+			details = merged
+		}
+
+		quantityMinutes := line.QuantityMinutes
+		unitAmount := line.UnitAmount
+		lineAmount := line.LineAmount
+		if !isSystemLine {
+			quantityMinutes = input.QuantityMinutes
+			unitAmount = domain.MustGBP(input.UnitAmountMinor)
+			lineAmount = domain.MustGBP(input.LineAmountMinor)
+		}
+
+		n, updErr := uc.repo.UpdateInvoiceLine(ctx, tx, actor.TenantID, actor.BranchID, lineID, description, quantityMinutes, unitAmount, lineAmount, details)
 		if updErr != nil {
 			return fmt.Errorf("update invoice line: %w", updErr)
 		}
@@ -219,7 +260,7 @@ func (uc *ManageInvoiceLines) UpdateLine(ctx context.Context, actor tenant.Actor
 			Details: map[string]any{
 				"line_id":   lineID.String(),
 				"line_kind": line.LineKind,
-				"amount":    input.LineAmountMinor,
+				"amount":    lineAmount.Minor(),
 				"subtotal":  subtotal,
 				"total_due": totalDue,
 			},
@@ -230,11 +271,11 @@ func (uc *ManageInvoiceLines) UpdateLine(ctx context.Context, actor tenant.Actor
 		result = InvoiceLineResult{
 			LineID:          lineID,
 			LineKind:        line.LineKind,
-			Description:     input.Description,
+			Description:     description,
 			SortOrder:       line.SortOrder,
-			QuantityMinutes: input.QuantityMinutes,
-			UnitAmountMinor: input.UnitAmountMinor,
-			LineAmountMinor: input.LineAmountMinor,
+			QuantityMinutes: quantityMinutes,
+			UnitAmountMinor: unitAmount.Minor(),
+			LineAmountMinor: lineAmount.Minor(),
 			SubtotalMinor:   subtotal,
 			TotalDueMinor:   totalDue,
 		}
@@ -380,4 +421,22 @@ func (uc *ManageInvoiceLines) nextSortOrder(ctx context.Context, tenantID, branc
 		}
 	}
 	return maxOrder + 1, nil
+}
+
+// maxLineDescriptionRunes is the maximum length (in runes) of a line
+// description accepted anywhere a description is entered (R9).
+const maxLineDescriptionRunes = 120
+
+// validateLineDescription trims and validates a line description: non-empty
+// after trimming, and at most 120 runes. It returns the trimmed value so the
+// caller persists the canonical form.
+func validateLineDescription(raw string) (string, *domainerrors.DomainError) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "", domainerrors.Validation("Description must not be empty.", "description")
+	}
+	if utf8.RuneCountInString(trimmed) > maxLineDescriptionRunes {
+		return "", domainerrors.Validation("Description must be at most 120 characters.", "description")
+	}
+	return trimmed, nil
 }

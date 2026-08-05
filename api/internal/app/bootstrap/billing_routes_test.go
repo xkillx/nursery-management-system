@@ -88,7 +88,7 @@ func TestBillingRouteInventory(t *testing.T) {
 
 	expected := []string{
 		"GET /api/v1/invoices/drafts/preflight",
-		"POST /api/v1/invoice-runs/drafts",
+		"POST /api/v1/invoices/drafts/generate",
 	}
 	for _, want := range expected {
 		if _, ok := have[want]; !ok {
@@ -508,7 +508,7 @@ func TestBillingGenerationRouteInventory(t *testing.T) {
 	}
 
 	expected := []string{
-		"POST /api/v1/invoice-runs/drafts",
+		"POST /api/v1/invoices/drafts/generate",
 	}
 	for _, want := range expected {
 		if _, ok := have[want]; !ok {
@@ -520,7 +520,7 @@ func TestBillingGenerationRouteInventory(t *testing.T) {
 func TestBillingGenerationUnauthenticated(t *testing.T) {
 	h := setupBillingHarness(t)
 
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", "", `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", "", `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusUnauthorized)
 }
 
@@ -528,7 +528,7 @@ func TestBillingGenerationRoleGuards(t *testing.T) {
 	h := setupBillingHarness(t)
 
 	for _, token := range []string{h.practitionerToken, h.parentToken} {
-		w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", token, `{"billing_month":"2026-05"}`)
+		w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", token, `{"billing_month":"2026-05"}`)
 		requireStatus(t, w, http.StatusForbidden)
 		requireErrorCode(t, w, "forbidden_role")
 	}
@@ -538,17 +538,17 @@ func TestBillingGenerationValidationErrors(t *testing.T) {
 	h := setupBillingHarness(t)
 
 	// Missing billing_month
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{}`)
 	requireStatus(t, w, http.StatusBadRequest)
 	requireErrorCode(t, w, "validation_error")
 
 	// Malformed billing_month
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"invalid"}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"invalid"}`)
 	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 
 	// Invalid child_id
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":["not-a-uuid"]}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05","child_ids":["not-a-uuid"]}`)
 	requireStatus(t, w, http.StatusUnprocessableEntity)
 	requireErrorCode(t, w, "validation_error")
 }
@@ -578,7 +578,7 @@ func TestBillingGenerationFullMonthCreatesDrafts(t *testing.T) {
 	}
 
 	// Generate
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
@@ -660,7 +660,7 @@ func TestBillingGenerationRerunUpdatesSameDraft(t *testing.T) {
 	}
 
 	// First generation
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp1 genDraftsResponse
@@ -668,7 +668,7 @@ func TestBillingGenerationRerunUpdatesSameDraft(t *testing.T) {
 	invoiceID := resp1.Generated[0].InvoiceID
 
 	// Second generation (rerun)
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp2 genDraftsResponse
@@ -748,7 +748,7 @@ func TestBillingGenerationIssuedInvoiceBlocked(t *testing.T) {
 		t.Fatalf("insert issued invoice: %v", err)
 	}
 
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -808,7 +808,7 @@ func TestBillingGenerationSelectedChildren(t *testing.T) {
 
 	// Generate only child1
 	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s"]}`, child1)
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, body)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -834,7 +834,7 @@ func TestBillingGenerationSelectedUnknownChild(t *testing.T) {
 
 	unknownID := uuid.MustParse("d0000000-0000-0000-0000-000000000001")
 	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s"]}`, unknownID)
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, body)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -854,7 +854,7 @@ func TestBillingGenerationSelectedUnknownChild(t *testing.T) {
 func TestBillingGenerationEmptyChildIDsNoop(t *testing.T) {
 	h := setupBillingHarness(t)
 
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05","child_ids":[]}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05","child_ids":[]}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -882,7 +882,7 @@ func TestBillingGenerationDuplicateChildIDsDeduped(t *testing.T) {
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
 
 	body := fmt.Sprintf(`{"billing_month":"2026-05","child_ids":["%s","%s"]}`, child1, child1)
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, body)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, body)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -912,7 +912,7 @@ func TestBillingGenerationZeroAttendanceGetsDraft(t *testing.T) {
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
 	// No attendance sessions
 
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -940,7 +940,7 @@ func TestBillingGenerationPreservesExtraLines(t *testing.T) {
 	dbtest.InsertGuardianLink(t, h.pool, link1, h.tenantID, h.branchID, guardian1, child1)
 
 	// First generation
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 	var resp1 genDraftsResponse
 	decodeJSON(t, w, &resp1)
@@ -958,7 +958,7 @@ func TestBillingGenerationPreservesExtraLines(t *testing.T) {
 	}
 
 	// Rerun generation
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	// Extra line preserved
@@ -1134,7 +1134,7 @@ func TestBillingGenerationCriticalCalculationSnapshot(t *testing.T) {
 		t.Fatalf("insert session 2: %v", err)
 	}
 
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp genDraftsResponse
@@ -1299,7 +1299,7 @@ func TestBillingGenerationRerunRecalculatesSameDraftAndReplacesSystemLines(t *te
 		t.Fatalf("insert session 1: %v", err)
 	}
 
-	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w := doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp1 genDraftsResponse
@@ -1332,7 +1332,7 @@ func TestBillingGenerationRerunRecalculatesSameDraftAndReplacesSystemLines(t *te
 		t.Fatalf("insert session 2: %v", err)
 	}
 
-	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoice-runs/drafts", h.managerToken, `{"billing_month":"2026-05"}`)
+	w = doRequest(t, h.router, http.MethodPost, "/api/v1/invoices/drafts/generate", h.managerToken, `{"billing_month":"2026-05"}`)
 	requireStatus(t, w, http.StatusOK)
 
 	var resp2 genDraftsResponse
