@@ -1622,7 +1622,7 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 
 	resp.Lines = make([]invoiceLineResponse, 0, len(r.Lines))
 	for _, line := range r.Lines {
-		resp.Lines = append(resp.Lines, invoiceLineResponse{
+		lineResp := invoiceLineResponse{
 			LineID:                 line.ID.String(),
 			LineKind:               line.LineKind,
 			Description:            line.Description,
@@ -1635,8 +1635,14 @@ func toInvoiceDetailResponse(r application.GetInvoiceResult) invoiceDetailRespon
 			CoreBillableMinutes:    line.CoreBillableMinutes,
 			SessionCount:           line.SessionCount,
 			FundingModel:           line.FundingModel,
+			DescriptionOverride:    line.DescriptionOverride,
 			Sessions:               toSessionRows(line.Sessions),
-		})
+		}
+		if line.HourlyBookingID != nil {
+			id := line.HourlyBookingID.String()
+			lineResp.HourlyBookingID = &id
+		}
+		resp.Lines = append(resp.Lines, lineResp)
 	}
 
 	return resp

@@ -216,6 +216,8 @@ type invoiceLineResponse struct {
 	CoreBillableMinutes    *int                 `json:"core_billable_minutes"`
 	SessionCount           *int                 `json:"session_count"`
 	FundingModel           *string              `json:"funding_model,omitempty"`
+	DescriptionOverride    bool                 `json:"description_override"`
+	HourlyBookingID        *string              `json:"hourly_booking_id,omitempty"`
 	Sessions               []sessionRowResponse `json:"sessions"`
 }
 
