@@ -222,4 +222,3 @@ func TestCoreSessionsComputer_NoOpEditPreservesSessions(t *testing.T) {
 		t.Fatal("expected persisted details on no-op edit (sessions preserved)")
 	}
 }
-

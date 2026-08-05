@@ -37,8 +37,8 @@ func NewCreateDraftInvoice(
 	holidayPeriodLookup domain.HolidayPeriodLookup,
 ) *CreateDraftInvoice {
 	return &CreateDraftInvoice{
-		repo:  repo,
-		txMgr: txMgr,
+		repo:   repo,
+		txMgr:  txMgr,
 		auditW: auditW,
 		core: &coreSessionsComputer{
 			repo:                 repo,
