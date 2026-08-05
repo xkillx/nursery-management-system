@@ -72,7 +72,10 @@ const draftDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+    
+      sessions: [],
     },
+
     {
       lineId: 'l2',
       lineKind: 'funded_deduction',
@@ -88,7 +91,10 @@ const draftDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+    
+      sessions: [],
     },
+
     {
       lineId: 'l3',
       lineKind: 'extra',
@@ -104,7 +110,10 @@ const draftDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+    
+      sessions: [],
     },
+
   ],
   createdAt: '2026-06-09T10:00:00Z',
   updatedAt: '2026-06-09T12:00:00Z',

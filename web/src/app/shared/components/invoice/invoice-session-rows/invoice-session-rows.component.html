@@ -1,0 +1,43 @@
+@if (sessions.length > 0) {
+  @for (session of sessions; track $index) {
+    <tr class="border-b border-gray-100 dark:border-gray-800">
+      <td class="py-3 pr-4 text-gray-800 dark:text-white/90 whitespace-nowrap">
+        {{ formatSessionDate(session.occurrenceDate) }}
+      </td>
+      <td class="py-3 pr-4 text-gray-800 dark:text-white/90">
+        {{ formatSessionBooking(session) }}
+      </td>
+      <td class="py-3 pr-4 text-gray-500 dark:text-gray-400">
+        Standard Weekly / Monthly Session Rate
+      </td>
+      <td class="py-3 pr-4 text-gray-500 dark:text-gray-400"></td>
+      <td class="py-3 pr-4 text-right text-gray-700 dark:text-gray-300">
+        {{ formatSessionQuantity(session.durationMinutes) }}
+      </td>
+      <td class="py-3 pr-4 text-right text-gray-700 dark:text-gray-300">
+        {{ formatUnitAmount(unitAmountMinor) }}
+      </td>
+      <td class="py-3 text-right font-medium text-gray-800 dark:text-white/90">
+        {{ formatUnitAmount(session.sessionAmountMinor) }}
+      </td>
+    </tr>
+  }
+}
+
+@if (aggregate) {
+  <tr class="border-b border-gray-200 bg-gray-50/50 font-semibold dark:border-gray-700 dark:bg-white/[0.02]">
+    <td class="py-3 pr-4 text-gray-900 dark:text-white/90">
+      {{ aggregate.description }}@if (aggregate.sessionCount > 0) {<span class="text-gray-500 dark:text-gray-400 font-normal"> · {{ aggregate.sessionCount }} session{{ aggregate.sessionCount === 1 ? '' : 's' }}</span>}
+    </td>
+    <td class="py-3 pr-4"></td>
+    <td class="py-3 pr-4"></td>
+    <td class="py-3 pr-4"></td>
+    <td class="py-3 pr-4 text-right text-gray-700 dark:text-gray-300">
+      {{ formatSessionQuantity(aggregate.quantityMinutes) }}
+    </td>
+    <td class="py-3 pr-4"></td>
+    <td class="py-3 text-right font-semibold text-gray-900 dark:text-white/90">
+      {{ formatUnitAmount(aggregate.totalMinor) }}
+    </td>
+  </tr>
+}

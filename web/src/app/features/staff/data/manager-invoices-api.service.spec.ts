@@ -363,7 +363,19 @@ child_last_name: null, blocker_codes: ['incomplete_attendance'] },
         },
         lines: [
           { line_id: 'l2', line_kind: 'funded_deduction', description: 'Funded deduction', sort_order: 2, quantity_minutes: 360, unit_amount_minor: 25, line_amount_minor: -9000 },
-          { line_id: 'l1', line_kind: 'core_childcare', description: 'Core childcare', sort_order: 1, quantity_minutes: 1320, unit_amount_minor: 25, line_amount_minor: 33000 },
+          {
+            line_id: 'l1',
+            line_kind: 'core_childcare',
+            description: 'Core childcare',
+            sort_order: 1,
+            quantity_minutes: 1320,
+            unit_amount_minor: 25,
+            line_amount_minor: 33000,
+            sessions: [
+              { occurrence_date: '2026-05-11', start_minutes: 480, end_minutes: 960, duration_minutes: 480, session_type_name: 'Full Day', session_amount_minor: 12000 },
+              { occurrence_date: '2026-05-12', start_minutes: 480, end_minutes: 960, duration_minutes: 480, session_type_name: 'Full Day', session_amount_minor: 12000 },
+            ],
+          },
         ],
         created_at: '2026-06-09T10:00:00Z',
         updated_at: '2026-06-09T12:00:00Z',
@@ -383,6 +395,10 @@ child_last_name: null, blocker_codes: ['incomplete_attendance'] },
         expect(detail.lines[0].lineId).toBe('l1');
         expect(detail.lines[1].lineId).toBe('l2');
         expect(detail.lines[0].lineKind).toBe('core_childcare');
+        expect(detail.lines[0].sessions.length).toBe(2);
+        expect(detail.lines[0].sessions[0].occurrenceDate).toBe('2026-05-11');
+        expect(detail.lines[0].sessions[0].sessionAmountMinor).toBe(12000);
+        expect(detail.lines[1].sessions).toEqual([]);
       });
 
       const req = httpMock.expectOne('/api/v1/invoices/inv-1');

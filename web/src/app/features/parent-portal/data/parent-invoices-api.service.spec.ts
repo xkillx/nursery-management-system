@@ -235,6 +235,84 @@ child_last_name: null,
       const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices/inv-2'));
       req.flush(apiResponse);
     });
+
+    it('maps sessions[] into InvoiceSession[] with session_amount_minor', (done) => {
+      const apiResponse = {
+        invoice_id: 'inv-3',
+        invoice_kind: 'monthly',
+        invoice_number: 'INV-3',
+        invoice_number_display: 'INV-3',
+        child_id: 'c-3',
+        child_first_name: 'Cara',
+        child_middle_name: null,
+        child_last_name: null,
+        billing_month: '2026-05',
+        status: 'issued',
+        subtotal_minor: 30000,
+        funded_deduction_minor: 0,
+        total_due_minor: 30000,
+        amount_paid_minor: 0,
+        lines: [
+          {
+            line_kind: 'core_childcare',
+            description: 'Core childcare',
+            sort_order: 1,
+            quantity_minutes: 480,
+            unit_amount_minor: 3750,
+            line_amount_minor: 30000,
+            sessions: [
+              { occurrence_date: '2026-05-04', start_minutes: 480, end_minutes: 960, duration_minutes: 480, session_type_name: 'Full Day', session_amount_minor: 15000 },
+              { occurrence_date: '2026-05-11', start_minutes: 480, end_minutes: 960, duration_minutes: 480, session_type_name: 'Full Day', session_amount_minor: 15000 },
+            ],
+          },
+        ],
+      };
+
+      service.getInvoice('inv-3').subscribe((detail) => {
+        const core = detail.lines[0];
+        expect(core.sessions.length).toBe(2);
+        expect(core.sessions[0].occurrenceDate).toBe('2026-05-04');
+        expect(core.sessions[0].sessionTypeName).toBe('Full Day');
+        expect(core.sessions[0].startMinutes).toBe(480);
+        expect(core.sessions[0].endMinutes).toBe(960);
+        expect(core.sessions[0].durationMinutes).toBe(480);
+        expect(core.sessions[0].sessionAmountMinor).toBe(15000);
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices/inv-3'));
+      req.flush(apiResponse);
+    });
+
+    it('defaults sessions to empty array when absent', (done) => {
+      const apiResponse = {
+        invoice_id: 'inv-4',
+        invoice_kind: 'monthly',
+        invoice_number: 'INV-4',
+        invoice_number_display: 'INV-4',
+        child_id: 'c-4',
+        child_first_name: 'Dan',
+        child_middle_name: null,
+        child_last_name: null,
+        billing_month: '2026-05',
+        status: 'issued',
+        subtotal_minor: 5000,
+        funded_deduction_minor: 0,
+        total_due_minor: 5000,
+        amount_paid_minor: 0,
+        lines: [
+          { line_kind: 'extras', description: 'Extra', sort_order: 1, quantity_minutes: 60, unit_amount_minor: 5000, line_amount_minor: 5000 },
+        ],
+      };
+
+      service.getInvoice('inv-4').subscribe((detail) => {
+        expect(detail.lines[0].sessions).toEqual([]);
+        done();
+      });
+
+      const req = httpMock.expectOne((r) => r.url.includes('/parent/invoices/inv-4'));
+      req.flush(apiResponse);
+    });
   });
 
   describe('createCheckoutSession', () => {

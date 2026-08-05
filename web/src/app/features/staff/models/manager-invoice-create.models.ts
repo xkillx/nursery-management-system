@@ -9,6 +9,7 @@ export interface ManagerInvoicePrefillLine {
   fundedDeductionMinutes: number;
   coreBillableMinutes: number;
   sessionCount: number;
+  sessions: InvoiceSession[];
 }
 
 export interface ManagerInvoicePrefillEntitlement {
@@ -16,6 +17,8 @@ export interface ManagerInvoicePrefillEntitlement {
   fundedAllowanceMinutes: number;
   statusLabel: string;
 }
+
+import { InvoiceSession } from '../../../shared/models/invoice-session.models';
 
 export interface ManagerInvoicePrefill {
   childId: string;
@@ -47,6 +50,7 @@ export interface FormInvoiceLine {
   coreBillableMinutes: number;
   sessionCount: number;
   isFundingOffset: boolean;
+  sessions?: InvoiceSession[];
 }
 
 export interface DraftInvoiceResult {

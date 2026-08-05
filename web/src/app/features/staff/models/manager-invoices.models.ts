@@ -1,5 +1,7 @@
 export type ManagerInvoiceStatus = 'draft' | 'issued' | 'payment_failed' | 'paid' | 'overdue' | 'void';
 
+import { InvoiceSession } from '../../../shared/models/invoice-session.models';
+
 export type ManagerInvoiceDueStatus = 'not_due' | 'due' | 'overdue' | 'paid';
 
 export interface ManagerInvoicePeriod {
@@ -81,6 +83,7 @@ export interface ManagerInvoiceLine {
   coreBillableMinutes: number | null;
   sessionCount: number | null;
   fundingModel: string | null;
+  sessions: InvoiceSession[];
 }
 
 export interface ManagerInvoiceSiteProfile {

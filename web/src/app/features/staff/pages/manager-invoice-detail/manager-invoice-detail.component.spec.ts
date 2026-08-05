@@ -84,6 +84,7 @@ const issuedDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+      sessions: [],
     },
     {
       lineId: 'l2',
@@ -100,6 +101,7 @@ const issuedDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
+      sessions: [],
     },
   ],
   createdAt: '2026-06-09T10:00:00Z',

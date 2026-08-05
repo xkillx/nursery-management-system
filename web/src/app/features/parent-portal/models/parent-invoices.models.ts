@@ -1,5 +1,7 @@
 export type ParentInvoiceStatus = 'issued' | 'payment_failed' | 'paid' | 'overdue';
 
+import { InvoiceSession } from '../../../shared/models/invoice-session.models';
+
 export type ParentInvoiceDueStatus = 'due' | 'overdue' | 'paid';
 
 export interface ParentInvoicePeriod {
@@ -57,6 +59,7 @@ export interface ParentInvoiceLine {
   unitAmountMinor: number | null;
   lineAmountMinor: number;
   fundingModel: string | null;
+  sessions: InvoiceSession[];
 }
 
 export interface ParentInvoiceSiteProfile {

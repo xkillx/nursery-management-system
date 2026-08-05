@@ -13,6 +13,7 @@ import {
   ParentInvoicePeriod,
   CheckoutSessionResult,
 } from '../models/parent-invoices.models';
+import { InvoiceSession } from '../../../shared/models/invoice-session.models';
 import { formatChildName } from '../../staff/utils/manager-list-formatters';
 
 interface ChildNameApi {
@@ -70,6 +71,16 @@ interface InvoiceLineApi {
   unit_amount_minor?: number | null;
   line_amount_minor: number;
   funding_model?: string | null;
+  sessions?: InvoiceSessionApi[] | null;
+}
+
+interface InvoiceSessionApi {
+  occurrence_date: string;
+  start_minutes?: number | null;
+  end_minutes?: number | null;
+  duration_minutes?: number | null;
+  session_type_name: string;
+  session_amount_minor: number;
 }
 
 interface InvoiceDetailApi extends ChildNameApi {
@@ -249,6 +260,18 @@ export class ParentInvoicesApiService {
       unitAmountMinor: l.unit_amount_minor ?? null,
       lineAmountMinor: l.line_amount_minor,
       fundingModel: l.funding_model ?? null,
+      sessions: (l.sessions ?? []).map((s) => this.toSession(s)),
+    };
+  }
+
+  private toSession(s: InvoiceSessionApi): InvoiceSession {
+    return {
+      occurrenceDate: s.occurrence_date,
+      startMinutes: s.start_minutes ?? null,
+      endMinutes: s.end_minutes ?? null,
+      durationMinutes: s.duration_minutes ?? null,
+      sessionTypeName: s.session_type_name,
+      sessionAmountMinor: s.session_amount_minor,
     };
   }
 

@@ -1,0 +1,66 @@
+<div class="overflow-x-auto">
+  <table class="w-full min-w-[720px] border-collapse text-left text-sm">
+    <thead>
+      <tr class="border-b border-gray-200/70 bg-gray-50/70 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+        <th scope="col" class="px-6 py-4">Date</th>
+        <th scope="col" class="px-6 py-4">Booking</th>
+        <th scope="col" class="px-6 py-4">Description</th>
+        <th scope="col" class="px-6 py-4">Kind</th>
+        <th scope="col" class="px-6 py-4 text-right w-24">Qty</th>
+        <th scope="col" class="px-6 py-4 text-right w-32">Unit</th>
+        <th scope="col" class="px-6 py-4 text-right w-32">Total</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+      @if (lines.length === 0) {
+        <tr>
+          <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            {{ emptyMessage }}
+          </td>
+        </tr>
+      }
+
+      @for (line of lines; track $index) {
+        @if (line.sessions.length > 0 && line.aggregate) {
+          <app-invoice-session-rows
+            [sessions]="line.sessions"
+            [aggregate]="line.aggregate"
+            [unitAmountMinor]="line.unitAmountMinor"
+          />
+        } @else {
+          <tr class="transition" [class.bg-orange-50\/40]="line.lineKind === 'funded_deduction'" [class.dark:bg-orange-500\/5]="line.lineKind === 'funded_deduction'" [class.hover:bg-gray-50\/60]="line.lineKind !== 'funded_deduction'" [class.dark:hover:bg-white\/[0.01]]="line.lineKind !== 'funded_deduction'">
+            <td class="px-6 py-4 text-gray-500 dark:text-gray-400"></td>
+            <td class="px-6 py-4">
+              <p class="font-bold text-sm" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-900]="line.lineKind !== 'funded_deduction'" [class.dark:text-white]="line.lineKind !== 'funded_deduction'">
+                {{ line.description }}
+              </p>
+              @if (line.lineKind === 'funded_deduction') {
+                <p class="text-xs text-orange-700 dark:text-orange-400 font-medium mt-1 flex items-center gap-1.5">
+                  <span class="inline-block size-1.5 rounded-full bg-orange-500"></span>
+                  {{ fundingModelLabel(line.fundingModel) }}
+                </p>
+              }
+            </td>
+            <td class="px-6 py-4 text-gray-500 dark:text-gray-400"></td>
+            <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ lineKindLabel(line.lineKind) }}</td>
+            <td class="px-6 py-4 text-right text-sm font-medium" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-700]="line.lineKind !== 'funded_deduction'" [class.dark:text-gray-300]="line.lineKind !== 'funded_deduction'">
+              @if (line.quantityMinutes) {
+                {{ line.quantityMinutes / 60 }} hr{{ line.quantityMinutes / 60 === 1 ? '' : 's' }}
+              }
+            </td>
+            <td class="px-6 py-4 text-right text-sm" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-600]="line.lineKind !== 'funded_deduction'" [class.dark:text-gray-400]="line.lineKind !== 'funded_deduction'">
+              {{ formatUnitAmount(line.unitAmountMinor) }}
+            </td>
+            <td class="px-6 py-4 text-right text-sm font-bold" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-900]="line.lineKind !== 'funded_deduction'" [class.dark:text-white]="line.lineKind !== 'funded_deduction'">
+              @if (line.lineKind === 'funded_deduction' && line.lineAmountMinor > 0) {
+                &minus;{{ formatUnitAmount(line.lineAmountMinor) }}
+              } @else {
+                {{ formatUnitAmount(line.lineAmountMinor) }}
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

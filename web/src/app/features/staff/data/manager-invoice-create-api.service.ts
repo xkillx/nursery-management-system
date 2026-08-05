@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api.config';
+import { InvoiceSession } from '../../../shared/models/invoice-session.models';
 import {
   ManagerInvoicePrefill,
   ManagerInvoicePrefillLine,
@@ -21,6 +22,16 @@ interface PrefillLineApi {
   funded_deduction_minutes: number;
   core_billable_minutes: number;
   session_count: number;
+  sessions?: InvoiceSessionApi[] | null;
+}
+
+interface InvoiceSessionApi {
+  occurrence_date: string;
+  start_minutes?: number | null;
+  end_minutes?: number | null;
+  duration_minutes?: number | null;
+  session_type_name: string;
+  session_amount_minor: number;
 }
 
 interface PrefillEntitlementApi {
@@ -220,6 +231,18 @@ export class ManagerInvoiceCreateApiService {
       fundedDeductionMinutes: l.funded_deduction_minutes,
       coreBillableMinutes: l.core_billable_minutes,
       sessionCount: l.session_count,
+      sessions: (l.sessions ?? []).map((s) => this.toSession(s)),
+    };
+  }
+
+  private toSession(s: InvoiceSessionApi): InvoiceSession {
+    return {
+      occurrenceDate: s.occurrence_date,
+      startMinutes: s.start_minutes ?? null,
+      endMinutes: s.end_minutes ?? null,
+      durationMinutes: s.duration_minutes ?? null,
+      sessionTypeName: s.session_type_name,
+      sessionAmountMinor: s.session_amount_minor,
     };
   }
 
