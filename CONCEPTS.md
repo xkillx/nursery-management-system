@@ -71,8 +71,8 @@ Invoices are generated for the next calendar month before service is delivered. 
 - `overdue` — due date passed without payment
 
 ### Invoice Lines
-- `core_childcare` — the booking-driven childcare cost (booked minutes × hourly rate)
-- `funded_deduction` — the funding entitlement deduction (funded minutes × hourly rate, subtracted)
+- `core_childcare` — the booking-driven childcare cost (booked minutes × hourly rate). On issued invoices and the manager/parent detail views it renders as one per-session row per booked occurrence, derived from the line's `details` JSON (`booked_sessions`), each showing the session date, session type, hours, hourly rate, and its allocated amount (largest-remainder over the line total). Invoices without session data (legacy or empty `details`) fall back to a single aggregate "Core childcare" row.
+- `funded_deduction` — the funding entitlement deduction (funded minutes × hourly rate, subtracted). Remains a single flat adjustment row and is not allocated per session.
 - `extra` — ad-hoc charges added by manager
 - `ad_hoc` — one-off booking charges for individual ad-hoc sessions
 
