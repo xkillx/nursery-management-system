@@ -71,10 +71,12 @@ Invoices are generated for the next calendar month before service is delivered. 
 - `overdue` — due date passed without payment
 
 ### Invoice Lines
-- `core_childcare` — the booking-driven childcare cost (booked minutes × hourly rate). On issued invoices and the manager/parent detail views it renders as one per-session row per booked occurrence, derived from the line's `details` JSON (`booked_sessions`), each showing the session date, session type, hours, hourly rate, and its allocated amount (largest-remainder over the line total). Invoices without session data (legacy or empty `details`) fall back to a single aggregate "Core childcare" row.
+- `core_childcare` — the booking-driven childcare cost (booked minutes × hourly rate). The default description is `"{Month Year} Recurring Booking"` (e.g. "May 2026 Recurring Booking"), derived from the invoice's billing month and shared across auto-generation, prefill, and manual-draft create. On issued invoices and the manager/parent detail views it renders as one per-session row per booked occurrence, derived from the line's `details` JSON (`booked_sessions`), each showing the session date, session type, hours, hourly rate, and its allocated amount (largest-remainder over the line total). Invoices without session data (legacy or empty `details`) fall back to a single aggregate "Core childcare" row.
 - `funded_deduction` — the funding entitlement deduction (funded minutes × hourly rate, subtracted). Remains a single flat adjustment row and is not allocated per session.
 - `extra` — ad-hoc charges added by manager
 - `ad_hoc` — one-off booking charges for individual ad-hoc sessions
+
+**Description editability and regeneration.** On a draft invoice, any line is description-editable by a manager (quantity/unit/amount stays read-only on `core_childcare`, `funded_deduction`, and `hourly` lines). A renamed description persists a `description_override: true` marker in the line's `details` JSONB; regeneration keeps human-renamed descriptions (keyed by line kind for core/funded deduction and by `hourly_booking_id` for hourly lines) while untouched system lines reset to their derived default. Ad-hoc lines are not deleted on regeneration, so their renames survive naturally. This resolves the per-session breakdown plan's core-line editability question in the description-only direction: description edits never collapse the persisted `booked_sessions`.
 
 ### Booking Pattern
 A child's planned weekly attendance schedule. The system counts day-of-week occurrences in the calendar month × session duration = `booked_core_minutes`. This is the billing basis under advance-pay.
