@@ -364,9 +364,14 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 			}
 		}
 
+		// Enrich each booked session with its allocated amount so the
+		// persisted breakdown is stable (KTD6): the largest-remainder
+		// baseline over the line total equals the as-billed amounts.
+		enrichedSessions := enrichBookedSessions(calc)
+
 		coreLineDetails := domain.CoreLineDetails{
 			BookedCoreMinutes: calc.TotalMinutes,
-			BookedSessions:    calc.Sessions,
+			BookedSessions:    enrichedSessions,
 			BookedPerEntry:    calc.PerEntry,
 		}
 		coreLineDetailsJSON, jsonErr := json.Marshal(coreLineDetails)
@@ -516,4 +521,21 @@ func (uc *GenerateTermInvoices) Execute(ctx context.Context, in GenerateTermInvo
 		Blocked:     blocked,
 		TotalDueSum: totalDueSum,
 	}, nil
+}
+
+// enrichBookedSessions copies the calculated sessions and persists each
+// session's allocated amount (largest-remainder over the line subtotal), so
+// the as-billed per-session breakdown is stable at read time (R9, KTD6).
+func enrichBookedSessions(calc domain.BookedCoreCalculation) []domain.BookedSession {
+	sessionWeights := make([]int, len(calc.Sessions))
+	for i, s := range calc.Sessions {
+		sessionWeights[i] = s.DurationMinutes
+	}
+	sessionAmounts := domain.AllocateLineAmount(calc.Subtotal.Minor(), sessionWeights)
+	enriched := make([]domain.BookedSession, len(calc.Sessions))
+	for i, s := range calc.Sessions {
+		enriched[i] = s
+		enriched[i].SessionAmountMinor = sessionAmounts[i]
+	}
+	return enriched
 }

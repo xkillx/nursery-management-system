@@ -27,13 +27,19 @@ type BookedPatternEntry struct {
 }
 
 // BookedSession is a single booked occurrence in the billing month — used
-// for invoice line explainability.
+// for invoice line explainability. StartMinutes, EndMinutes and
+// SessionAmountMinor are additive, optional fields: auto-generated invoices
+// persist them at generation time (KTD2), while legacy rows simply lack the
+// keys and fall back to read-time allocation.
 type BookedSession struct {
-	DayOfWeek       int
-	OccurrenceDate  time.Time
-	DurationMinutes int
-	SessionTypeID   string
-	SessionTypeName string
+	DayOfWeek          int
+	OccurrenceDate     time.Time
+	DurationMinutes    int
+	SessionTypeID      string
+	SessionTypeName    string
+	StartMinutes       int
+	EndMinutes         int
+	SessionAmountMinor int
 }
 
 // BookedCoreCalculation is the per-term result of the advance-pay calculation.
@@ -280,6 +286,8 @@ func CalculateBookedCoreMinutesInMonth(
 						DurationMinutes: e.SessionType.DurationMinutes,
 						SessionTypeID:   e.SessionType.ID,
 						SessionTypeName: e.SessionType.Name,
+						StartMinutes:    e.SessionType.StartMinutes,
+						EndMinutes:      e.SessionType.EndMinutes,
 					})
 				}
 			}
