@@ -35,15 +35,19 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/ui/modal/confirmation-dialog.component';
 import { InvoiceTimelineComponent, TimelineEntry } from '../../../../shared/components/invoice/invoice-timeline/invoice-timeline.component';
+import {
+  InvoiceLineItemsTableComponent,
+  InvoiceLineItemsTableLine,
+  buildLineItemsTableLine,
+} from '../../../../shared/components/invoice/invoice-line-items-table/invoice-line-items-table.component';
 import { ManagerInvoicesApiService } from '../../data/manager-invoices-api.service';
 import {
   ManagerInvoiceDetail,
-  ManagerInvoiceLine,
   ManagerPaymentStatus,
   PaymentEvent,
   PaginatedPaymentEvents,
 } from '../../models/manager-invoices.models';
-import { formatGbp, formatMinutes, formatBillingMonthLabel } from '../../utils/invoice-run-formatters';
+import { formatGbp, formatBillingMonthLabel } from '../../utils/invoice-run-formatters';
 import {
   canShowParentRetry,
   getPaymentDisplayState,
@@ -78,51 +82,10 @@ function formatDate(iso: string | null): string {
   }).format(d);
 }
 
-function lineKindLabel(kind: string): string {
-  if (kind === 'ad_hoc') return 'Ad-hoc session';
-  return kind
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
 function invoiceDisplayTitle(detail: ManagerInvoiceDetail): string {
   if (detail.invoiceNumberDisplay) return detail.invoiceNumberDisplay;
   if (detail.invoiceNumber) return detail.invoiceNumber;
   return `Draft Invoice — ${detail.childName}`;
-}
-
-function lineQuantityLabel(line: ManagerInvoiceLine): string {
-  if (line.lineKind === 'funded_deduction') {
-    if (line.fundedAllowanceMinutes !== null && line.fundedAllowanceMinutes > 0) {
-      return `${formatMinutes(line.fundedAllowanceMinutes)} allowance`;
-    }
-    if (line.quantityHours !== null) {
-      return `${line.quantityHours} hr${line.quantityHours === 1 ? '' : 's'}`;
-    }
-    return '—';
-  }
-  if (line.sessionCount !== null && line.sessionCount > 0) {
-    return `${line.sessionCount} session${line.sessionCount === 1 ? '' : 's'}`;
-  }
-  if (line.quantityHours !== null) {
-    return `${line.quantityHours} hr${line.quantityHours === 1 ? '' : 's'}`;
-  }
-  return '—';
-}
-
-function lineKindTone(kind: string): 'primary' | 'accent' | 'success' | 'neutral' {
-  if (kind === 'funded_deduction') return 'accent';
-  if (kind === 'core_childcare' || kind === 'core_charge') return 'primary';
-  if (kind === 'ad_hoc') return 'success';
-  if (kind.startsWith('extra_')) return 'success';
-  return 'neutral';
-}
-
-function fundingModelLabel(model: string | null): string {
-  if (model === 'term_time_only') return 'Term-time funding';
-  if (model === 'stretched') return 'Stretched funding';
-  return 'Funded hours';
 }
 
 @Component({
@@ -135,6 +98,7 @@ function fundingModelLabel(model: string | null): string {
     StatusBadgeComponent,
     ConfirmationDialogComponent,
     InvoiceTimelineComponent,
+    InvoiceLineItemsTableComponent,
     NgIcon,
   ],
   templateUrl: './manager-invoice-detail.component.html',
@@ -204,14 +168,27 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
   isConfirmSendOpen = false;
 
   readonly formatGbp = formatGbp;
-  readonly formatMinutes = formatMinutes;
   readonly formatBillingMonthLabel = formatBillingMonthLabel;
   readonly formatInstant = formatInstant;
   readonly formatDate = formatDate;
-  readonly lineKindLabel = lineKindLabel;
-  readonly lineQuantityLabel = lineQuantityLabel;
-  readonly lineKindTone = lineKindTone;
-  readonly fundingModelLabel = fundingModelLabel;
+
+  get tableLines(): InvoiceLineItemsTableLine[] {
+    if (!this.detail) return [];
+    return this.detail.lines
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((l) =>
+        buildLineItemsTableLine({
+          lineKind: l.lineKind,
+          description: l.description,
+          quantityMinutes: l.quantityHours != null ? Math.round(l.quantityHours * 60) : null,
+          unitAmountMinor: l.unitAmountMinor,
+          lineAmountMinor: l.lineAmountMinor,
+          fundingModel: l.fundingModel,
+          sessions: l.sessions,
+        }),
+      );
+  }
 
   readonly canShowParentRetry = canShowParentRetry;
   readonly getPaymentDisplayState = getPaymentDisplayState;
@@ -415,17 +392,6 @@ export class ManagerInvoiceDetailComponent implements OnInit, AfterViewInit {
     }
 
     return entries;
-  }
-
-  lineToneClasses(kind: string): string {
-    const tone = lineKindTone(kind);
-    const map: Record<ReturnType<typeof lineKindTone>, string> = {
-      primary: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300',
-      accent: 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300',
-      success: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-300',
-      neutral: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
-    };
-    return map[tone];
   }
 
   paymentStateBadgeClasses(state: PaymentDisplayState): string {

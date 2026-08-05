@@ -84,7 +84,10 @@ const issuedDetail: ManagerInvoiceDetail = {
       coreBillableMinutes: null,
       sessionCount: null,
       fundingModel: null,
-      sessions: [],
+      sessions: [
+        { occurrenceDate: '2026-05-04', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 },
+        { occurrenceDate: '2026-05-11', startMinutes: 480, endMinutes: 960, durationMinutes: 480, sessionTypeName: 'Full Day', sessionAmountMinor: 16500 },
+      ],
     },
     {
       lineId: 'l2',
@@ -394,6 +397,15 @@ describe('ManagerInvoiceDetailComponent', () => {
     const coreIndex = tableText.indexOf('Core childcare');
     const fundedIndex = tableText.indexOf('Funded deduction');
     expect(coreIndex).toBeLessThan(fundedIndex);
+  });
+
+  it('renders per-session breakdown for core line', () => {
+    createFixture();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Mon 4 May');
+    expect(text).toContain('Full Day (08:00–16:00)');
+    expect(text).toContain('Core childcare · 2 sessions');
+    expect(text).toContain('£165.00');
   });
 
   it('shows locked/immutable notice for issued invoices', () => {

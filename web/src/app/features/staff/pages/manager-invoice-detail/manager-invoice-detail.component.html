@@ -293,55 +293,7 @@
           </div>
 
           @if (detail.lines.length > 0) {
-            <div class="overflow-x-auto">
-              <table class="w-full min-w-[600px] border-collapse text-left text-sm">
-                <thead>
-                  <tr class="border-b border-gray-200/70 bg-gray-50/70 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
-                    <th class="px-6 py-4">DESCRIPTION</th>
-                    <th class="px-6 py-4 text-center w-28">QTY</th>
-                    <th class="px-6 py-4 text-right w-36">UNIT PRICE</th>
-                    <th class="px-6 py-4 text-right w-36">GROSS</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                  @for (line of detail.lines; track line.lineId) {
-                    <tr class="transition" [class.bg-orange-50\/40]="line.lineKind === 'funded_deduction'" [class.dark:bg-orange-500\/5]="line.lineKind === 'funded_deduction'" [class.hover:bg-gray-50\/60]="line.lineKind !== 'funded_deduction'" [class.dark:hover:bg-white\/[0.01]]="line.lineKind !== 'funded_deduction'">
-                      <td class="px-6 py-4">
-                        <p class="font-bold text-sm" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-900]="line.lineKind !== 'funded_deduction'" [class.dark:text-white]="line.lineKind !== 'funded_deduction'">
-                          {{ line.description }}
-                        </p>
-                        @if (line.lineKind === 'funded_deduction') {
-                          <p class="text-xs text-orange-700 dark:text-orange-400 font-medium mt-1 flex items-center gap-1.5">
-                            <span class="inline-block size-1.5 rounded-full bg-orange-500"></span>
-                            {{ fundingModelLabel(line.fundingModel) }}
-                          </p>
-                        }
-                        @if (line.lineKind !== 'funded_deduction' && line.sessionCount) {
-                          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ formatBillingMonthLabel(detail.billingMonth) }} Attendance Period</p>
-                        }
-                      </td>
-                      <td class="px-6 py-4 text-center text-sm font-medium" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-700]="line.lineKind !== 'funded_deduction'" [class.dark:text-gray-300]="line.lineKind !== 'funded_deduction'">
-                        {{ lineQuantityLabel(line) }}
-                      </td>
-                      <td class="px-6 py-4 text-right text-sm" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-600]="line.lineKind !== 'funded_deduction'" [class.dark:text-gray-400]="line.lineKind !== 'funded_deduction'">
-                        @if (line.unitAmountMinor !== null) {
-                          {{ formatGbp(line.unitAmountMinor) }}
-                        } @else {
-                          —
-                        }
-                      </td>
-                      <td class="px-6 py-4 text-right text-sm font-bold" [class.text-orange-900]="line.lineKind === 'funded_deduction'" [class.dark:text-orange-300]="line.lineKind === 'funded_deduction'" [class.text-gray-900]="line.lineKind !== 'funded_deduction'" [class.dark:text-white]="line.lineKind !== 'funded_deduction'">
-                        @if (line.lineKind === 'funded_deduction' && line.lineAmountMinor > 0) {
-                          &minus;{{ formatGbp(line.lineAmountMinor) }}
-                        } @else {
-                          {{ formatGbp(line.lineAmountMinor) }}
-                        }
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <app-invoice-line-items-table [lines]="tableLines" />
 
             <!-- Summary Totals Block -->
             <div class="flex justify-end border-t border-gray-100 bg-gray-50/30 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
